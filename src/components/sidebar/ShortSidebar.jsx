@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 export default function ShortSidebar() {
   return (
     <React.Fragment>
-      <aside className="bg-white shadow-md block lg:hidden">
-        <div className="flex flex-col items-center w-16 max-h-screen h-full overflow-hidden text-gray-700 rounded">
+      <aside className="bg-slate-900 shadow-md block lg:hidden">
+        <div className="flex flex-col items-center w-16 max-h-screen h-full overflow-hidden text-slate-300 rounded">
           <Link className="flex items-center justify-center mt-3" to="#">
             <svg
               className="w-8 h-8 fill-current"
@@ -18,7 +18,7 @@ export default function ShortSidebar() {
           </Link>
           <div className="flex flex-col items-center mt-3 border-t border-gray-300">
             <Link
-              className="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-gray-300"
+              className="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-slate-800"
               to="#"
             >
               <svg
@@ -37,7 +37,7 @@ export default function ShortSidebar() {
               </svg>
             </Link>
             <Link
-              className="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-gray-300"
+              className="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-slate-800"
               to="#"
             >
               <svg
@@ -56,7 +56,7 @@ export default function ShortSidebar() {
               </svg>
             </Link>
             <Link
-              className="flex items-center justify-center w-12 h-12 mt-2 bg-gray-300 rounded"
+              className="flex items-center justify-center w-12 h-12 mt-2 bg-slate-800 rounded"
               to="#"
             >
               <svg
@@ -75,7 +75,7 @@ export default function ShortSidebar() {
               </svg>
             </Link>
             <Link
-              className="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-gray-300"
+              className="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-slate-800"
               to="#"
             >
               <svg
@@ -96,7 +96,7 @@ export default function ShortSidebar() {
           </div>
           <div className="flex flex-col items-center mt-2 border-t border-gray-300">
             <Link
-              className="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-gray-300"
+              className="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-slate-800"
               to="#"
             >
               <svg
@@ -115,7 +115,7 @@ export default function ShortSidebar() {
               </svg>
             </Link>
             <Link
-              className="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-gray-300"
+              className="flex items-center justify-center w-12 h-12 mt-2 rounded hover:bg-slate-800"
               to="#"
             >
               <svg
@@ -134,7 +134,7 @@ export default function ShortSidebar() {
               </svg>
             </Link>
             <Link
-              className="relative flex items-center justify-center w-12 h-12 mt-2 hover:bg-gray-300"
+              className="relative flex items-center justify-center w-12 h-12 mt-2 hover:bg-slate-800"
               to="#"
             >
               <svg
@@ -155,7 +155,7 @@ export default function ShortSidebar() {
             </Link>
           </div>
           <Link
-            className="flex items-center justify-center w-16 h-16 mt-auto bg-gray-200 hover:bg-gray-300"
+            className="flex items-center justify-center w-16 h-16 mt-auto bg-gray-200 hover:bg-slate-800"
             to="#"
           >
             <svg

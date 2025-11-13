@@ -73,7 +73,7 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/t
 
 ### - Create .env file:
 
-Créez un fichier .env même niveau que src et les autres fichiers puis mettez dedans les variables suivantes pour initier les urls de base du backend:
+Créez un fichier .env même niveau que src et les autres fichiers puis mettez dedans les variables suivantes pour assigner les urls de base du backend:
 
 - REACT_APP_API_URL
 - REACT_APP_BASE_URL

@@ -52,7 +52,7 @@ export default function InputFileCard({
   return (
     <React.Fragment>
       <div
-        className="relative p-3 bg-white rounded-3xl flex overflow-hidden items-center min-w-[300px] cursor-pointer group"
+        className="relative p-3 bg-slate-800 rounded-3xl flex overflow-hidden items-center min-w-[300px] cursor-pointer group"
         style={{ backgroundSize: "600px", backgroundImage: `url(${imageUrl})` }}
       >
         <input
@@ -63,16 +63,16 @@ export default function InputFileCard({
           className="absolute cursor-pointer inset-0 w-full h-full opacity-0 z-50"
         />
         <img
-          className="z-50 h-5 w-5 absolute top-3 right-3 rounded-full outline outline-gray-100/15 transition duration-1000 group-hover:scale-[2] group-hover:rotate-[410deg] group-hover:-translate-y-3 group-hover:translate-x-3"
+          className="z-50 h-5 w-5 absolute top-3 right-3 rounded-full outline outline-slate-800/15 transition duration-1000 group-hover:scale-[2] group-hover:rotate-[410deg] group-hover:-translate-y-3 group-hover:translate-x-3"
           height="20"
           width="20"
           src={imageUrl}
           alt="Icon"
         />
-        <div className="absolute inset-0 ring-1 ring-white/30 ring-inset bg-gradient-to-l from-black/80 via-black/50 to-black/20 rounded-2xl overflow-hidden"></div>
+        <div className="absolute inset-0 ring-1 ring-slate-900/30 ring-inset bg-gradient-to-l from-slate-950/90 via-slate-900/50 to-black/20 rounded-2xl overflow-hidden"></div>
         <div className="relative z-10 flex items-center space-x-4">
           <img
-            className="h-16 w-16 rounded-2xl object-contain shadow-md border border-gray-100/20 transition duration-300 group-hover:scale-95"
+            className="h-16 w-16 rounded-2xl object-contain shadow-md border border-slate-900/20 transition duration-300 group-hover:scale-95"
             height="64"
             width="64"
             src={imageUrl}

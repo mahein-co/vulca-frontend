@@ -1,6 +1,5 @@
 import React from "react";
 import { useSelector } from "react-redux";
-import { Link } from "react-router-dom";
 
 import InputFileCard from "../../../components/card/InputFileCard";
 import UploadedFiles from "./UploadedFiles";
@@ -58,11 +57,11 @@ export default function IndexOcrPage() {
                 acceptFile={card.acceptFile}
               />
             ))}
-            <div className="mt-4 px-6 py-1 text-xs bg-gray-300 rounded-full inline-flex transition duration-300 hover:bg-gray-800 hover:text-white hover:-translate-y-1">
+            {/* <div className="mt-4 px-6 py-1 text-xs bg-gray-300 rounded-full inline-flex transition duration-300 hover:bg-gray-800 hover:text-white hover:-translate-y-1">
               <Link to="#" rel="noopener noreferrer">
                 Or by formular
               </Link>
-            </div>
+            </div> */}
           </div>
         </React.Fragment>
       )}

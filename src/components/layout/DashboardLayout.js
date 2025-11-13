@@ -12,7 +12,7 @@ export default function DashboardLayout() {
         <ShortSidebar />
         <div className="flex-1 flex flex-col">
           <IndexHeader />
-          <div className="bg-gray-100 max-h-screen h-full p-7">
+          <div className="bg-slate-800 max-h-screen h-full p-7 text-slate-300 overflow-auto">
             <Outlet />
           </div>
         </div>

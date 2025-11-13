@@ -1,3 +1,6 @@
+import IconDashboarb from "../assets/icons/dashboard.png";
+import IconOcr from "../assets/icons/pdf.png";
+
 export const BASE_URL_API = process.env.REACT_APP_API_URL;
 
 export const PATHS = {
@@ -8,3 +11,8 @@ export const PATHS = {
   dashboard: "/app",
   ocr: "/app/ocr",
 };
+
+export const SIDEBAR_NAVIGATIONS = [
+  { title: "Dashboard", path: "/app", icon: IconDashboarb },
+  { title: "Import file", path: "/app/ocr", icon: IconOcr },
+];

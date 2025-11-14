@@ -24,10 +24,10 @@ export const ocrApiSlice = createApi({
       ) {
         try {
           const formData = new FormData();
-          for (const f of files) formData.append("files", f);
+          for (const f of files) formData.append("file", f);
 
           const response = await axios.post(
-            `${BASE_URL_API}upload/`,
+            `${BASE_URL_API}/files/`,
             formData,
             {
               headers: { "Content-Type": "multipart/form-data" },
@@ -51,14 +51,17 @@ export const ocrApiSlice = createApi({
       },
       invalidatesTags: ["UploadedFiles"],
     }),
-    // saveFileSource: builder.mutation({
-    //   query: (fileData) => ({
-    //     url: "upload/",
-    //     method: "POST",
-    //     body: fileData,
-    //   }),
-    //   invalidatesTags: ["UploadedFiles"],
-    // }),
+
+    // Save one file =====================================
+    saveOneFileSource: builder.mutation({
+      query: (fileData) => ({
+        url: "files/",
+        method: "POST",
+        headers: { "Content-Type": "multipart/form-data" },
+        body: fileData,
+      }),
+      invalidatesTags: ["UploadedFiles"],
+    }),
 
     // Delete file =====================================
     deleteFile: builder.mutation({
@@ -75,4 +78,5 @@ export const {
   useGetFilesSourcesQuery,
   useSaveFileSourceMutation,
   useDeleteFileMutation,
+  useSaveOneFileSourceMutation,
 } = ocrApiSlice;

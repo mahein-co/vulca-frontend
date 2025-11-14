@@ -58,7 +58,7 @@ export default function InputFileCard({
         <input
           type="file"
           accept={acceptFile}
-          multiple
+          multiple={numberOfFiles > 1}
           onChange={handleFileChange}
           className="absolute cursor-pointer inset-0 w-full h-full opacity-0 z-50"
         />

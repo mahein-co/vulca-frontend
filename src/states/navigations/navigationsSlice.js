@@ -1,7 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  activePageTitle: "Dashboard",
+  activePageTitle: "Vulca Menabe",
 };
 
 export const navigationsSlice = createSlice({

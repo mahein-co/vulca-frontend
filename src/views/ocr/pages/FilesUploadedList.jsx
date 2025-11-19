@@ -1,5 +1,6 @@
+import { BsFillCloudDownloadFill } from "react-icons/bs";
 import PropType from "prop-types";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BsTrash3Fill } from "react-icons/bs";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -11,7 +12,10 @@ import {
   actionRemoveFileByIndex,
 } from "../../../states/ocr/ocrSlice";
 import { calculateFileSizeInMB } from "../../../utils/utilsFunctions";
-import { useSaveFileSourceMutation } from "../../../states/ocr/ocrApiSlice";
+import {
+  useSaveFileSourceMutation,
+  useSaveOneFileSourceMutation,
+} from "../../../states/ocr/ocrApiSlice";
 import toast from "react-hot-toast";
 
 const FileTypeUploaded = ({ fileType }) => {
@@ -45,12 +49,12 @@ const FileTypeUploaded = ({ fileType }) => {
   }
 };
 
-UploadedFiles.propTypes = {
+FilesUploadedList.propTypes = {
   files: PropType.array,
   totalFiles: PropType.number,
 };
 
-export default function UploadedFiles({ files, totalFiles }) {
+export default function FilesUploadedList({ files, totalFiles }) {
   // USE-DISPATCH =====================================
   const dispatch = useDispatch();
   // GLOBAL-STATES =====================================
@@ -69,6 +73,17 @@ export default function UploadedFiles({ files, totalFiles }) {
   const deleteFileSelected = (index) => {
     dispatch(actionRemoveFileByIndex(index));
   };
+
+  // Save files uploaded to backend  =====================================
+  const [
+    actionSaveOneFileSource,
+    {
+      isLoading: isSavingOneFile,
+      isSuccess: isSaveOneFileSuccess,
+      isError: isSaveOneFileError,
+      error: saveOneFileError,
+    },
+  ] = useSaveOneFileSourceMutation() || [];
 
   // UPLOAD FILE ======================================
   const handleUpload = async () => {
@@ -98,6 +113,34 @@ export default function UploadedFiles({ files, totalFiles }) {
       toast.error("Erreur pendant l'upload");
     }
   };
+
+  // Handle save on file  =====================================
+  const handleSaveOneFile = (file) => {
+    const fileData = new FormData();
+    fileData.append("file", file);
+    actionSaveOneFileSource(fileData);
+  };
+
+  // USE-EFFECT: Save one file success =====================================
+  useEffect(() => {
+    if (isSavingOneFile && !isSaveOneFileSuccess) {
+      toast.loading("Sauvegarde du fichier en cours...");
+    } else if (isSaveOneFileSuccess && !isSavingOneFile) {
+      toast.dismiss();
+      toast.success("Fichier sauvegardé avec succès !");
+    } else if (isSaveOneFileError && !isSavingOneFile) {
+      toast.dismiss();
+      console.log(saveOneFileError);
+      toast.error(
+        `${saveOneFileError?.data?.error || "Erreur lors de la sauvegarde."}`
+      );
+    }
+  }, [
+    isSaveOneFileSuccess,
+    isSavingOneFile,
+    saveOneFileError,
+    isSaveOneFileError,
+  ]);
 
   return (
     <React.Fragment>
@@ -175,39 +218,51 @@ export default function UploadedFiles({ files, totalFiles }) {
                         </div>
 
                         <div className="mt-4 sm:mt-0">
-                          <h3 className="text-lg font-medium text-pretty text-slate-200">
-                            {file?.name}
-                          </h3>
+                          <div className="flex w-full items-start justify-between">
+                            <div>
+                              <h3 className="text-lg font-medium text-pretty text-slate-200">
+                                {file?.name}
+                              </h3>
 
-                          <p className="mt-1 text-sm text-grey">
-                            {calculateFileSizeInMB(file?.size)}
-                          </p>
-                          {progressMap[index] > 0 && (
-                            <React.Fragment>
-                              <div class="relative mt-1 w-64">
-                                <div class="flex mb-2 items-center justify-between">
-                                  <div>
-                                    <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-teal-600 bg-teal-200">
-                                      {progressMap[index] < 100
-                                        ? "In Progress"
-                                        : " Completed"}
-                                    </span>
+                              <p className="mt-1 text-sm text-grey">
+                                {calculateFileSizeInMB(file?.size)}
+                              </p>
+                              {progressMap[index] > 0 && (
+                                <React.Fragment>
+                                  <div class="relative mt-1 w-64">
+                                    <div class="flex mb-2 items-center justify-between">
+                                      <div>
+                                        <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-teal-600 bg-teal-200">
+                                          {progressMap[index] < 100
+                                            ? "In Progress"
+                                            : " Completed"}
+                                        </span>
+                                      </div>
+                                      <div class="text-right">
+                                        <span class="text-xs font-semibold inline-block text-teal-600">
+                                          {progressMap[index]}%
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div class="flex rounded-full h-2 bg-gray-200">
+                                      <div
+                                        style={{
+                                          width: `${progressMap[index]}%`,
+                                        }}
+                                        class="rounded-full bg-teal-500"
+                                      ></div>
+                                    </div>
                                   </div>
-                                  <div class="text-right">
-                                    <span class="text-xs font-semibold inline-block text-teal-600">
-                                      {progressMap[index]}%
-                                    </span>
-                                  </div>
-                                </div>
-                                <div class="flex rounded-full h-2 bg-gray-200">
-                                  <div
-                                    style={{ width: `${progressMap[index]}%` }}
-                                    class="rounded-full bg-teal-500"
-                                  ></div>
-                                </div>
-                              </div>
-                            </React.Fragment>
-                          )}
+                                </React.Fragment>
+                              )}
+                            </div>
+
+                            <div className="mt-2">
+                              <button onClick={() => handleSaveOneFile(file)}>
+                                <BsFillCloudDownloadFill />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>

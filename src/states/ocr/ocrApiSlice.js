@@ -63,6 +63,17 @@ export const ocrApiSlice = createApi({
       invalidatesTags: ["UploadedFiles"],
     }),
 
+    // Extract data from file =====================================
+    extractDataFromFile: builder.mutation({
+      query: (fileData) => ({
+        url: "files/extract",
+        method: "POST",
+        headers: { "Content-Type": "multipart/form-data" },
+        body: fileData,
+      }),
+      invalidatesTags: ["UploadedFiles"],
+    }),
+
     // Delete file =====================================
     deleteFile: builder.mutation({
       query: (fileId) => ({
@@ -79,4 +90,5 @@ export const {
   useSaveFileSourceMutation,
   useDeleteFileMutation,
   useSaveOneFileSourceMutation,
+  useExtractDataFromFileMutation,
 } = ocrApiSlice;

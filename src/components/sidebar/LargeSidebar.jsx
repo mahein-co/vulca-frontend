@@ -1,10 +1,13 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { SIDEBAR_NAVIGATIONS } from "../../constants/globalConstants";
 import { useDispatch, useSelector } from "react-redux";
+import { Link, useLocation } from "react-router-dom";
+import { SIDEBAR_NAVIGATIONS } from "../../constants/globalConstants";
 import { actionSetActivePageTitle } from "../../states/navigations/navigationsSlice";
 
 export default function LargeSidebar() {
+  // USE-LOCATION ===================================
+  const location = useLocation();
+  // USE-DISPATCH ===================================
   const dispatch = useDispatch();
   const activePageTitle = useSelector(
     (state) => state.navigations.activePageTitle
@@ -38,7 +41,7 @@ export default function LargeSidebar() {
                     key={index}
                     onClick={() => handleChangeActivePageTitle(navItem?.title)}
                     className={`${
-                      activePageTitle === navItem?.title && "bg-slate-800"
+                      location.pathname === navItem?.path && "bg-slate-800"
                     } flex items-center w-full h-12 px-3 mt-2 rounded-xl hover:bg-slate-800`}
                     to={navItem?.path}
                   >
@@ -54,7 +57,7 @@ export default function LargeSidebar() {
                 );
               })}
             </div>
-            <div className="flex flex-col items-center w-full mt-2 border-t border-slate-800">
+            {/* <div className="flex flex-col items-center w-full mt-2 border-t border-slate-800">
               <Link
                 className="flex items-center w-full h-12 px-3 mt-2 rounded-2xl hover:bg-slate-800"
                 to="#"
@@ -116,7 +119,7 @@ export default function LargeSidebar() {
                 <span className="ml-2 text-sm font-medium">Messages</span>
                 <span className="absolute top-0 left-0 w-2 h-2 mt-2 ml-2 bg-indigo-500 rounded-full"></span>
               </Link>
-            </div>
+            </div> */}
           </div>
 
           <Link

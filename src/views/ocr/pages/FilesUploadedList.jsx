@@ -10,11 +10,11 @@ import PdfIcon from "../../../assets/icons/pdf.png";
 import {
   useExtractDataFromFileMutation,
   useSaveFileSourceMutation,
-  useSaveOneFileSourceMutation,
 } from "../../../states/ocr/ocrApiSlice";
 import {
   actionClearUploadedFiles,
   actionRemoveFileByIndex,
+  actionSelectFile,
 } from "../../../states/ocr/ocrSlice";
 import { calculateFileSizeInMB } from "../../../utils/utilsFunctions";
 import DynamicJsonForm from "../forms/DynamicJsonForm";
@@ -68,6 +68,9 @@ export default function FilesUploadedList({ files, totalFiles }) {
   // LOCAL-STATE: is the formula of verification appear =================
   const [isShowVerification, setIsShowVerification] = useState(false);
 
+  // LOCAL-STATE: selectfile ==========================================
+  const [selectedFile, setSelectedFile] = useState(null);
+
   // GLOBAL-FUNCTIONS: Clear files list =====================================
   const cancelUploadFile = () => {
     dispatch(actionClearUploadedFiles());
@@ -88,18 +91,6 @@ export default function FilesUploadedList({ files, totalFiles }) {
       error: errorExtracted,
     },
   ] = useExtractDataFromFileMutation() || [];
-
-  // Save files uploaded to backend  =====================================
-  const [
-    actionSaveOneFileSource,
-    {
-      data: saveOneFileData,
-      isLoading: isSavingOneFile,
-      isSuccess: isSaveOneFileSuccess,
-      isError: isSaveOneFileError,
-      error: saveOneFileError,
-    },
-  ] = useSaveOneFileSourceMutation() || [];
 
   // UPLOAD FILE ======================================
   const handleUpload = async () => {
@@ -134,35 +125,9 @@ export default function FilesUploadedList({ files, totalFiles }) {
   const handleExtractData = (file) => {
     const fileData = new FormData();
     fileData.append("file", file);
+    setSelectedFile(file);
     actionExtractData(fileData);
   };
-
-  // Handle save on file  =====================================
-  const handleSaveOneFile = (file) => {
-    const fileData = new FormData();
-    fileData.append("file", file);
-    actionSaveOneFileSource(fileData);
-  };
-
-  // USE-EFFECT: Save one file success =====================================
-  useEffect(() => {
-    if (isSavingOneFile && !isSaveOneFileSuccess) {
-      toast.loading("Sauvegarde du fichier en cours...");
-    } else if (isSaveOneFileSuccess && !isSavingOneFile) {
-      toast.dismiss();
-      toast.success("Fichier sauvegardé avec succès !");
-    } else if (isSaveOneFileError && !isSavingOneFile) {
-      toast.dismiss();
-      toast.error(
-        `${saveOneFileError?.data?.error || "Erreur lors de la sauvegarde."}`
-      );
-    }
-  }, [
-    isSaveOneFileSuccess,
-    isSavingOneFile,
-    saveOneFileError,
-    isSaveOneFileError,
-  ]);
 
   // USE-EFFECT: extract data
   useEffect(() => {
@@ -170,6 +135,7 @@ export default function FilesUploadedList({ files, totalFiles }) {
       toast.loading("Extraction en cours...");
     } else if (isSuccessExtracted && !isLoadingExtracted) {
       setIsShowVerification(true);
+      dispatch(actionSelectFile(selectedFile));
       toast.dismiss();
       toast.success("Extraction du fichier avec succès !");
     } else if (isErrorExtracted && !isLoadingExtracted) {
@@ -183,9 +149,9 @@ export default function FilesUploadedList({ files, totalFiles }) {
     isSuccessExtracted,
     isErrorExtracted,
     errorExtracted,
+    dispatch,
+    selectedFile,
   ]);
-
-  console.log("Extracted data: ", dataExtracted?.extracted_json);
 
   return (
     <React.Fragment>

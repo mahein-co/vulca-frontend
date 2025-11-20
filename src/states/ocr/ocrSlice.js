@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   uploadedFiles: [],
   fileType: "tableau",
+  selectedFile: null,
 };
 
 export const ocrSlice = createSlice({
@@ -18,6 +19,14 @@ export const ocrSlice = createSlice({
           ...action.payload.uploadedFiles,
         ],
         fileType: action.payload.fileType,
+      };
+    },
+
+    // Select file to save ===================
+    actionSelectFile: (state, action) => {
+      return {
+        ...state,
+        selectedFile: action.payload,
       };
     },
 
@@ -43,5 +52,6 @@ export const {
   actionAddUploadedFiles,
   actionClearUploadedFiles,
   actionRemoveFileByIndex,
+  actionSelectFile,
 } = ocrSlice.actions;
 export default ocrSlice.reducer;

@@ -62,7 +62,7 @@ export const ocrApiSlice = createApi({
       }),
       invalidatesTags: ["UploadedFiles"],
     }),
-
+    
     // Extract data from file =====================================
     extractDataFromFile: builder.mutation({
       query: (fileData) => ({

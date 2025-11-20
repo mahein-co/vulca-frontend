@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 export default function ShortSidebar() {
   return (
     <React.Fragment>
-      <aside className="bg-slate-900 shadow-md block lg:hidden">
+      <aside className="fixed top-0 left-0 h-screen bg-slate-900 shadow-md block lg:hidden">
         <div className="flex flex-col items-center w-16 max-h-screen h-full overflow-hidden text-slate-300 rounded">
           <Link className="flex items-center justify-center mt-3" to="#">
             <svg

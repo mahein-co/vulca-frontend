@@ -1,5 +1,5 @@
 import React from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import { Link, useLocation } from "react-router-dom";
 import { SIDEBAR_NAVIGATIONS } from "../../constants/globalConstants";
 import { actionSetActivePageTitle } from "../../states/navigations/navigationsSlice";
@@ -9,9 +9,6 @@ export default function LargeSidebar() {
   const location = useLocation();
   // USE-DISPATCH ===================================
   const dispatch = useDispatch();
-  const activePageTitle = useSelector(
-    (state) => state.navigations.activePageTitle
-  );
 
   // Set active page title
   const handleChangeActivePageTitle = (title) => {
@@ -20,7 +17,7 @@ export default function LargeSidebar() {
 
   return (
     <React.Fragment>
-      <aside className="hidden lg:block w-48 bg-slate-900 shadow-md">
+      <aside className="fixed hidden lg:flex h-screen mt-14 flex-col lg:mt-0 top-0 left-0 w-48 bg-slate-900 shadow-md">
         <div className="flex flex-col items-center max-h-screen h-full overflow-hidden text-slate-300 rounded">
           <Link className="flex items-center w-full px-3 mt-3" to="/">
             <svg

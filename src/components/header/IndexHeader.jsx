@@ -7,7 +7,7 @@ export default function IndexHeader() {
   );
   return (
     <React.Fragment>
-      <header className="bg-slate-900 shadow-sm p-4 flex justify-between items-center">
+      <header className="sticky -top-1 lg:top-0 w-full bg-slate-900 shadow-sm p-4 flex justify-between items-center z-50">
         <h1 className="text-xl font-bold text-primary">{activePageTitle}</h1>
         <div className="flex items-center gap-4">
           <input

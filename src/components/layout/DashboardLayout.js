@@ -7,12 +7,14 @@ import ShortSidebar from "../sidebar/ShortSidebar";
 export default function DashboardLayout() {
   return (
     <React.Fragment>
-      <div class="flex min-h-screen bg-white">
-        <LargeSidebar />
-        <ShortSidebar />
-        <div className="flex-1 flex flex-col">
+      <div class="flex min-h-screen bg-slate-800">
+        <div>
+          <LargeSidebar />
+          <ShortSidebar />
+        </div>
+        <div className="flex-1 transition-all duration-300 ease-in-out ml-48 flex flex-col">
           <IndexHeader />
-          <div className="bg-slate-800 max-h-screen h-full p-7 text-slate-300 overflow-auto">
+          <div className="bg-slate-800 p-7 text-slate-300">
             <Outlet />
           </div>
         </div>

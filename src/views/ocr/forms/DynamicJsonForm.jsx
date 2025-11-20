@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
 import PropType from "prop-types";
-import { useSaveOneFileSourceMutation } from "../../../states/ocr/ocrApiSlice";
+import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import { actionSelectFile } from "../../../states/ocr/ocrSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
+import { useSaveOneFileSourceMutation } from "../../../states/ocr/ocrApiSlice";
+import { actionClearUploadedFiles } from "../../../states/ocr/ocrSlice";
 
 DynamicJsonForm.propTypes = {
   initialData: PropType.object,
@@ -72,10 +72,10 @@ export default function DynamicJsonForm({
   const handleGenerateJournal = () => {
     const dataToSend = {
       ...formData,
-      file_source: saveOneFileData?.file_source?.id,
+      file_source: saveOneFileData?.file_source.id,
     };
+    console.log(dataToSend);
     setFormData(dataToSend);
-
     actionGenerateJournal(dataToSend);
   };
 
@@ -106,7 +106,7 @@ export default function DynamicJsonForm({
     saveOneFileData,
   ]);
 
-  // USE-EFFECT: Save one file success =====================================
+  // USE-EFFECT:  =====================================
   useEffect(() => {
     if (isLoadingJournal) {
       toast.dismiss();
@@ -116,6 +116,7 @@ export default function DynamicJsonForm({
     if (isSuccessJournal && !isLoadingJournal) {
       toast.dismiss();
       toast.success("Journal généré avec succès !");
+      dispatch(actionClearUploadedFiles());
       return;
     }
 
@@ -124,7 +125,7 @@ export default function DynamicJsonForm({
       toast.error("Erreur de génération du journal");
       return;
     }
-  }, [isLoadingJournal, isSuccessJournal, isErrorJournal]);
+  }, [dispatch, isLoadingJournal, isSuccessJournal, isErrorJournal]);
 
   return (
     <React.Fragment>

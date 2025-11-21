@@ -64,6 +64,9 @@ export default function DynamicJsonForm({
     actionSaveOneFileSource(fileData);
   };
 
+  // ERROR SAFE FILE SOURCE
+  console.log("ERROR SAVE FILE SOURCE: ", saveOneFileError);
+
   // HANDLE SUBMIT =======================================
   const handleSubmit = () => {
     handleSaveOneFile();
@@ -127,6 +130,8 @@ export default function DynamicJsonForm({
     }
   }, [dispatch, isLoadingJournal, isSuccessJournal, isErrorJournal]);
 
+  console.log("JSON: ", formData);
+
   return (
     <React.Fragment>
       {isSaveOneFileSuccess ? (
@@ -159,13 +164,49 @@ export default function DynamicJsonForm({
                 <label className="block text-sm font-medium capitalize">
                   {key.replace(/_/g, " ")}
                 </label>
+                {typeof value !== "object" ? (
+                  <input
+                    type="text"
+                    className="w-full p-2 bg-slate-700 rounded-lg"
+                    value={value ?? ""}
+                    onChange={(e) => handleChange(key, e.target.value)}
+                  />
+                ) : null}
+                {Array.isArray(value) ? (
+                  <div className="space-y-4">
+                    {value.map((item, index) => (
+                      <div
+                        key={index}
+                        className="p-3 bg-slate-800 rounded-lg space-y-1 border border-slate-600"
+                      >
+                        <h4 className="font-medium uppercase text-end">
+                          {index + 1} - {key.replace(/_/g, " ")}
+                        </h4>
 
-                <input
-                  type="text"
-                  className="w-full p-2 bg-slate-700 rounded-lg"
-                  value={value ?? ""}
-                  onChange={(e) => handleChange(key, e.target.value)}
-                />
+                        {/* Sous-champs dans l'objet */}
+                        {Object.entries(item).map(([subKey, subValue]) => (
+                          <div key={subKey}>
+                            <label className="block text-sm capitalize">
+                              {subKey.replace(/_/g, " ")}
+                            </label>
+
+                            <input
+                              className="w-full p-2 bg-slate-700 rounded-lg"
+                              value={subValue ?? ""}
+                              onChange={(e) =>
+                                handleChange("designation", {
+                                  index,
+                                  field: subKey,
+                                  value: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>

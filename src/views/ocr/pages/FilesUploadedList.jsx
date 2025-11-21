@@ -133,16 +133,21 @@ export default function FilesUploadedList({ files, totalFiles }) {
   useEffect(() => {
     if (isLoadingExtracted && !isSuccessExtracted) {
       toast.loading("Extraction en cours...");
-    } else if (isSuccessExtracted && !isLoadingExtracted) {
+      return;
+    }
+    if (isSuccessExtracted && !isLoadingExtracted) {
       setIsShowVerification(true);
       dispatch(actionSelectFile(selectedFile));
       toast.dismiss();
       toast.success("Extraction du fichier avec succès !");
-    } else if (isErrorExtracted && !isLoadingExtracted) {
+      return;
+    }
+    if (isErrorExtracted && !isLoadingExtracted) {
       toast.dismiss();
       toast.error(
         `${errorExtracted?.data?.error || "Erreur lors de l'extraction'."}`
       );
+      return;
     }
   }, [
     isLoadingExtracted,

@@ -5,7 +5,6 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
 
@@ -28,9 +27,13 @@ const horizontalData = [
 
 export default function BarCharts() {
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* --- Vertical Chart --- */}
       <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Ventes par Mois (Vertical)</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6">
+          Ventes par Mois (Vertical)
+        </h2>
+
         <div className="w-full h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={verticalData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -50,8 +53,12 @@ export default function BarCharts() {
         </div>
       </div>
 
+      {/* --- Horizontal Chart --- */}
       <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Comparaison des Charges (Horizontal)</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6">
+          Comparaison des Charges (Horizontal)
+        </h2>
+
         <div className="w-full h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart

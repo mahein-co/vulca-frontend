@@ -64,9 +64,6 @@ export default function DynamicJsonForm({
     actionSaveOneFileSource(fileData);
   };
 
-  // ERROR SAFE FILE SOURCE
-  console.log("ERROR SAVE FILE SOURCE: ", saveOneFileError);
-
   // HANDLE SUBMIT =======================================
   const handleSubmit = () => {
     handleSaveOneFile();
@@ -172,6 +169,30 @@ export default function DynamicJsonForm({
                     onChange={(e) => handleChange(key, e.target.value)}
                   />
                 ) : null}
+
+                {typeof value === "object" ? (
+                  <div className="p-3 bg-slate-800 rounded-lg space-y-1 border border-slate-600">
+                    {Object.entries(value).map(([subKey, subValue]) => (
+                      <div key={subKey}>
+                        <label className="block text-sm capitalize">
+                          {subKey.replace(/_/g, " ")}
+                        </label>
+
+                        <input
+                          className="w-full p-2 bg-slate-700 rounded-lg"
+                          value={subValue ?? ""}
+                          onChange={(e) =>
+                            handleChange("designation", {
+                              field: subKey,
+                              value: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+
                 {Array.isArray(value) ? (
                   <div className="space-y-4">
                     {value.map((item, index) => (

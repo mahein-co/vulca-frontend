@@ -5,6 +5,7 @@ import IndexLoginPage from "./views/auth/pages/IndexLoginPage";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import IndexOcrPage from "./views/ocr/pages/IndexOcrPage";
 import IndexDashboardPage from "./views/dashboard/IndexDashboardPage";
+import IndexFinancePage from "./views/finance/IndexFinancePage";
 
 export default function Routes() {
   return useRoutes([
@@ -15,6 +16,7 @@ export default function Routes() {
       children: [
         { path: "", element: <IndexDashboardPage /> },
         { path: "ocr", element: <IndexOcrPage /> },
+        { path: "finance", element: <IndexFinancePage /> },
       ],
     },
     {

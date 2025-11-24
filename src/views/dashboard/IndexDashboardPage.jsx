@@ -3,8 +3,6 @@ import ScoreCard from "../../components/card/ScoreCard";
 import ChartCA from "../../components/charts/ChartCA.jsx";
 import BarCharts from "../../components/charts/BarCharts.jsx";
 import PieCamembert from "../../components/charts/PieChart.jsx";
-import Bilan from "../../components/cloture/Bilan.jsx";
-import CompteDeResultatCard from "../../components/cloture/CompteDeResultatCard.jsx";
 
 export default function IndexDashboardPage() { 
   
@@ -49,12 +47,6 @@ export default function IndexDashboardPage() {
                     </div>
                   </div>
                 </div>
-              </div>
-              <div style={{ padding: "20px" }}>
-                 <Bilan />
-              </div>
-              <div style={{ padding: "20px" }}>
-                 <CompteDeResultatCard />
               </div>
     </React.Fragment>
   );

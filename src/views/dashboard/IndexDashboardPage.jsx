@@ -8,7 +8,7 @@ export default function IndexDashboardPage() {
   
   return (
     <React.Fragment>
-          <div className="p-8 grid grid-cols-4 gap-6">
+          <div className="p-8 grid grid-cols-4 gap-6 text-black">
             <ScoreCard title="Chiffre d'affaires (MGA)" value="4 500 000" variation={12} />
             <ScoreCard title="EBE (MGA)" value="120 000" variation={5} />
             <ScoreCard title="Bénéfice net (MGA)" value="750 000" variation={8} />

@@ -8,19 +8,19 @@ import Balance from "../../components/cloture/Balance.jsx";
 export default function IndexFinancePage() {
   return (
     <React.Fragment>
-      <div className="p-8">
+      {/* <div className="p-8">
         <Journal />
-      </div>
-      <div className="p-8 text-black">
+      </div> */}
+      {/* <div className="p-8 text-black">
         <GrandLivre />
       </div>
       <div className="p-8 text-black">
         <Balance />
-      </div>
-      <div style={{ padding: "20px" }}>
+      </div> */}
+      <div>
           <Bilan />
       </div>
-      <div style={{ padding: "20px" }}>
+      <div>
           <CompteDeResultatCard />
       </div>
     </React.Fragment>

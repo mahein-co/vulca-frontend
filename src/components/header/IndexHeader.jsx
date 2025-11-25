@@ -6,21 +6,28 @@ export default function IndexHeader() {
     (state) => state.navigations.activePageTitle
   );
 
-    // Liste des mois
+  // Liste des mois
   const months = [
     "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"
   ];
 
-  // Liste d'années (exemple)
+  // Liste d'années
   const years = [2023, 2024, 2025];
+
   return (
     <React.Fragment>
       <header className="sticky -top-1 lg:top-0 w-full bg-slate-900 shadow-sm p-4 flex justify-between items-center z-50">
+
+        {/* Titre à gauche */}
         <h1 className="text-xl font-bold text-primary">{activePageTitle}</h1>
-        {/* --- FILTERS --- */}
+
+        {/* Zone de droite : Filtres + Search + Avatar */}
+        <div className="flex items-center gap-4">
+
+          {/* Filtres */}
           <div className="flex items-center gap-3">
-            {/* Filter Month */}
+            {/* Filtre Mois */}
             <select
               defaultValue="Tous"
               className="px-3 py-2 rounded-lg bg-slate-800 text-white border border-slate-700"
@@ -31,7 +38,7 @@ export default function IndexHeader() {
               ))}
             </select>
 
-            {/* Filter Year */}
+            {/* Filtre Année */}
             <select
               defaultValue="Tous"
               className="px-3 py-2 rounded-lg bg-slate-800 text-white border border-slate-700"
@@ -42,13 +49,16 @@ export default function IndexHeader() {
               ))}
             </select>
           </div>
-        <div className="flex items-center gap-4">
+
+          {/* Search */}
           <input
             type="text"
             placeholder="Search..."
             className="px-4 hidden py-2 border rounded-lg"
           />
-          <div className="w-7 h-7  rounded-full bg-slate-300 flex items-center justify-center text-dark text-xs">
+
+          {/* Avatar */}
+          <div className="w-7 h-7 rounded-full bg-slate-300 flex items-center justify-center text-dark text-xs">
             SR
           </div>
         </div>
@@ -56,4 +66,5 @@ export default function IndexHeader() {
     </React.Fragment>
   );
 }
+
 

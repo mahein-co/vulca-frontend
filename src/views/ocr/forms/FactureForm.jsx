@@ -3,18 +3,22 @@ import { Plus, Trash2 } from "lucide-react";
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
 
 export default function FactureForm() {
+  // ITEMS DETAILS ===============================================
   const [items, setItems] = useState([
     { designation: "", quantite: 1, prix: 0, tva: 20 },
   ]);
 
+  // ADD ITEM ====================================================
   const addItem = () => {
     setItems([...items, { designation: "", quantite: 1, prix: 0, tva: 20 }]);
   };
 
+  // REMOVE ITEM =================================================
   const removeItem = (index) => {
     setItems(items.filter((_, i) => i !== index));
   };
 
+  // HANDLE ITEM CHANGE ==========================================
   const handleItemChange = (index, key, value) => {
     const newItems = [...items];
     newItems[index][key] = value;
@@ -27,16 +31,31 @@ export default function FactureForm() {
     0
   );
 
+  // TOTAL TVA ======================================================
   const totalTVA = items.reduce(
     (sum, item) => sum + (item.quantite * item.prix * item.tva) / 100,
     0
   );
 
+  // TOTAL TTC ======================================================
   const totalTTC = totalHT + totalTVA;
 
+  // HANDLE SUBMIT FACTURE ==========================================
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Facture générée :", { items, totalHT, totalTVA, totalTTC });
+
+    console.log("Facture générée : ", {
+      pieceType: "Piece comptable de type facture",
+      address: e.target.address.value,
+      date: e.target.dateFacture.value,
+      details: items,
+      totalHT,
+      totalTVA,
+      totalTTC,
+      entreprise: e.target.entrepriseName.value,
+      client: e.target.clientName.value,
+      facture: e.target.factureNum.value,
+    });
   };
 
   return (
@@ -49,40 +68,62 @@ export default function FactureForm() {
         {/* --- Informations générales --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="font-semibold">Entreprise :</label>
+            <label htmlFor="entrepriseName" className="font-semibold">
+              Entreprise :
+            </label>
             <input
+              type="text"
+              name="entrepriseName"
+              id="entrepriseName"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Nom de l'entreprise"
             />
           </div>
 
           <div>
-            <label className="font-semibold">Client :</label>
+            <label htmlFor="clientName" className="font-semibold">
+              Client :
+            </label>
             <input
+              id="clientName"
+              name="clientName"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Nom du client"
             />
           </div>
 
           <div>
-            <label className="font-semibold">Numéro de facture :</label>
+            <label htmlFor="factureNum" className="font-semibold">
+              Numéro de facture :
+            </label>
             <input
+              type="text"
+              name="factureNum"
+              id="factureNum"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="FAC-2025-001"
             />
           </div>
 
           <div>
-            <label className="font-semibold">Date :</label>
+            <label htmlFor="dateFacture" className="font-semibold">
+              Date :
+            </label>
             <input
+              id="dateFacture"
               type="date"
+              name="dateFacture"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
             />
           </div>
 
           <div>
-            <label className="font-semibold">Lieu :</label>
+            <label htmlFor="address" className="font-semibold">
+              Lieu :
+            </label>
             <input
+              id="address"
+              name="address"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Adresse ..."
             />

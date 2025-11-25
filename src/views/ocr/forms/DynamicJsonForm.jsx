@@ -127,8 +127,6 @@ export default function DynamicJsonForm({
     }
   }, [dispatch, isLoadingJournal, isSuccessJournal, isErrorJournal]);
 
-  console.log("JSON: ", formData);
-
   return (
     <React.Fragment>
       {isSaveOneFileSuccess ? (

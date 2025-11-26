@@ -73,8 +73,8 @@ export default function DynamicJsonForm({
     const dataToSend = {
       ...formData,
       file_source: saveOneFileData?.file_source.id,
+      form_source: null,
     };
-    console.log(dataToSend);
     setFormData(dataToSend);
     actionGenerateJournal(dataToSend);
   };

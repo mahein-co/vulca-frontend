@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
 
@@ -6,6 +6,9 @@ export default function BonAchatForm() {
   const [items, setItems] = useState([
     { designation: "", quantite: 1, prix: 0 },
   ]);
+
+  // DATE TODAY: LIMIT DATE INPUT =================================
+  const [today, setToday] = useState("");
 
   const addItem = () => {
     setItems([...items, { designation: "", quantite: 1, prix: 0 }]);
@@ -33,6 +36,10 @@ export default function BonAchatForm() {
     });
   };
 
+  useEffect(() => {
+    setToday(new Date().toISOString().split("T")[0]);
+  }, []);
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-slate-900 text-slate-200 shadow-xl rounded-xl">
       <div className="flex items-center justify-between mb-7">
@@ -47,6 +54,8 @@ export default function BonAchatForm() {
             <label className="font-semibold">Fournisseur :</label>
             <input
               type="text"
+              required
+              name="fourinsseurAchat"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Ex : Société XXX"
             />
@@ -56,6 +65,8 @@ export default function BonAchatForm() {
             <label className="font-semibold">Client :</label>
             <input
               type="text"
+              name="clientAchat"
+              required
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Nom du client"
             />
@@ -65,6 +76,8 @@ export default function BonAchatForm() {
             <label className="font-semibold">Référence du bon :</label>
             <input
               type="text"
+              name="referenceAchat"
+              required
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="BA-2025-001"
             />
@@ -74,6 +87,8 @@ export default function BonAchatForm() {
             <label className="font-semibold">Date :</label>
             <input
               type="date"
+              required
+              max={today}
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
             />
           </div>
@@ -82,6 +97,7 @@ export default function BonAchatForm() {
             <label className="font-semibold">Lieu :</label>
             <input
               type="text"
+              required
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Adresse..."
             />
@@ -108,12 +124,14 @@ export default function BonAchatForm() {
                 <tr key={index} className="border">
                   <td className="p-2 border">
                     <input
+                      type="text"
+                      required
                       className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
                       value={item.designation}
                       onChange={(e) =>
                         handleItemChange(index, "designation", e.target.value)
                       }
-                      placeholder="Ex : Riz, Huile..."
+                      placeholder="Produit ou service"
                     />
                   </td>
 

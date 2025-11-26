@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
 
@@ -6,6 +6,11 @@ export default function BankForm() {
   const [transactions, setTransactions] = useState([
     { date: "", description: "", debit: 0, credit: 0 },
   ]);
+
+  // DATES STATES =======================================
+  const [today, setToday] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   const addTransaction = () => {
     setTransactions([
@@ -45,6 +50,10 @@ export default function BankForm() {
     });
   };
 
+  useEffect(() => {
+    setToday(new Date().toISOString().split("T")[0]);
+  }, []);
+
   return (
     <div className="max-w-5xl mx-auto p-6 bg-slate-900 text-slate-200 shadow-lg rounded-xl">
       <div className="flex items-center justify-between mb-7">
@@ -58,6 +67,7 @@ export default function BankForm() {
           <div>
             <label className="font-semibold">Nom du titulaire :</label>
             <input
+              required
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Nom et prénom"
             />
@@ -66,6 +76,7 @@ export default function BankForm() {
           <div>
             <label className="font-semibold">Numéro du compte (RIB) :</label>
             <input
+              required
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Ex : 00001 00002 00003 00004"
             />
@@ -74,8 +85,9 @@ export default function BankForm() {
           <div>
             <label className="font-semibold">Banque :</label>
             <input
+              required
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-              placeholder="Ex : BNI, BMOI, BFV SG…"
+              placeholder="Ex : BNI, BMOI, BOA"
             />
           </div>
 
@@ -83,6 +95,10 @@ export default function BankForm() {
             <label className="font-semibold">Période - Du :</label>
             <input
               type="date"
+              required
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              max={endDate || today}
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
             />
           </div>
@@ -91,6 +107,11 @@ export default function BankForm() {
             <label className="font-semibold">Au :</label>
             <input
               type="date"
+              required
+              min={startDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              value={endDate}
+              max={today}
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
             />
           </div>
@@ -98,6 +119,7 @@ export default function BankForm() {
           <div>
             <label className="font-semibold">Solde initial (Ar) :</label>
             <input
+              required
               type="number"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Ex : 1500000"
@@ -125,7 +147,9 @@ export default function BankForm() {
                 <tr key={index}>
                   <td className="p-2 border">
                     <input
+                      required
                       type="date"
+                      max={today}
                       className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
                       value={item.date}
                       onChange={(e) =>

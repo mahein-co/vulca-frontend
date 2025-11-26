@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
 
@@ -7,6 +7,9 @@ export default function FactureForm() {
   const [items, setItems] = useState([
     { designation: "", quantite: 1, prix: 0, tva: 20 },
   ]);
+
+  // DATE TODAY: LIMIT DATE INPUT =================================
+  const [today, setToday] = useState("");
 
   // ADD ITEM ====================================================
   const addItem = () => {
@@ -58,6 +61,10 @@ export default function FactureForm() {
     });
   };
 
+  useEffect(() => {
+    setToday(new Date().toISOString().split("T")[0]);
+  }, []);
+
   return (
     <div className="max-w-5xl mx-auto p-6 bg-slate-900 text-slate-200 shadow-xl rounded-xl">
       <div className="flex items-center justify-between mb-7">
@@ -73,6 +80,7 @@ export default function FactureForm() {
             </label>
             <input
               type="text"
+              required
               name="entrepriseName"
               id="entrepriseName"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
@@ -85,8 +93,34 @@ export default function FactureForm() {
               Client :
             </label>
             <input
+              required
               id="clientName"
               name="clientName"
+              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
+              placeholder="Nom du client"
+            />
+          </div>
+          <div>
+            <label htmlFor="nifFacture" className="font-semibold">
+              NIF :
+            </label>
+            <input
+              required
+              id="nifFacture"
+              name="nifFacture"
+              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
+              placeholder="Nom du client"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="rcsFacture" className="font-semibold">
+              RCS (Registre Commerce des Sociétés) :
+            </label>
+            <input
+              required
+              id="rcsFacture"
+              name="rcsFacture"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Nom du client"
             />
@@ -97,6 +131,7 @@ export default function FactureForm() {
               Numéro de facture :
             </label>
             <input
+              required
               type="text"
               name="factureNum"
               id="factureNum"
@@ -111,6 +146,8 @@ export default function FactureForm() {
             </label>
             <input
               id="dateFacture"
+              required
+              max={today}
               type="date"
               name="dateFacture"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
@@ -123,6 +160,7 @@ export default function FactureForm() {
             </label>
             <input
               id="address"
+              required
               name="address"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Adresse ..."
@@ -157,6 +195,7 @@ export default function FactureForm() {
                   <tr key={index}>
                     <td className="p-2 border">
                       <input
+                        required
                         className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
                         value={item.designation}
                         onChange={(e) =>

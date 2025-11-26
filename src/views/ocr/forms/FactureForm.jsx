@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
+import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
+import toast from "react-hot-toast";
 
 export default function FactureForm() {
   // ITEMS DETAILS ===============================================
@@ -15,6 +17,17 @@ export default function FactureForm() {
   const addItem = () => {
     setItems([...items, { designation: "", quantite: 1, prix: 0, tva: 20 }]);
   };
+
+  // SAVE PIECE FACTURE =========================================
+  const [
+    actionSaveFacture,
+    {
+      isError: isErrorSaveFacture,
+      isLoading: isLoadingSaveFacture,
+      isSuccess: isSuccessSaveFacture,
+      error: errorSaveFacture,
+    },
+  ] = useSavePieceByFormularMutation() || [];
 
   // REMOVE ITEM =================================================
   const removeItem = (index) => {
@@ -44,22 +57,46 @@ export default function FactureForm() {
   const totalTTC = totalHT + totalTVA;
 
   // HANDLE SUBMIT FACTURE ==========================================
-  const handleSubmit = (e) => {
+  const handleSubmitFacture = (e) => {
     e.preventDefault();
-
-    console.log("Facture générée : ", {
-      pieceType: "Piece comptable de type facture",
-      address: e.target.address.value,
-      date: e.target.dateFacture.value,
-      details: items,
-      totalHT,
-      totalTVA,
-      totalTTC,
-      entreprise: e.target.entrepriseName.value,
-      client: e.target.clientName.value,
-      facture: e.target.factureNum.value,
-    });
+    const data = {
+      piece_type: "Piece comptable de type facture",
+      description_json: {
+        address: e.target.address.value,
+        date: e.target.dateFacture.value,
+        details: items,
+        totalHT,
+        totalTVA,
+        totalTTC,
+        entreprise: e.target.entrepriseName.value,
+        client: e.target.clientName.value,
+        facture: e.target.factureNum.value,
+        nif: e.target.nifFacture.value,
+        rcs: e.target.rcsFacture.value,
+        stat: e.target.statFacture.value,
+      },
+    };
+    actionSaveFacture(data);
   };
+
+  useEffect(() => {
+    if (isLoadingSaveFacture && !isSuccessSaveFacture) {
+      toast.loading("Enregistrement en cours...");
+      return;
+    }
+
+    if (!isLoadingSaveFacture && isSuccessSaveFacture) {
+      toast.dismiss();
+      toast.success("Enregistrement avec succès!");
+      return;
+    }
+
+    if (!isLoadingSaveFacture && isErrorSaveFacture) {
+      toast.dismiss();
+      toast.error("Error d'enregistrement!");
+      return;
+    }
+  }, [isLoadingSaveFacture, isSuccessSaveFacture, isErrorSaveFacture]);
 
   useEffect(() => {
     setToday(new Date().toISOString().split("T")[0]);
@@ -71,7 +108,7 @@ export default function FactureForm() {
         <BackToFormsPage />
         <h3 className="text-2xl text-center">Formulaire d'une Facture</h3>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmitFacture} className="space-y-6">
         {/* --- Informations générales --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -100,29 +137,46 @@ export default function FactureForm() {
               placeholder="Nom du client"
             />
           </div>
+
           <div>
             <label htmlFor="nifFacture" className="font-semibold">
               NIF :
             </label>
             <input
+              type="text"
               required
               id="nifFacture"
               name="nifFacture"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-              placeholder="Nom du client"
+              placeholder="NIF"
             />
           </div>
 
           <div>
             <label htmlFor="rcsFacture" className="font-semibold">
-              RCS (Registre Commerce des Sociétés) :
+              RCS :
             </label>
             <input
+              type="text"
               required
               id="rcsFacture"
               name="rcsFacture"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-              placeholder="Nom du client"
+              placeholder="Registre Commerce des Sociétés"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="statFacture" className="font-semibold">
+              Stat :
+            </label>
+            <input
+              type="text"
+              required
+              id="statFacture"
+              name="statFacture"
+              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
+              placeholder="Stat"
             />
           </div>
 

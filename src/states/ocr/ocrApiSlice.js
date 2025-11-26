@@ -5,7 +5,7 @@ import axios from "axios";
 export const ocrApiSlice = createApi({
   reducerPath: "ocrApi",
   baseQuery: fetchBaseQuery({ baseUrl: BASE_URL_API, credentials: "include" }),
-  tagTypes: ["sources", "UploadedFiles"],
+  tagTypes: ["pieces", "UploadedFiles"],
   endpoints: (builder) => ({
     // get uploaded files list =====================================
     getFilesSources: builder.query({
@@ -62,7 +62,18 @@ export const ocrApiSlice = createApi({
       }),
       invalidatesTags: ["UploadedFiles"],
     }),
-    
+
+    // Save piece compta by formular =====================================
+    savePieceByFormular: builder.mutation({
+      query: (data) => ({
+        url: "pieces/",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: data,
+      }),
+      invalidatesTags: ["pieces"],
+    }),
+
     // Extract data from file =====================================
     extractDataFromFile: builder.mutation({
       query: (fileData) => ({
@@ -91,4 +102,5 @@ export const {
   useDeleteFileMutation,
   useSaveOneFileSourceMutation,
   useExtractDataFromFileMutation,
+  useSavePieceByFormularMutation,
 } = ocrApiSlice;

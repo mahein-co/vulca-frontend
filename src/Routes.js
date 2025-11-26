@@ -10,6 +10,7 @@ import IndexAddByFormsPage from "./views/ocr/pages/IndexAddByFormsPage";
 import FactureForm from "./views/ocr/forms/FactureForm";
 import BonAchatForm from "./views/ocr/forms/BonAchatForm";
 import BankForm from "./views/ocr/forms/BankForm";
+import Classification from "./views/classification/Classification";
 
 export default function Routes() {
   return useRoutes([
@@ -25,6 +26,7 @@ export default function Routes() {
         { path: "forms/facture", element: <FactureForm /> },
         { path: "forms/achat", element: <BonAchatForm /> },
         { path: "forms/bank", element: <BankForm /> },
+        { path: "classification", element: <Classification /> },
       ],
     },
     {

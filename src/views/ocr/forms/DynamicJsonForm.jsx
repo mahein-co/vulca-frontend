@@ -127,6 +127,8 @@ export default function DynamicJsonForm({
     }
   }, [dispatch, isLoadingJournal, isSuccessJournal, isErrorJournal]);
 
+  console.log("DATA EXTRACTED: ", formData);
+
   return (
     <React.Fragment>
       {isSaveOneFileSuccess ? (
@@ -154,80 +156,89 @@ export default function DynamicJsonForm({
           </div>
 
           <div className="space-y-3">
-            {Object.entries(formData).map(([key, value]) => (
-              <div key={key} className="space-y-1">
-                <label className="block text-sm font-medium capitalize">
-                  {key.replace(/_/g, " ")}
-                </label>
-                {typeof value !== "object" ? (
-                  <input
-                    type="text"
-                    className="w-full p-2 bg-slate-700 rounded-lg"
-                    value={value ?? ""}
-                    onChange={(e) => handleChange(key, e.target.value)}
-                  />
-                ) : null}
+            {Object.entries(formData).map(([key, value]) => {
+              const isArray = Array.isArray(value);
+              const isObject =
+                typeof value === "object" && !isArray && value !== null;
+              const isPrimitive = !isArray && !isObject;
 
-                {typeof value === "object" ? (
-                  <div className="p-3 bg-slate-800 rounded-lg space-y-1 border border-slate-600">
-                    {Object.entries(value).map(([subKey, subValue]) => (
-                      <div key={subKey}>
-                        <label className="block text-sm capitalize">
-                          {subKey.replace(/_/g, " ")}
-                        </label>
+              return (
+                <div key={key} className="space-y-2">
+                  {/* Label principal */}
+                  <label className="block text-sm font-medium capitalize">
+                    {key.replace(/_/g, " ")}
+                  </label>
 
-                        <input
-                          className="w-full p-2 bg-slate-700 rounded-lg"
-                          value={subValue ?? ""}
-                          onChange={(e) =>
-                            handleChange("designation", {
-                              field: subKey,
-                              value: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
+                  {/* ---------- Valeur simple ---------- */}
+                  {isPrimitive && (
+                    <input
+                      type="text"
+                      className="w-full p-2 bg-slate-700 rounded-lg"
+                      value={value ?? ""}
+                      onChange={(e) => handleChange(key, e.target.value)}
+                    />
+                  )}
 
-                {Array.isArray(value) ? (
-                  <div className="space-y-4">
-                    {value.map((item, index) => (
-                      <div
-                        key={index}
-                        className="p-3 bg-slate-800 rounded-lg space-y-1 border border-slate-600"
-                      >
-                        <h4 className="font-medium uppercase text-end">
-                          {index + 1} - {key.replace(/_/g, " ")}
-                        </h4>
+                  {/* ---------- Objet ---------- */}
+                  {isObject && (
+                    <div className="p-3 bg-slate-800 rounded-lg space-y-2 border border-slate-600">
+                      {Object.entries(value).map(([subKey, subValue]) => (
+                        <div key={subKey}>
+                          <label className="block text-sm capitalize">
+                            {subKey.replace(/_/g, " ")}
+                          </label>
+                          <input
+                            className="w-full p-2 bg-slate-700 rounded-lg"
+                            value={subValue ?? ""}
+                            onChange={(e) =>
+                              handleChange(key, {
+                                field: subKey,
+                                value: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
 
-                        {/* Sous-champs dans l'objet */}
-                        {Object.entries(item).map(([subKey, subValue]) => (
-                          <div key={subKey}>
-                            <label className="block text-sm capitalize">
-                              {subKey.replace(/_/g, " ")}
-                            </label>
+                  {/* ---------- Liste d'objets ---------- */}
+                  {isArray && (
+                    <div className="space-y-4">
+                      {value.map((item, indexItem) => (
+                        <div
+                          key={indexItem}
+                          className="p-3 bg-slate-800 rounded-lg space-y-2 border border-slate-600"
+                        >
+                          <h4 className="font-medium uppercase text-end">
+                            {indexItem + 1} - {key.replace(/_/g, " ")}
+                          </h4>
 
-                            <input
-                              className="w-full p-2 bg-slate-700 rounded-lg"
-                              value={subValue ?? ""}
-                              onChange={(e) =>
-                                handleChange("designation", {
-                                  index,
-                                  field: subKey,
-                                  value: e.target.value,
-                                })
-                              }
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ))}
+                          {Object.entries(item).map(([subKey, subValue]) => (
+                            <div key={subKey}>
+                              <label className="block text-sm capitalize">
+                                {subKey.replace(/_/g, " ")}
+                              </label>
+                              <input
+                                className="w-full p-2 bg-slate-700 rounded-lg"
+                                value={subValue ?? ""}
+                                onChange={(e) =>
+                                  handleChange(key, {
+                                    indexItem,
+                                    field: subKey,
+                                    value: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <button

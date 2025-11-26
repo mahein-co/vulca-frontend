@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
+import toast from "react-hot-toast";
+import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 
 export default function BonAchatForm() {
   const [items, setItems] = useState([
@@ -9,6 +11,17 @@ export default function BonAchatForm() {
 
   // DATE TODAY: LIMIT DATE INPUT =================================
   const [today, setToday] = useState("");
+
+  // SAVE PIECE BON ACHAT =========================================
+  const [
+    actionSaveBonAchat,
+    {
+      isError: isErrorSaveBonAchat,
+      isLoading: isLoadingSaveBonAchat,
+      isSuccess: isSuccessSaveBonAchat,
+      error: errorSaveBonAchat,
+    },
+  ] = useSavePieceByFormularMutation() || [];
 
   const addItem = () => {
     setItems([...items, { designation: "", quantite: 1, prix: 0 }]);
@@ -29,12 +42,46 @@ export default function BonAchatForm() {
     0
   );
 
-  const handleSubmit = (e) => {
+  // HANDLE SUBMIT BON ACHAT ==========================================
+  const handleSubmitBonAchat = (e) => {
     e.preventDefault();
-    console.log("Bon d'achat soumis : ", {
-      items,
-    });
+    const data = {
+      piece_type: "Type bon d'achat",
+      description_json: {
+        fournisseur: e.target.fourinsseurAchat.value,
+        client: e.target.clientAchat.value,
+        reference_bon_achat: e.target.referenceAchat.value,
+        rcs: e.target.rcsBonAchat.value,
+        nif: e.target.nifBonAchat.value,
+        stat: e.target.statBonAchat.value,
+        num_bon_achat: e.target.bonAchatNum.value,
+        date: e.target.dateBonAchat.value,
+        address: e.target.address.value,
+        details: items,
+        totalGeneral,
+      },
+    };
+    actionSaveBonAchat(data);
   };
+
+  useEffect(() => {
+    if (isLoadingSaveBonAchat && !isSuccessSaveBonAchat) {
+      toast.loading("Enregistrement en cours...");
+      return;
+    }
+
+    if (!isLoadingSaveBonAchat && isSuccessSaveBonAchat) {
+      toast.dismiss();
+      toast.success("Enregistrement avec succès!");
+      return;
+    }
+
+    if (!isLoadingSaveBonAchat && isErrorSaveBonAchat) {
+      toast.dismiss();
+      toast.error("Error d'enregistrement!");
+      return;
+    }
+  }, [isLoadingSaveBonAchat, isSuccessSaveBonAchat, isErrorSaveBonAchat]);
 
   useEffect(() => {
     setToday(new Date().toISOString().split("T")[0]);
@@ -47,7 +94,7 @@ export default function BonAchatForm() {
         <h3 className="text-2xl text-center">Formulaire d'un Bon d'Achat</h3>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmitBonAchat} className="space-y-6">
         {/* --- Informations générales --- */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -84,11 +131,71 @@ export default function BonAchatForm() {
           </div>
 
           <div>
-            <label className="font-semibold">Date :</label>
+            <label htmlFor="rcsBonAchat" className="font-semibold">
+              RCS :
+            </label>
             <input
-              type="date"
+              type="text"
+              required
+              id="rcsBonAchat"
+              name="rcsBonAchat"
+              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
+              placeholder="Registre Commerce des Sociétés"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="nifBonAchat" className="font-semibold">
+              NIF :
+            </label>
+            <input
+              type="text"
+              required
+              id="nifBonAchat"
+              name="nifBonAchat"
+              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
+              placeholder="NIF"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="statBonAchat" className="font-semibold">
+              Stat :
+            </label>
+            <input
+              type="text"
+              required
+              id="statBonAchat"
+              name="statBonAchat"
+              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
+              placeholder="Stat"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="bonAchatNum" className="font-semibold">
+              Numéro de BonAchat :
+            </label>
+            <input
+              required
+              type="text"
+              name="bonAchatNum"
+              id="bonAchatNum"
+              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
+              placeholder="FAC-2025-001"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="dateBonAchat" className="font-semibold">
+              Date :
+            </label>
+            <input
+              id="dateBonAchat"
               required
               max={today}
+              type="date"
+              name="dateBonAchat"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
             />
           </div>
@@ -98,6 +205,7 @@ export default function BonAchatForm() {
             <input
               type="text"
               required
+              name="address"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Adresse..."
             />

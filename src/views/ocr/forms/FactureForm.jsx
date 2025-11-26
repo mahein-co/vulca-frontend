@@ -60,7 +60,7 @@ export default function FactureForm() {
   const handleSubmitFacture = (e) => {
     e.preventDefault();
     const data = {
-      piece_type: "Piece comptable de type facture",
+      piece_type: "Type facture",
       description_json: {
         address: e.target.address.value,
         date: e.target.dateFacture.value,

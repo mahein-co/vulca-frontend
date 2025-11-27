@@ -3,12 +3,18 @@ import { Plus, Trash2 } from "lucide-react";
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 
 export default function FactureForm() {
+  // USE-NAVIGATE =======================================
+  const navigate = useNavigate();
   // ITEMS DETAILS ===============================================
   const [items, setItems] = useState([
     { designation: "", quantite: 1, prix: 0, tva: 20 },
   ]);
+  // STATE DATA TO GENERATE JOURNAL
+  const [dataToGenerateJournal, setDataToGenerateJournal] = useState({});
 
   // DATE TODAY: LIMIT DATE INPUT =================================
   const [today, setToday] = useState("");
@@ -25,9 +31,20 @@ export default function FactureForm() {
       isError: isErrorSaveFacture,
       isLoading: isLoadingSaveFacture,
       isSuccess: isSuccessSaveFacture,
-      error: errorSaveFacture,
+      data: dataSaveFacture,
     },
   ] = useSavePieceByFormularMutation() || [];
+
+  // GENERATE JOURNAL ============================
+  const [
+    actionGenerateJournal,
+    {
+      isError: isErrorGenerateJournal,
+      isLoading: isLoadingGenerateJournal,
+      isSuccess: isSuccessGenerateJournal,
+      error: errorGenerateJournal,
+    },
+  ] = useGenerateJournalMutation() || [];
 
   // REMOVE ITEM =================================================
   const removeItem = (index) => {
@@ -76,9 +93,39 @@ export default function FactureForm() {
         stat: e.target.statFacture.value,
       },
     };
+    setDataToGenerateJournal(data);
     actionSaveFacture(data);
   };
 
+  // USE-EFFECT Generate Journal =============================
+  useEffect(() => {
+    if (isLoadingGenerateJournal && !isSuccessGenerateJournal) {
+      toast.dismiss();
+      toast.loading("Génération du journal en cours...");
+      return;
+    }
+
+    if (!isLoadingGenerateJournal && isSuccessGenerateJournal) {
+      toast.dismiss();
+      toast.success("Génération du journal avec succès!");
+      navigate("/app/classification");
+      return;
+    }
+
+    if (!isLoadingGenerateJournal && isErrorGenerateJournal) {
+      toast.dismiss();
+      toast.error(errorGenerateJournal?.data.error || "Error de génération!");
+      return;
+    }
+  }, [
+    isLoadingGenerateJournal,
+    isSuccessGenerateJournal,
+    isErrorGenerateJournal,
+    navigate,
+    errorGenerateJournal,
+  ]);
+
+  // USE-EFFECT Save Facture ========================
   useEffect(() => {
     if (isLoadingSaveFacture && !isSuccessSaveFacture) {
       toast.loading("Enregistrement en cours...");
@@ -88,6 +135,12 @@ export default function FactureForm() {
     if (!isLoadingSaveFacture && isSuccessSaveFacture) {
       toast.dismiss();
       toast.success("Enregistrement avec succès!");
+      const data = {
+        ...dataToGenerateJournal,
+        file_source: null,
+        form_source: dataSaveFacture?.form_source.id,
+      };
+      actionGenerateJournal(data);
       return;
     }
 
@@ -96,8 +149,16 @@ export default function FactureForm() {
       toast.error("Error d'enregistrement!");
       return;
     }
-  }, [isLoadingSaveFacture, isSuccessSaveFacture, isErrorSaveFacture]);
+  }, [
+    isLoadingSaveFacture,
+    isSuccessSaveFacture,
+    isErrorSaveFacture,
+    dataSaveFacture,
+    actionGenerateJournal,
+    dataToGenerateJournal,
+  ]);
 
+  // USE-EFFECT Date Today ==========================
   useEffect(() => {
     setToday(new Date().toISOString().split("T")[0]);
   }, []);

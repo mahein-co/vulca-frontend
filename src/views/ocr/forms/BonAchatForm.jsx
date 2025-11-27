@@ -3,8 +3,16 @@ import { Plus, Trash2 } from "lucide-react";
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
 import toast from "react-hot-toast";
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
+import { useNavigate } from "react-router-dom";
+import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 
 export default function BonAchatForm() {
+  // USE-NAVIGATE =======================================
+  const navigate = useNavigate();
+
+  // STATE DATA TO GENERATE JOURNAL
+  const [dataToGenerateJournal, setDataToGenerateJournal] = useState({});
+
   const [items, setItems] = useState([
     { designation: "", quantite: 1, prix: 0 },
   ]);
@@ -19,9 +27,20 @@ export default function BonAchatForm() {
       isError: isErrorSaveBonAchat,
       isLoading: isLoadingSaveBonAchat,
       isSuccess: isSuccessSaveBonAchat,
-      error: errorSaveBonAchat,
+      data: dataSaveBonAchat,
     },
   ] = useSavePieceByFormularMutation() || [];
+
+  // GENERATE JOURNAL ============================
+  const [
+    actionGenerateJournal,
+    {
+      isError: isErrorGenerateJournal,
+      isLoading: isLoadingGenerateJournal,
+      isSuccess: isSuccessGenerateJournal,
+      error: errorGenerateJournal,
+    },
+  ] = useGenerateJournalMutation() || [];
 
   const addItem = () => {
     setItems([...items, { designation: "", quantite: 1, prix: 0 }]);
@@ -61,9 +80,39 @@ export default function BonAchatForm() {
         totalGeneral,
       },
     };
+    setDataToGenerateJournal(data);
     actionSaveBonAchat(data);
   };
 
+  // USE-EFFECT Generate Journal =============================
+  useEffect(() => {
+    if (isLoadingGenerateJournal && !isSuccessGenerateJournal) {
+      toast.dismiss();
+      toast.loading("Génération du journal en cours...");
+      return;
+    }
+
+    if (!isLoadingGenerateJournal && isSuccessGenerateJournal) {
+      toast.dismiss();
+      toast.success("Génération du journal avec succès!");
+      navigate("/app/classification");
+      return;
+    }
+
+    if (!isLoadingGenerateJournal && isErrorGenerateJournal) {
+      toast.dismiss();
+      toast.error(errorGenerateJournal?.data.error || "Error de génération!");
+      return;
+    }
+  }, [
+    isLoadingGenerateJournal,
+    isSuccessGenerateJournal,
+    isErrorGenerateJournal,
+    navigate,
+    errorGenerateJournal,
+  ]);
+
+  // USE-EFFECT Save form =============================
   useEffect(() => {
     if (isLoadingSaveBonAchat && !isSuccessSaveBonAchat) {
       toast.loading("Enregistrement en cours...");
@@ -73,6 +122,12 @@ export default function BonAchatForm() {
     if (!isLoadingSaveBonAchat && isSuccessSaveBonAchat) {
       toast.dismiss();
       toast.success("Enregistrement avec succès!");
+      const data = {
+        ...dataToGenerateJournal,
+        file_source: null,
+        form_source: dataSaveBonAchat?.form_source.id,
+      };
+      actionGenerateJournal(data);
       return;
     }
 
@@ -81,8 +136,16 @@ export default function BonAchatForm() {
       toast.error("Error d'enregistrement!");
       return;
     }
-  }, [isLoadingSaveBonAchat, isSuccessSaveBonAchat, isErrorSaveBonAchat]);
+  }, [
+    isLoadingSaveBonAchat,
+    isSuccessSaveBonAchat,
+    dataToGenerateJournal,
+    dataSaveBonAchat,
+    isErrorSaveBonAchat,
+    actionGenerateJournal,
+  ]);
 
+  // USE-EFFECT Date Today =============================
   useEffect(() => {
     setToday(new Date().toISOString().split("T")[0]);
   }, []);

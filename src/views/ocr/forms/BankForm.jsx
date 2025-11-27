@@ -3,12 +3,19 @@ import { Plus, Trash2 } from "lucide-react";
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import toast from "react-hot-toast";
+import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
+import { useNavigate } from "react-router-dom";
 
 export default function BankForm() {
+  // USE-NAVIGATE =======================================
+  const navigate = useNavigate();
+
   const [transactions, setTransactions] = useState([
     { date: "", description: "", debit: 0, credit: 0 },
   ]);
 
+  // STATE DATA TO GENERATE JOURNAL
+  const [dataToGenerateJournal, setDataToGenerateJournal] = useState({});
   // DATES STATES =======================================
   const [today, setToday] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -21,9 +28,20 @@ export default function BankForm() {
       isError: isErrorSaveReleveBancaire,
       isLoading: isLoadingSaveReleveBancaire,
       isSuccess: isSuccessSaveReleveBancaire,
-      error: errorSaveReleveBancaire,
+      data: dataSaveReleveBancaire,
     },
   ] = useSavePieceByFormularMutation() || [];
+
+  // GENERATE JOURNAL ============================
+  const [
+    actionGenerateJournal,
+    {
+      isError: isErrorGenerateJournal,
+      isLoading: isLoadingGenerateJournal,
+      isSuccess: isSuccessGenerateJournal,
+      error: errorGenerateJournal,
+    },
+  ] = useGenerateJournalMutation() || [];
 
   const addTransaction = () => {
     setTransactions([
@@ -72,9 +90,39 @@ export default function BankForm() {
         soldeFinal,
       },
     };
+    setDataToGenerateJournal(data);
     actionSaveReleveBancaire(data);
   };
 
+  // USE-EFFECT Generate Journal =============================
+  useEffect(() => {
+    if (isLoadingGenerateJournal && !isSuccessGenerateJournal) {
+      toast.dismiss();
+      toast.loading("Génération du journal en cours...");
+      return;
+    }
+
+    if (!isLoadingGenerateJournal && isSuccessGenerateJournal) {
+      toast.dismiss();
+      toast.success("Génération du journal avec succès!");
+      navigate("/app/classification");
+      return;
+    }
+
+    if (!isLoadingGenerateJournal && isErrorGenerateJournal) {
+      toast.dismiss();
+      toast.error(errorGenerateJournal?.data.error || "Error de génération!");
+      return;
+    }
+  }, [
+    isLoadingGenerateJournal,
+    isSuccessGenerateJournal,
+    isErrorGenerateJournal,
+    navigate,
+    errorGenerateJournal,
+  ]);
+
+  // USE-EFFECT Save Form =============================
   useEffect(() => {
     if (isLoadingSaveReleveBancaire && !isSuccessSaveReleveBancaire) {
       toast.loading("Enregistrement en cours...");
@@ -84,6 +132,12 @@ export default function BankForm() {
     if (!isLoadingSaveReleveBancaire && isSuccessSaveReleveBancaire) {
       toast.dismiss();
       toast.success("Enregistrement avec succès!");
+      const data = {
+        ...dataToGenerateJournal,
+        file_source: null,
+        form_source: dataSaveReleveBancaire?.form_source.id,
+      };
+      actionGenerateJournal(data);
       return;
     }
 
@@ -96,8 +150,12 @@ export default function BankForm() {
     isLoadingSaveReleveBancaire,
     isSuccessSaveReleveBancaire,
     isErrorSaveReleveBancaire,
+    dataToGenerateJournal,
+    dataSaveReleveBancaire,
+    actionGenerateJournal,
   ]);
 
+  // USE-EFFECT Date Today =============================
   useEffect(() => {
     setToday(new Date().toISOString().split("T")[0]);
   }, []);

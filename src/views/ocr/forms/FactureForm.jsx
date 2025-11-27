@@ -106,7 +106,7 @@ export default function FactureForm() {
     <div className="max-w-5xl mx-auto p-6 bg-slate-900 text-slate-200 shadow-xl rounded-xl">
       <div className="flex items-center justify-between mb-7">
         <BackToFormsPage />
-        <h3 className="text-2xl text-center">Formulaire d'une Facture</h3>
+        <h3 className="text-2xl text-center">Facture</h3>
       </div>
       <form onSubmit={handleSubmitFacture} className="space-y-6">
         {/* --- Informations générales --- */}
@@ -331,6 +331,7 @@ export default function FactureForm() {
           {/* Ajouter une ligne */}
           <button
             type="button"
+            disabled={isLoadingSaveFacture}
             onClick={addItem}
             className="flex items-center gap-2 mt-3 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-500"
           >
@@ -364,6 +365,7 @@ export default function FactureForm() {
         {/* --- Bouton enregistrer --- */}
         <button
           type="submit"
+          disabled={isLoadingSaveFacture}
           className="mx-auto w-full lg:w-1/3 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 text-lg"
         >
           Enregistrer la Facture

@@ -91,7 +91,7 @@ export default function BonAchatForm() {
     <div className="max-w-4xl mx-auto p-6 bg-slate-900 text-slate-200 shadow-xl rounded-xl">
       <div className="flex items-center justify-between mb-7">
         <BackToFormsPage />
-        <h3 className="text-2xl text-center">Formulaire d'un Bon d'Achat</h3>
+        <h3 className="text-2xl text-center">Bon d'Achat</h3>
       </div>
 
       <form onSubmit={handleSubmitBonAchat} className="space-y-6">
@@ -292,6 +292,7 @@ export default function BonAchatForm() {
           {/* Bouton ajouter une ligne */}
           <button
             type="button"
+            disabled={isLoadingSaveBonAchat}
             onClick={addItem}
             className="flex items-center gap-2 mt-3 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
@@ -308,6 +309,7 @@ export default function BonAchatForm() {
         {/* Bouton soumettre */}
         <button
           type="submit"
+          disabled={isLoadingSaveBonAchat}
           className="mx-auto w-1/3 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 text-lg"
         >
           Enregistrer le Bon d'Achat

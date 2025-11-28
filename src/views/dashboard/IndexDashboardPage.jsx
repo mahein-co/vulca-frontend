@@ -4,19 +4,37 @@ import ChartCA from "../../components/charts/ChartCA.jsx";
 import BarCharts from "../../components/charts/BarCharts.jsx";
 import PieCamembert from "../../components/charts/PieChart.jsx";
 
-export default function IndexDashboardPage() { 
-  
+
+export default function IndexDashboardPage() {
+  const defaultData = {
+    count: 0,
+  };  
   return (
     <React.Fragment>
-          <div className="p-8 grid grid-cols-4 gap-6 text-black">
-            <ScoreCard title="Chiffre d'affaires (MGA)" value="4 500 000" variation={12} />
-            <ScoreCard title="EBE (MGA)" value="120 000" variation={5} />
-            <ScoreCard title="Bénéfice net (MGA)" value="750 000" variation={8} />
-            <ScoreCard title="Trésorerie (MGA)" value="950 000" variation={-3} />
-            <ScoreCard title="BFR (MGA)" value="400 000" variation={-6} />
-            <ScoreCard title="Ratio D/C (MGA)" value="400 000" variation={-6} />
-            <ScoreCard title="Total Actif (MGA)" value="400 000" variation={-6} />
-            <ScoreCard title="Total Passif (MGA)" value="400 000" variation={-6} />
+          <div className="p-8 bg-gray-800"> 
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-black">
+              
+              {/* Journal des Ventes (avec une bordure bleue pour correspondre à l'image) */}
+              <div className="rounded-xl p-0.5 shadow-xl">
+                <ScoreCard 
+                  title="Chiffre d'affaires" 
+                  count={defaultData.count} 
+ 
+                />
+              </div>
+              <ScoreCard 
+                title="EBE" 
+                count={defaultData.count} 
+              />
+              <ScoreCard 
+                title="Bénéfice net" 
+                count={defaultData.count} 
+              />
+              <ScoreCard 
+                title="BFR" 
+                count={defaultData.count} 
+              />
+            </div>
           </div>
           <div className="mb-8">
                 <ChartCA />

@@ -15,7 +15,7 @@ export default function IndexOcrPage() {
       fileType: "image",
       appName: "Uploaded Image OCR",
       description: "PNG, JPG, JPEG up to 10MB",
-      acceptFile: ".png, .jpg, .jpeg",
+      acceptFile: ".png, .jpg, .jpeg, .webp",
       numberOfFiles: 1,
     },
     {

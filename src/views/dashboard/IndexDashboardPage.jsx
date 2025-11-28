@@ -1,8 +1,8 @@
 import React from "react";
 import ScoreCard from "../../components/card/ScoreCard";
 import ChartCA from "../../components/charts/ChartCA.jsx";
-import BarCharts from "../../components/charts/BarCharts.jsx";
-import PieCamembert from "../../components/charts/PieChart.jsx";
+// import BarCharts from "../../components/charts/BarCharts.jsx";
+// import PieCamembert from "../../components/charts/PieChart.jsx";
 
 
 export default function IndexDashboardPage() {
@@ -39,10 +39,10 @@ export default function IndexDashboardPage() {
           <div className="mb-8">
                 <ChartCA />
           </div>
-          <div>
+          {/* <div>
                 <BarCharts />
-          </div>
-          <div className="mt-10 grid grid-cols-1 grid-cols-2 gap-6 mb-8">
+          </div> */}
+          {/* <div className="mt-10 grid grid-cols-1 grid-cols-2 gap-6 mb-8">
                 <PieCamembert />
                 <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
                   <h2 className="text-xl font-bold text-gray-900 mb-4">Statistiques Rapides</h2>
@@ -65,7 +65,7 @@ export default function IndexDashboardPage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> */}
     </React.Fragment>
   );
 }

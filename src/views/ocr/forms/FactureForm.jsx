@@ -3,12 +3,18 @@ import { Plus, Trash2 } from "lucide-react";
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 
 export default function FactureForm() {
+  // USE-NAVIGATE =======================================
+  const navigate = useNavigate();
   // ITEMS DETAILS ===============================================
   const [items, setItems] = useState([
     { designation: "", quantite: 1, prix: 0, tva: 20 },
   ]);
+  // STATE DATA TO GENERATE JOURNAL
+  const [dataToGenerateJournal, setDataToGenerateJournal] = useState({});
 
   // DATE TODAY: LIMIT DATE INPUT =================================
   const [today, setToday] = useState("");
@@ -25,9 +31,20 @@ export default function FactureForm() {
       isError: isErrorSaveFacture,
       isLoading: isLoadingSaveFacture,
       isSuccess: isSuccessSaveFacture,
-      error: errorSaveFacture,
+      data: dataSaveFacture,
     },
   ] = useSavePieceByFormularMutation() || [];
+
+  // GENERATE JOURNAL ============================
+  const [
+    actionGenerateJournal,
+    {
+      isError: isErrorGenerateJournal,
+      isLoading: isLoadingGenerateJournal,
+      isSuccess: isSuccessGenerateJournal,
+      error: errorGenerateJournal,
+    },
+  ] = useGenerateJournalMutation() || [];
 
   // REMOVE ITEM =================================================
   const removeItem = (index) => {
@@ -60,7 +77,7 @@ export default function FactureForm() {
   const handleSubmitFacture = (e) => {
     e.preventDefault();
     const data = {
-      piece_type: "Piece comptable de type facture",
+      piece_type: "Type facture",
       description_json: {
         address: e.target.address.value,
         date: e.target.dateFacture.value,
@@ -76,9 +93,39 @@ export default function FactureForm() {
         stat: e.target.statFacture.value,
       },
     };
+    setDataToGenerateJournal(data);
     actionSaveFacture(data);
   };
 
+  // USE-EFFECT Generate Journal =============================
+  useEffect(() => {
+    if (isLoadingGenerateJournal && !isSuccessGenerateJournal) {
+      toast.dismiss();
+      toast.loading("Génération du journal en cours...");
+      return;
+    }
+
+    if (!isLoadingGenerateJournal && isSuccessGenerateJournal) {
+      toast.dismiss();
+      toast.success("Génération du journal avec succès!");
+      navigate("/app/classification");
+      return;
+    }
+
+    if (!isLoadingGenerateJournal && isErrorGenerateJournal) {
+      toast.dismiss();
+      toast.error(errorGenerateJournal?.data.error || "Error de génération!");
+      return;
+    }
+  }, [
+    isLoadingGenerateJournal,
+    isSuccessGenerateJournal,
+    isErrorGenerateJournal,
+    navigate,
+    errorGenerateJournal,
+  ]);
+
+  // USE-EFFECT Save Facture ========================
   useEffect(() => {
     if (isLoadingSaveFacture && !isSuccessSaveFacture) {
       toast.loading("Enregistrement en cours...");
@@ -88,6 +135,12 @@ export default function FactureForm() {
     if (!isLoadingSaveFacture && isSuccessSaveFacture) {
       toast.dismiss();
       toast.success("Enregistrement avec succès!");
+      const data = {
+        ...dataToGenerateJournal,
+        file_source: null,
+        form_source: dataSaveFacture?.form_source.id,
+      };
+      actionGenerateJournal(data);
       return;
     }
 
@@ -96,8 +149,16 @@ export default function FactureForm() {
       toast.error("Error d'enregistrement!");
       return;
     }
-  }, [isLoadingSaveFacture, isSuccessSaveFacture, isErrorSaveFacture]);
+  }, [
+    isLoadingSaveFacture,
+    isSuccessSaveFacture,
+    isErrorSaveFacture,
+    dataSaveFacture,
+    actionGenerateJournal,
+    dataToGenerateJournal,
+  ]);
 
+  // USE-EFFECT Date Today ==========================
   useEffect(() => {
     setToday(new Date().toISOString().split("T")[0]);
   }, []);
@@ -106,7 +167,7 @@ export default function FactureForm() {
     <div className="max-w-5xl mx-auto p-6 bg-slate-900 text-slate-200 shadow-xl rounded-xl">
       <div className="flex items-center justify-between mb-7">
         <BackToFormsPage />
-        <h3 className="text-2xl text-center">Formulaire d'une Facture</h3>
+        <h3 className="text-2xl text-center">Facture</h3>
       </div>
       <form onSubmit={handleSubmitFacture} className="space-y-6">
         {/* --- Informations générales --- */}
@@ -331,6 +392,7 @@ export default function FactureForm() {
           {/* Ajouter une ligne */}
           <button
             type="button"
+            disabled={isLoadingSaveFacture}
             onClick={addItem}
             className="flex items-center gap-2 mt-3 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-500"
           >
@@ -364,6 +426,7 @@ export default function FactureForm() {
         {/* --- Bouton enregistrer --- */}
         <button
           type="submit"
+          disabled={isLoadingSaveFacture}
           className="mx-auto w-full lg:w-1/3 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 text-lg"
         >
           Enregistrer la Facture

@@ -1,16 +1,47 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
+import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
+import toast from "react-hot-toast";
+import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
+import { useNavigate } from "react-router-dom";
 
 export default function BankForm() {
+  // USE-NAVIGATE =======================================
+  const navigate = useNavigate();
+
   const [transactions, setTransactions] = useState([
     { date: "", description: "", debit: 0, credit: 0 },
   ]);
 
+  // STATE DATA TO GENERATE JOURNAL
+  const [dataToGenerateJournal, setDataToGenerateJournal] = useState({});
   // DATES STATES =======================================
   const [today, setToday] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+
+  // SAVE PIECE RELEVE BANCAIRE =========================================
+  const [
+    actionSaveReleveBancaire,
+    {
+      isError: isErrorSaveReleveBancaire,
+      isLoading: isLoadingSaveReleveBancaire,
+      isSuccess: isSuccessSaveReleveBancaire,
+      data: dataSaveReleveBancaire,
+    },
+  ] = useSavePieceByFormularMutation() || [];
+
+  // GENERATE JOURNAL ============================
+  const [
+    actionGenerateJournal,
+    {
+      isError: isErrorGenerateJournal,
+      isLoading: isLoadingGenerateJournal,
+      isSuccess: isSuccessGenerateJournal,
+      error: errorGenerateJournal,
+    },
+  ] = useGenerateJournalMutation() || [];
 
   const addTransaction = () => {
     setTransactions([
@@ -33,6 +64,7 @@ export default function BankForm() {
     (sum, t) => sum + Number(t.debit || 0),
     0
   );
+
   const totalCredit = transactions.reduce(
     (sum, t) => sum + Number(t.credit || 0),
     0
@@ -40,16 +72,90 @@ export default function BankForm() {
 
   const soldeFinal = totalCredit - totalDebit;
 
-  const handleSubmit = (e) => {
+  // HANDLE SUBMIT BON ACHAT ==========================================
+  const handleSubmitBank = (e) => {
     e.preventDefault();
-    console.log("Relevé Bancaire soumis :", {
-      transactions,
-      totalDebit,
-      totalCredit,
-      soldeFinal,
-    });
+    const data = {
+      piece_type: "Type Revelé Bancaire",
+      description_json: {
+        name_titulaire: e.target.fullName.value,
+        account_number: e.target.accountNumber.value,
+        bank_name: e.target.bankName.value,
+        periode_date_start: e.target.startDate.value,
+        periode_date_end: e.target.endDate.value,
+        initial_sold: e.target.soldInitial.value,
+        transactions_details: transactions,
+        totalDebit,
+        totalCredit,
+        soldeFinal,
+      },
+    };
+    setDataToGenerateJournal(data);
+    actionSaveReleveBancaire(data);
   };
 
+  // USE-EFFECT Generate Journal =============================
+  useEffect(() => {
+    if (isLoadingGenerateJournal && !isSuccessGenerateJournal) {
+      toast.dismiss();
+      toast.loading("Génération du journal en cours...");
+      return;
+    }
+
+    if (!isLoadingGenerateJournal && isSuccessGenerateJournal) {
+      toast.dismiss();
+      toast.success("Génération du journal avec succès!");
+      navigate("/app/classification");
+      return;
+    }
+
+    if (!isLoadingGenerateJournal && isErrorGenerateJournal) {
+      toast.dismiss();
+      toast.error(errorGenerateJournal?.data.error || "Error de génération!");
+      return;
+    }
+  }, [
+    isLoadingGenerateJournal,
+    isSuccessGenerateJournal,
+    isErrorGenerateJournal,
+    navigate,
+    errorGenerateJournal,
+  ]);
+
+  // USE-EFFECT Save Form =============================
+  useEffect(() => {
+    if (isLoadingSaveReleveBancaire && !isSuccessSaveReleveBancaire) {
+      toast.loading("Enregistrement en cours...");
+      return;
+    }
+
+    if (!isLoadingSaveReleveBancaire && isSuccessSaveReleveBancaire) {
+      toast.dismiss();
+      toast.success("Enregistrement avec succès!");
+      const data = {
+        ...dataToGenerateJournal,
+        file_source: null,
+        form_source: dataSaveReleveBancaire?.form_source.id,
+      };
+      actionGenerateJournal(data);
+      return;
+    }
+
+    if (!isLoadingSaveReleveBancaire && isErrorSaveReleveBancaire) {
+      toast.dismiss();
+      toast.error("Error d'enregistrement!");
+      return;
+    }
+  }, [
+    isLoadingSaveReleveBancaire,
+    isSuccessSaveReleveBancaire,
+    isErrorSaveReleveBancaire,
+    dataToGenerateJournal,
+    dataSaveReleveBancaire,
+    actionGenerateJournal,
+  ]);
+
+  // USE-EFFECT Date Today =============================
   useEffect(() => {
     setToday(new Date().toISOString().split("T")[0]);
   }, []);
@@ -61,13 +167,17 @@ export default function BankForm() {
         <h3 className="text-2xl text-center">Relevé Bancaire</h3>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmitBank} className="space-y-6">
         {/* Informations Compte */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className="font-semibold">Nom du titulaire :</label>
+            <label htmlFor="fullName" className="font-semibold">
+              Nom du titulaire :
+            </label>
             <input
               required
+              id="fullName"
+              name="fullName"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Nom et prénom"
             />
@@ -77,6 +187,7 @@ export default function BankForm() {
             <label className="font-semibold">Numéro du compte (RIB) :</label>
             <input
               required
+              name="accountNumber"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Ex : 00001 00002 00003 00004"
             />
@@ -86,6 +197,7 @@ export default function BankForm() {
             <label className="font-semibold">Banque :</label>
             <input
               required
+              name="bankName"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Ex : BNI, BMOI, BOA"
             />
@@ -96,6 +208,7 @@ export default function BankForm() {
             <input
               type="date"
               required
+              name="startDate"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
               max={endDate || today}
@@ -107,6 +220,7 @@ export default function BankForm() {
             <label className="font-semibold">Au :</label>
             <input
               type="date"
+              name="endDate"
               required
               min={startDate}
               onChange={(e) => setEndDate(e.target.value)}
@@ -121,6 +235,7 @@ export default function BankForm() {
             <input
               required
               type="number"
+              name="soldInitial"
               className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
               placeholder="Ex : 1500000"
             />

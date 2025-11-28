@@ -20,8 +20,8 @@ export const PATHS = {
 
 export const SIDEBAR_NAVIGATIONS = [
   { title: "Dashboard", path: "/app", icon: IconDashboarb },
-  { title: "Import file", path: "/app/ocr", icon: IconOcr },
+  { title: "classification", path: "/app/classification", icon: IconAdd },
   { title: "Finance", path: "/app/finance", icon: IconFinance },
   { title: "Formulaire", path: "/app/forms", icon: IconAdd },
-  { title: "classification", path: "/app/classification", icon: IconAdd },
+  { title: "Import file", path: "/app/ocr", icon: IconOcr },
 ];

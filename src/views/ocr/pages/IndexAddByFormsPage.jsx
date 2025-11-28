@@ -88,7 +88,7 @@ export default function IndexAddByFormsPage() {
               </div>
               <p className="relative text-xs md:text-sm text-gray-600 dark:text-gray-400">
                 Choisir le formulaire pour insérer
-                <span className="ml-1 underline">un relevet bancaire</span>.
+                <span className="ml-1 underline">un relevé bancaire</span>.
               </p>
             </Link>
           </div>

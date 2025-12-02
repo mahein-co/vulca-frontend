@@ -1,9 +1,9 @@
 import React from "react";
-import Journal from "../../components/cloture/journal.jsx";
-import GrandLivre from "../../components/cloture/GrandLivre.jsx";
-import Bilan from "../../components/cloture/Bilan.jsx";
-import CompteDeResultatCard from "../../components/cloture/CompteDeResultatCard.jsx";
-import Balance from "../../components/cloture/Balance.jsx";
+// import Journal from "../../components/cloture/journal.jsx";
+// import GrandLivre from "../../components/cloture/GrandLivre.jsx";
+// import Bilan from "../../components/cloture/Bilan.jsx";
+// import CompteDeResultatCard from "../../components/cloture/CompteDeResultatCard.jsx";
+import EtatFinance from "../../components/cloture/EtatFinance.jsx";
 
 export default function IndexFinancePage() {
   return (
@@ -18,10 +18,7 @@ export default function IndexFinancePage() {
         <Balance />
       </div> */}
       <div>
-          <Bilan />
-      </div>
-      <div>
-          <CompteDeResultatCard />
+          <EtatFinance />
       </div>
     </React.Fragment>
   );

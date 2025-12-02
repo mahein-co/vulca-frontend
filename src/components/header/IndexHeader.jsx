@@ -56,7 +56,6 @@ export default function IndexHeader() {
             placeholder="Search..."
             className="px-4 hidden py-2 border rounded-lg"
           />
-
           {/* Avatar */}
           <div className="w-7 h-7 rounded-full bg-slate-300 flex items-center justify-center text-dark text-xs">
             SR

@@ -16,6 +16,8 @@ export const PATHS = {
   facture: "/app/forms/facture",
   achat: "/app/forms/achat",
   banque: "/app/forms/bank",
+  bilan: '/app/forms/Bilan', // ou le chemin que vous souhaitez
+  compteResultat: '/app/forms/CompteResultat',
 };
 
 export const SIDEBAR_NAVIGATIONS = [

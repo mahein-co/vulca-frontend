@@ -8,6 +8,8 @@ import IndexDashboardPage from "./views/dashboard/IndexDashboardPage";
 import IndexFinancePage from "./views/finance/IndexFinancePage";
 import IndexAddByFormsPage from "./views/ocr/pages/IndexAddByFormsPage";
 import FactureForm from "./views/ocr/forms/FactureForm";
+import BilanForm from "./views/ocr/forms/BilanForm";
+import CompteResultatForm from "./views/ocr/forms/CompteResultatForm";
 import BonAchatForm from "./views/ocr/forms/BonAchatForm";
 import BankForm from "./views/ocr/forms/BankForm";
 import Classification from "./views/classification/Classification";
@@ -27,6 +29,9 @@ export default function Routes() {
         { path: "forms/achat", element: <BonAchatForm /> },
         { path: "forms/bank", element: <BankForm /> },
         { path: "classification", element: <Classification /> },
+        { path: "forms/bilan", element: <BilanForm /> },
+        { path: "forms/CompteResultat", element: <CompteResultatForm /> },
+
       ],
     },
     {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
+import { BASE_URL_API } from '../../../constants/globalConstants';
 
 export default function CompteResultatForm() {
   const [lignes, setLignes] = useState([]);
@@ -92,25 +93,46 @@ export default function CompteResultatForm() {
   };
 
   const enregistrerCompteResultat = async () => {
-    if (lignes.length === 0) {
-      alert('Ajoutez au moins une ligne avant d\'enregistrer');
-      return;
+  if (lignes.length === 0) {
+    alert('Ajoutez au moins une ligne avant d\'enregistrer');
+    return;
+  }
+
+  console.log('Données à enregistrer:', lignes);
+
+  for (const ligne of lignes) {
+
+    // Vérification anti-erreur
+    if (!ligne.numeroCompte || !ligne.libelle || !ligne.montant || !ligne.date) {
+      console.warn("Ligne ignorée car incomplète :", ligne);
+      continue;
     }
 
-    // Simuler l'envoi vers la base de données
-    console.log('Données à enregistrer:', lignes);
-    
-    // Ici vous pouvez faire un appel API
-    // Par exemple:
-    // const response = await fetch('/api/compte-resultat', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(lignes)
-    // });
+    const dataCompteResultat = {
+      balance: null,
+      numero_compte: ligne.numeroCompte,
+      libelle: ligne.libelle,
+      montant_ar: parseFloat(ligne.montant),
+      nature: ligne.nature,
+      date: ligne.date
+    };
 
-    alert(`✅ Compte de résultat enregistré avec succès!\n${lignes.length} ligne(s) enregistrée(s)`);
-    setLignes([]);
-  };
+    console.log("Envoi vers API :", dataCompteResultat);
+
+    const response = await fetch(`${BASE_URL_API}/CompteResultats/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(dataCompteResultat)
+    });
+
+    const result = await response.json();
+    console.log("Insertion réussie :", result);
+  }
+
+  alert(`✅ Compte de résultat enregistré avec succès !\n${lignes.length} ligne(s) insérée(s).`);
+  setLignes([]);
+};
+
 
   const calculerTotaux = () => {
     const totalCharges = lignes

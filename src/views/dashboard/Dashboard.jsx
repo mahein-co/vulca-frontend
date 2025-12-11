@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import BalanceModal from '../balance/BalanceModal';
-<<<<<<< HEAD
 import FactureForm from '../ocr/forms/NewInvoiceForm';
 import BarCharts from '../../components/charts/BarCharts';
 import PieChartRepartition from '../../components/charts/PieChartRepartition';
 import LineChartCAEvolution from '../../components/charts/LineChartCAEvolution';
-=======
-
-// import FactureForm from '../ocr/forms/NewInvoiceForm';
->>>>>>> 7e081e3ffbf2c3ff71a276b0dc77714310a1cb3a
 
 // --- 1. Données Statiques (inchangées) ---
 

@@ -11,23 +11,37 @@ export default function CompteResultatForm() {
     nature: 'Charge',
     date: ''
   });
+  const [ligneEnModification, setLigneEnModification] = useState(null);
+  const [errorNumeroCompte, setErrorNumeroCompte] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setNouvelleLigne(prev => ({
-      ...prev,
-      [name]: value
-    }));
+
+    if (name === 'numeroCompte') {
+      if (value === '' || ['6', '7'].includes(value[0])) {
+        setNouvelleLigne(prev => ({ ...prev, [name]: value }));
+        setErrorNumeroCompte(false);
+      } else {
+        setErrorNumeroCompte(true);
+      }
+    } else {
+      setNouvelleLigne(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const ajouterLigne = () => {
-    if (ligneEnModification) {
-      sauvegarderModification();
+    if (!nouvelleLigne.numeroCompte || !nouvelleLigne.libelle || !nouvelleLigne.montant || !nouvelleLigne.date) {
+      alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
-    if (!nouvelleLigne.numeroCompte || !nouvelleLigne.libelle || !nouvelleLigne.montant || !nouvelleLigne.date) {
-      alert('Veuillez remplir tous les champs obligatoires');
+    if (errorNumeroCompte) {
+      alert('Numéro de compte invalide. Doit commencer par 6 ou 7.');
+      return;
+    }
+
+    if (ligneEnModification) {
+      sauvegarderModification();
       return;
     }
 
@@ -38,22 +52,15 @@ export default function CompteResultatForm() {
     };
 
     setLignes([...lignes, ligne]);
-    
-    // Réinitialiser le formulaire
+
     setNouvelleLigne({
       numeroCompte: '',
       libelle: '',
       montant: '',
       nature: 'Charge',
-      date: nouvelleLigne.date // Garder la même date
+      date: nouvelleLigne.date
     });
   };
-
-  const supprimerLigne = (id) => {
-    setLignes(lignes.filter(ligne => ligne.id !== id));
-  };
-
-  const [ligneEnModification, setLigneEnModification] = useState(null);
 
   const modifierLigne = (ligne) => {
     setLigneEnModification(ligne.id);
@@ -64,6 +71,7 @@ export default function CompteResultatForm() {
       nature: ligne.nature,
       date: ligne.date
     });
+    setErrorNumeroCompte(false);
   };
 
   const annulerModification = () => {
@@ -75,6 +83,7 @@ export default function CompteResultatForm() {
       nature: 'Charge',
       date: ''
     });
+    setErrorNumeroCompte(false);
   };
 
   const sauvegarderModification = () => {
@@ -83,8 +92,13 @@ export default function CompteResultatForm() {
       return;
     }
 
-    setLignes(lignes.map(ligne => 
-      ligne.id === ligneEnModification 
+    if (errorNumeroCompte) {
+      alert('Numéro de compte invalide. Doit commencer par 6 ou 7.');
+      return;
+    }
+
+    setLignes(lignes.map(ligne =>
+      ligne.id === ligneEnModification
         ? { ...ligne, ...nouvelleLigne, montant: parseFloat(nouvelleLigne.montant) }
         : ligne
     ));
@@ -92,93 +106,93 @@ export default function CompteResultatForm() {
     annulerModification();
   };
 
-  const enregistrerCompteResultat = async () => {
-  if (lignes.length === 0) {
-    alert('Ajoutez au moins une ligne avant d\'enregistrer');
-    return;
-  }
-
-  console.log('Données à enregistrer:', lignes);
-
-  for (const ligne of lignes) {
-
-    // Vérification anti-erreur
-    if (!ligne.numeroCompte || !ligne.libelle || !ligne.montant || !ligne.date) {
-      console.warn("Ligne ignorée car incomplète :", ligne);
-      continue;
-    }
-
-    const dataCompteResultat = {
-      balance: null,
-      numero_compte: ligne.numeroCompte,
-      libelle: ligne.libelle,
-      montant_ar: parseFloat(ligne.montant),
-      nature: ligne.nature,
-      date: ligne.date
-    };
-
-    console.log("Envoi vers API :", dataCompteResultat);
-
-    const response = await fetch(`${BASE_URL_API}/CompteResultats/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(dataCompteResultat)
-    });
-
-    const result = await response.json();
-    console.log("Insertion réussie :", result);
-  }
-
-  alert(`✅ Compte de résultat enregistré avec succès !\n${lignes.length} ligne(s) insérée(s).`);
-  setLignes([]);
-};
-
-
-  const calculerTotaux = () => {
-    const totalCharges = lignes
-      .filter(l => l.nature === 'Charge')
-      .reduce((sum, l) => sum + l.montant, 0);
-    
-    const totalProduits = lignes
-      .filter(l => l.nature === 'Produit')
-      .reduce((sum, l) => sum + l.montant, 0);
-
-    const resultat = totalProduits - totalCharges;
-
-    return { totalCharges, totalProduits, resultat };
+  const supprimerLigne = (id) => {
+    setLignes(lignes.filter(ligne => ligne.id !== id));
   };
 
-  const { totalCharges, totalProduits, resultat } = calculerTotaux();
+  const enregistrerCompteResultat = async () => {
+    if (lignes.length === 0) {
+      alert('Ajoutez au moins une ligne avant d\'enregistrer');
+      return;
+    }
+
+    const natureMapping = {
+      "Charge": "CHARGE",
+      "Produit": "PRODUIT"
+    };
+
+    try {
+      for (const ligne of lignes) {
+        if (!ligne.numeroCompte || !ligne.libelle || !ligne.montant || !ligne.date) {
+          console.warn("Ligne ignorée car incomplète :", ligne);
+          continue;
+        }
+
+        const dataCompteResultat = {
+          balance: null,
+          numero_compte: ligne.numeroCompte,
+          libelle: ligne.libelle,
+          montant_ar: parseFloat(ligne.montant),
+          nature: natureMapping[ligne.nature] || ligne.nature, // mapping automatique
+          date: ligne.date
+        };
+
+        console.log("Envoi vers API :", dataCompteResultat);
+
+        const response = await fetch(`${BASE_URL_API}/CompteResultats/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(dataCompteResultat)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Erreur API:', errorData);
+          alert(`❌ Erreur lors de l'insertion de la ligne ${ligne.numeroCompte}`);
+          return;
+        }
+      }
+
+      alert(`✅ Compte de résultat enregistré avec succès !\n${lignes.length} ligne(s) insérée(s).`);
+      setLignes([]);
+    } catch (error) {
+      console.error('Erreur réseau ou serveur:', error);
+      alert('❌ Erreur lors de l\'enregistrement du compte de résultat');
+    }
+  };
+
+ 
 
   return (
     <div className="min-h-screen from-purple-50 to-pink-50 p-4">
       <div className="max-w-7xl mx-auto">
-
-        {/* Formulaire de saisie */}
         <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold text-gray-700 mb-4">
-             <BackToFormsPage />
-          </h2>
-          
+          <h2 className="text-xl font-semibold text-gray-700 mb-4"><BackToFormsPage /></h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                N° Compte *
-              </label>
-              <input
-                type="text"
-                name="numeroCompte"
-                value={nouvelleLigne.numeroCompte}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border text-dark border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Ex: 601"
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">N° Compte *</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="numeroCompte"
+                  value={nouvelleLigne.numeroCompte}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                    errorNumeroCompte ? 'border-red-500 animate-shake' : 'border-gray-300'
+                  }`}
+                  placeholder="Ex: 601"
+                />
+                {errorNumeroCompte && (
+                  <span className="absolute right-2 top-2 text-red-500">⚠️</span>
+                )}
+              </div>
+              {errorNumeroCompte && (
+                <p className="text-red-500 text-sm mt-1">Le numéro doit commencer par 6 ou 7</p>
+              )}
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Libellé *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Libellé *</label>
               <input
                 type="text"
                 name="libelle"
@@ -190,9 +204,7 @@ export default function CompteResultatForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Montant (Ar) *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Montant (Ar) *</label>
               <input
                 type="number"
                 name="montant"
@@ -205,9 +217,7 @@ export default function CompteResultatForm() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nature *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nature *</label>
               <select
                 name="nature"
                 value={nouvelleLigne.nature}
@@ -220,9 +230,7 @@ export default function CompteResultatForm() {
             </div>
 
             <div className="md:col-span-2 lg:col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Date *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
               <input
                 type="date"
                 name="date"
@@ -251,13 +259,9 @@ export default function CompteResultatForm() {
           </div>
         </div>
 
-        {/* Tableau des lignes */}
         {lignes.length > 0 && (
           <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">
-              Lignes saisies ({lignes.length})
-            </h2>
-            
+            <h2 className="text-xl font-semibold text-gray-700 mb-4">Lignes saisies ({lignes.length})</h2>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -275,34 +279,16 @@ export default function CompteResultatForm() {
                     <tr key={ligne.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 text-sm text-gray-900">{ligne.numeroCompte}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{ligne.libelle}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 text-right">
-                        {ligne.montant.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}
-                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-900 text-right">{ligne.montant.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
                       <td className="px-4 py-3 text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          ligne.nature === 'Produit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${ligne.nature === 'Produit' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                           {ligne.nature}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">{ligne.date}</td>
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex justify-center gap-2">
-                          <button
-                            onClick={() => modifierLigne(ligne)}
-                            className="text-blue-600 hover:text-blue-800 font-medium"
-                            title="Modifier"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={() => supprimerLigne(ligne.id)}
-                            className="text-red-600 hover:text-red-800 font-medium"
-                            title="Supprimer"
-                          >
-                            🗑️
-                          </button>
-                        </div>
+                      <td className="px-4 py-3 text-center flex justify-center gap-2">
+                        <button onClick={() => modifierLigne(ligne)} className="text-blue-600 hover:text-blue-800 font-medium" title="Modifier">✏️</button>
+                        <button onClick={() => supprimerLigne(ligne.id)} className="text-red-600 hover:text-red-800 font-medium" title="Supprimer">🗑️</button>
                       </td>
                     </tr>
                   ))}
@@ -310,7 +296,6 @@ export default function CompteResultatForm() {
               </table>
             </div>
 
-            {/* Bouton d'enregistrement */}
             <div className="mt-6 flex justify-end">
               <button
                 onClick={enregistrerCompteResultat}
@@ -319,13 +304,6 @@ export default function CompteResultatForm() {
                 💾 Valider
               </button>
             </div>
-          </div>
-        )}
-
-        {lignes.length === 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-12 text-center text-gray-500">
-            <p className="text-lg">Aucune ligne ajoutée pour le moment</p>
-            <p className="text-sm mt-2">Remplissez le formulaire ci-dessus et cliquez sur "Ajouter la ligne"</p>
           </div>
         )}
       </div>

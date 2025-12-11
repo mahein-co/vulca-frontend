@@ -13,6 +13,7 @@ import CompteResultatForm from "./views/ocr/forms/CompteResultatForm";
 import BonAchatForm from "./views/ocr/forms/BonAchatForm";
 import BankForm from "./views/ocr/forms/BankForm";
 import Classification from "./views/classification/Classification";
+import GrandLivre from "./views/grandlivre/grandlivre";
 
 export default function Routes() {
   return useRoutes([
@@ -29,6 +30,7 @@ export default function Routes() {
         { path: "forms/achat", element: <BonAchatForm /> },
         { path: "forms/bank", element: <BankForm /> },
         { path: "classification", element: <Classification /> },
+        { path: "grandlivre", element: <GrandLivre /> },
         { path: "forms/bilan", element: <BilanForm /> },
         { path: "forms/CompteResultat", element: <CompteResultatForm /> },
 

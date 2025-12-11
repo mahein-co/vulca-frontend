@@ -1,437 +1,308 @@
-import { useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { useState, useMemo } from 'react';
 import BackToFormsPage from "../../../components/button/BackToFormsPage";
-import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
-import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
-import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
+import { BASE_URL_API } from '../../../constants/globalConstants';
+
+// État initial d'une nouvelle ligne de facture
+const LIGNE_INITIALE = {
+  libelle: '',
+  quantite: 1,
+  prixUnitaire: 0,
+  tvaRate: 0.20 // Taux de TVA par défaut à 20%
+};
+
+// État initial du formulaire de facture
+const FACTURE_INITIALE = {
+  typeDocument: 'Vente', // 'Vente' ou 'Achat'
+  reference: '',
+  date: new Date().toISOString().slice(0, 10),
+  partenaire: '', // Nom du Client ou Fournisseur
+  lignesFacture: [{ ...LIGNE_INITIALE }],
+};
 
 export default function FactureForm() {
-  // USE-NAVIGATE =======================================
-  const navigate = useNavigate();
-  // ITEMS DETAILS ===============================================
-  const [items, setItems] = useState([
-    { designation: "", quantite: 1, prix: 0, tva: 20 },
-  ]);
-  // STATE DATA TO GENERATE JOURNAL
-  const [dataToGenerateJournal, setDataToGenerateJournal] = useState({});
+  const [facture, setFacture] = useState(FACTURE_INITIALE);
 
-  // DATE TODAY: LIMIT DATE INPUT =================================
-  const [today, setToday] = useState("");
+  // ----------------------------------------------------------------------
+  // 1. CALCUL DES TOTAUX (Optimisé avec useMemo)
+  // ----------------------------------------------------------------------
+  const { sousTotalHT, totalTVA, montantTotalTTC } = useMemo(() => {
+    let ht = 0;
+    let tva = 0;
 
-  // ADD ITEM ====================================================
-  const addItem = () => {
-    setItems([...items, { designation: "", quantite: 1, prix: 0, tva: 20 }]);
-  };
+    facture.lignesFacture.forEach(ligne => {
+      // Assure que les montants sont des nombres pour le calcul
+      const pu = parseFloat(ligne.prixUnitaire) || 0;
+      const qte = parseFloat(ligne.quantite) || 0;
+      const tauxTVA = parseFloat(ligne.tvaRate) || 0;
 
-  // SAVE PIECE FACTURE =========================================
-  const [
-    actionSaveFacture,
-    {
-      isError: isErrorSaveFacture,
-      isLoading: isLoadingSaveFacture,
-      isSuccess: isSuccessSaveFacture,
-      data: dataSaveFacture,
-    },
-  ] = useSavePieceByFormularMutation() || [];
+      const sousTotalLigne = pu * qte;
+      const montantTVA = sousTotalLigne * tauxTVA;
 
-  // GENERATE JOURNAL ============================
-  const [
-    actionGenerateJournal,
-    {
-      isError: isErrorGenerateJournal,
-      isLoading: isLoadingGenerateJournal,
-      isSuccess: isSuccessGenerateJournal,
-      error: errorGenerateJournal,
-    },
-  ] = useGenerateJournalMutation() || [];
+      ht += sousTotalLigne;
+      tva += montantTVA;
+    });
 
-  // REMOVE ITEM =================================================
-  const removeItem = (index) => {
-    setItems(items.filter((_, i) => i !== index));
-  };
-
-  // HANDLE ITEM CHANGE ==========================================
-  const handleItemChange = (index, key, value) => {
-    const newItems = [...items];
-    newItems[index][key] = value;
-    setItems(newItems);
-  };
-
-  // Calculs automatiques
-  const totalHT = items.reduce(
-    (sum, item) => sum + item.quantite * item.prix,
-    0
-  );
-
-  // TOTAL TVA ======================================================
-  const totalTVA = items.reduce(
-    (sum, item) => sum + (item.quantite * item.prix * item.tva) / 100,
-    0
-  );
-
-  // TOTAL TTC ======================================================
-  const totalTTC = totalHT + totalTVA;
-
-  // HANDLE SUBMIT FACTURE ==========================================
-  const handleSubmitFacture = (e) => {
-    e.preventDefault();
-    const data = {
-      piece_type: "Type facture",
-      description_json: {
-        address: e.target.address.value,
-        date: e.target.dateFacture.value,
-        details: items,
-        totalHT,
-        totalTVA,
-        totalTTC,
-        entreprise: e.target.entrepriseName.value,
-        client: e.target.clientName.value,
-        facture: e.target.factureNum.value,
-        nif: e.target.nifFacture.value,
-        rcs: e.target.rcsFacture.value,
-        stat: e.target.statFacture.value,
-      },
+    return {
+      sousTotalHT: ht,
+      totalTVA: tva,
+      montantTotalTTC: ht + tva
     };
-    setDataToGenerateJournal(data);
-    actionSaveFacture(data);
+  }, [facture.lignesFacture]);
+  // ----------------------------------------------------------------------
+
+
+  const handleChangeEnTete = (e) => {
+    const { name, value } = e.target;
+    setFacture(prev => ({ ...prev, [name]: value }));
   };
 
-  // USE-EFFECT Generate Journal =============================
-  useEffect(() => {
-    if (isLoadingGenerateJournal && !isSuccessGenerateJournal) {
-      toast.dismiss();
-      toast.loading("Génération du journal en cours...");
+  // ----------------------------------------------------------------------
+  // 2. GESTION DES LIGNES DE FACTURE
+  // ----------------------------------------------------------------------
+  const handleLigneChange = (index, e) => {
+    const { name, value } = e.target;
+    const nouvellesLignes = facture.lignesFacture.map((ligne, i) => {
+      if (i === index) {
+        // Gère la conversion des nombres (pour prix, quantité, taux)
+        if (['quantite', 'prixUnitaire', 'tvaRate'].includes(name)) {
+            // Le toFixed(2) est utilisé pour s'assurer que les taux sont gérés correctement s'ils sont saisis en pourcentages
+            // Ici, nous stockons le taux décimal (ex: 0.20)
+            return { ...ligne, [name]: parseFloat(value) || 0 };
+        }
+        return { ...ligne, [name]: value };
+      }
+      return ligne;
+    });
+    setFacture(prev => ({ ...prev, lignesFacture: nouvellesLignes }));
+  };
+
+  const ajouterLigne = () => {
+    setFacture(prev => ({ 
+      ...prev, 
+      lignesFacture: [...prev.lignesFacture, { ...LIGNE_INITIALE }] 
+    }));
+  };
+
+  const supprimerLigne = (index) => {
+    if (facture.lignesFacture.length > 1) {
+      setFacture(prev => ({ 
+        ...prev, 
+        lignesFacture: prev.lignesFacture.filter((_, i) => i !== index) 
+      }));
+    }
+  };
+  // ----------------------------------------------------------------------
+
+
+  // ----------------------------------------------------------------------
+  // 3. ENREGISTREMENT À L'API
+  // ----------------------------------------------------------------------
+  const enregistrerFacture = async () => {
+    // Validation minimale
+    if (!facture.reference || !facture.partenaire || facture.lignesFacture.length === 0 || montantTotalTTC <= 0) {
+      alert("Veuillez remplir toutes les informations d'en-tête, ajouter au moins une ligne et assurer un montant total positif.");
       return;
     }
+    
+    // Construction des données pour l'API
+    const documentData = {
+      // En-tête
+      reference: facture.reference,
+      date: facture.date,
+      partenaire: facture.partenaire, 
+      type_doc: facture.typeDocument.toUpperCase(), // EN MAJUSCULES pour l'API
 
-    if (!isLoadingGenerateJournal && isSuccessGenerateJournal) {
-      toast.dismiss();
-      toast.success("Génération du journal avec succès!");
-      navigate("/app/classification");
-      return;
+      // Totaux calculés
+      sous_total_ht: sousTotalHT,
+      total_tva: totalTVA,
+      montant_total_ttc: montantTotalTTC,
+      
+      // Lignes de facture formatées pour l'API
+      lignes: facture.lignesFacture.map(l => ({
+          libelle: l.libelle,
+          quantite: l.quantite,
+          prix_unitaire: l.prixUnitaire,
+          taux_tva: l.tvaRate,
+          montant_ht: (l.prixUnitaire * l.quantite), // Montant HT de la ligne
+      }))
+    };
+
+    console.log(`Envoi à l'API (${facture.typeDocument}):`, documentData);
+
+    try {
+      // L'URL est dynamique: /ventes/factures/ ou /achats/factures/
+      const url = `${BASE_URL_API}/${facture.typeDocument.toLowerCase()}s/factures/`; 
+      
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(documentData)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erreur ${response.status} lors de l'enregistrement de la facture.`);
+      }
+      
+      alert(`✅ Facture ${facture.typeDocument} enregistrée avec succès !`);
+      setFacture(FACTURE_INITIALE); // Réinitialiser le formulaire
+    } catch (error) {
+      console.error(error);
+      alert(`❌ Erreur lors de l'enregistrement de la facture: ${error.message}`);
     }
+  };
+  // ----------------------------------------------------------------------
 
-    if (!isLoadingGenerateJournal && isErrorGenerateJournal) {
-      toast.dismiss();
-      toast.error(errorGenerateJournal?.data.error || "Error de génération!");
-      return;
-    }
-  }, [
-    isLoadingGenerateJournal,
-    isSuccessGenerateJournal,
-    isErrorGenerateJournal,
-    navigate,
-    errorGenerateJournal,
-  ]);
 
-  // USE-EFFECT Save Facture ========================
-  useEffect(() => {
-    if (isLoadingSaveFacture && !isSuccessSaveFacture) {
-      toast.loading("Enregistrement en cours...");
-      return;
-    }
-
-    if (!isLoadingSaveFacture && isSuccessSaveFacture) {
-      toast.dismiss();
-      toast.success("Enregistrement avec succès!");
-      const data = {
-        ...dataToGenerateJournal,
-        file_source: null,
-        form_source: dataSaveFacture?.form_source.id,
-      };
-      actionGenerateJournal(data);
-      return;
-    }
-
-    if (!isLoadingSaveFacture && isErrorSaveFacture) {
-      toast.dismiss();
-      toast.error("Error d'enregistrement!");
-      return;
-    }
-  }, [
-    isLoadingSaveFacture,
-    isSuccessSaveFacture,
-    isErrorSaveFacture,
-    dataSaveFacture,
-    actionGenerateJournal,
-    dataToGenerateJournal,
-  ]);
-
-  // USE-EFFECT Date Today ==========================
-  useEffect(() => {
-    setToday(new Date().toISOString().split("T")[0]);
-  }, []);
+  // Fonction utilitaire pour le formatage monétaire
+  const formatMonetaire = (montant) => montant.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-slate-900 text-slate-200 shadow-xl rounded-xl">
-      <div className="flex items-center justify-between mb-7">
-        <BackToFormsPage />
-        <h3 className="text-2xl text-center">Facture</h3>
-      </div>
-      <form onSubmit={handleSubmitFacture} className="space-y-6">
-        {/* --- Informations générales --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label htmlFor="entrepriseName" className="font-semibold">
-              Entreprise :
-            </label>
-            <input
-              type="text"
-              required
-              name="entrepriseName"
-              id="entrepriseName"
-              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-              placeholder="Nom de l'entreprise"
-            />
-          </div>
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-7xl mx-auto">
+        
+        {/* EN-TÊTE DU DOCUMENT */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center justify-between">
+            <BackToFormsPage /> 
+            Formulaire de Facture ({facture.typeDocument})
+          </h2>
+          <hr className="mb-4" />
 
-          <div>
-            <label htmlFor="clientName" className="font-semibold">
-              Client :
-            </label>
-            <input
-              required
-              id="clientName"
-              name="clientName"
-              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-              placeholder="Nom du client"
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            
+            {/* Type Document (Vente/Achat) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Type *</label>
+              <select 
+                name="typeDocument" 
+                value={facture.typeDocument} 
+                onChange={handleChangeEnTete}
+                className="w-full px-3 py-2 border text-dark border-gray-300 rounded-md focus:ring-blue-500"
+              >
+                <option value="Vente">Facture Vente</option>
+                <option value="Achat">Facture Achat</option>
+              </select>
+            </div>
 
-          <div>
-            <label htmlFor="nifFacture" className="font-semibold">
-              NIF :
-            </label>
-            <input
-              type="text"
-              required
-              id="nifFacture"
-              name="nifFacture"
-              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-              placeholder="NIF"
-            />
-          </div>
+            {/* Référence */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Référence *</label>
+              <input type="text" name="reference" value={facture.reference} onChange={handleChangeEnTete}
+                className="w-full px-3 py-2 border text-dark border-gray-300 rounded-md focus:ring-blue-500"
+                placeholder="N° FAC-001" />
+            </div>
 
-          <div>
-            <label htmlFor="rcsFacture" className="font-semibold">
-              RCS :
-            </label>
-            <input
-              type="text"
-              required
-              id="rcsFacture"
-              name="rcsFacture"
-              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-              placeholder="Registre Commerce des Sociétés"
-            />
-          </div>
+            {/* Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+              <input type="date" name="date" value={facture.date} onChange={handleChangeEnTete}
+                className="w-full px-3 py-2 border text-dark border-gray-300 rounded-md focus:ring-blue-500" />
+            </div>
 
-          <div>
-            <label htmlFor="statFacture" className="font-semibold">
-              Stat :
-            </label>
-            <input
-              type="text"
-              required
-              id="statFacture"
-              name="statFacture"
-              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-              placeholder="Stat"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="factureNum" className="font-semibold">
-              Numéro de facture :
-            </label>
-            <input
-              required
-              type="text"
-              name="factureNum"
-              id="factureNum"
-              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-              placeholder="FAC-2025-001"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="dateFacture" className="font-semibold">
-              Date :
-            </label>
-            <input
-              id="dateFacture"
-              required
-              max={today}
-              type="date"
-              name="dateFacture"
-              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="address" className="font-semibold">
-              Lieu :
-            </label>
-            <input
-              id="address"
-              required
-              name="address"
-              className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-              placeholder="Adresse ..."
-            />
+            {/* Partenaire (Client ou Fournisseur - Dynamique) */}
+            <div className="md:col-span-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {facture.typeDocument === 'Vente' ? 'Client' : 'Fournisseur'} *
+              </label>
+              <input type="text" name="partenaire" value={facture.partenaire} onChange={handleChangeEnTete}
+                className="w-full px-3 py-2 border text-dark border-gray-300 rounded-md focus:ring-blue-500"
+                placeholder={`Nom du ${facture.typeDocument === 'Vente' ? 'Client' : 'Fournisseur'}`} />
+            </div>
+            
           </div>
         </div>
 
-        {/* --- Tableau dynamique --- */}
-        <div>
-          <h3 className="text-xl font-normal mb-3">Détails de la facture</h3>
-
-          <table className="w-full border">
-            <thead className="text-gray-100 text-left">
-              <tr>
-                <th className="p-2 w-72 border">Désignation</th>
-                <th className="p-2 border w-24">Qté</th>
-                <th className="p-2 border w-32">Prix (Ar)</th>
-                <th className="p-2 border w-28">TVA %</th>
-                <th className="p-2 border w-32">Total HT (Ar)</th>
-                <th className="p-2 border w-32">Total TTC (Ar)</th>
-                <th className="p-2 border w-12"></th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {items.map((item, index) => {
-                const totalHTLigne = item.quantite * item.prix;
-                const totalTTCLigne =
-                  totalHTLigne + (totalHTLigne * item.tva) / 100;
-
-                return (
+        {/* LIGNES DÉTAILLÉES */}
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h3 className="text-xl font-semibold text-gray-700 mb-4">Détail des lignes</h3>
+          
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="w-1/3 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Libellé *</th>
+                  <th className="w-1/12 px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantité *</th>
+                  <th className="w-1/6 px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Prix U. (HT) *</th>
+                  <th className="w-1/12 px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Taux TVA (0.00) *</th>
+                  <th className="w-1/6 px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Montant HT</th>
+                  <th className="w-1/12 px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Action</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {facture.lignesFacture.map((ligne, index) => (
                   <tr key={index}>
-                    <td className="p-2 border">
-                      <input
-                        required
-                        className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-                        value={item.designation}
-                        onChange={(e) =>
-                          handleItemChange(index, "designation", e.target.value)
-                        }
-                        placeholder="Produit ou service"
-                      />
+                    <td className="px-2 py-2">
+                      <input type="text" name="libelle" value={ligne.libelle} 
+                        onChange={(e) => handleLigneChange(index, e)}
+                        className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm" />
                     </td>
-
-                    <td className="p-2 border">
-                      <input
-                        type="number"
-                        min={0}
-                        className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-                        value={item.quantite}
-                        onChange={(e) =>
-                          handleItemChange(
-                            index,
-                            "quantite",
-                            Number(e.target.value)
-                          )
-                        }
-                      />
+                    <td className="px-2 py-2">
+                      <input type="number" name="quantite" value={ligne.quantite} min="1" step="1"
+                        onChange={(e) => handleLigneChange(index, e)}
+                        className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm text-right" />
                     </td>
-
-                    <td className="p-2 border">
-                      <input
-                        type="number"
-                        min={0}
-                        className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-                        value={item.prix}
-                        onChange={(e) =>
-                          handleItemChange(
-                            index,
-                            "prix",
-                            Number(e.target.value)
-                          )
-                        }
-                      />
+                    <td className="px-2 py-2">
+                      <input type="number" name="prixUnitaire" value={ligne.prixUnitaire} min="0" step="0.01"
+                        onChange={(e) => handleLigneChange(index, e)}
+                        className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm text-right" />
                     </td>
-
-                    <td className="p-2 border">
-                      <input
-                        type="number"
-                        min={0}
-                        className="w-full rounded-md text-white py-2 px-3 text-base font-normal bg-slate-700 outline-none"
-                        value={item.tva}
-                        onChange={(e) =>
-                          handleItemChange(index, "tva", Number(e.target.value))
-                        }
-                      />
+                    <td className="px-2 py-2">
+                      <input type="number" name="tvaRate" value={ligne.tvaRate} min="0" step="0.01" max="1"
+                        onChange={(e) => handleLigneChange(index, e)}
+                        className="w-full px-2 py-1 border border-gray-300 rounded-md text-sm text-right" />
                     </td>
-
-                    <td className="p-2 border">
-                      {totalHTLigne.toLocaleString("fr-FR")} Ar
+                    <td className="px-4 py-2 text-right text-sm font-semibold text-gray-800">
+                      {formatMonetaire(ligne.prixUnitaire * ligne.quantite)} Ar
                     </td>
-
-                    <td className="p-2 border">
-                      {totalTTCLigne.toLocaleString("fr-FR")} Ar
-                    </td>
-
-                    <td className="p-2 border text-center">
-                      {items.length > 1 && (
-                        <button
-                          type="button"
-                          className="text-red-600 hover:text-red-800"
-                          onClick={() => removeItem(index)}
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      )}
+                    <td className="px-4 py-2 text-center">
+                      <button onClick={() => supprimerLigne(index)} title="Supprimer la ligne"
+                        className="text-red-600 hover:text-red-800 disabled:opacity-50"
+                        disabled={facture.lignesFacture.length === 1}>
+                        🗑️
+                      </button>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          {/* Ajouter une ligne */}
-          <button
-            type="button"
-            disabled={isLoadingSaveFacture}
-            onClick={addItem}
-            className="flex items-center gap-2 mt-3 px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-500"
-          >
-            <Plus size={18} />
-            Ajouter une ligne
+          <button onClick={ajouterLigne}
+            className="mt-4 text-blue-600 hover:text-blue-800 font-medium py-2 px-4 border border-blue-600 rounded-lg transition duration-200">
+            ➕ Ajouter une ligne
           </button>
         </div>
 
-        {/* --- Totaux --- */}
-        <div className="text-right text-lg space-y-1">
-          <div>
-            Total HT :{" "}
-            <span className="font-bold">
-              {totalHT.toLocaleString("fr-FR")} Ar
-            </span>
-          </div>
-          <div>
-            TVA totale :{" "}
-            <span className="font-bold">
-              {totalTVA.toLocaleString("fr-FR")} Ar
-            </span>
-          </div>
-          <div>
-            Total TTC :{" "}
-            <span className="font-bold">
-              {totalTTC.toLocaleString("fr-FR")} Ar
-            </span>
-          </div>
+        {/* RÉSUMÉ DES TOTAUX ET BOUTON DE VALIDATION */}
+        <div className="flex justify-end">
+            <div className="w-full md:w-1/2 lg:w-1/3 bg-white p-6 rounded-lg shadow-lg">
+                <h3 className="text-xl font-semibold text-gray-700 mb-4">Synthèse</h3>
+                
+                <div className="space-y-2">
+                    <div className="flex justify-between font-medium text-gray-600">
+                        <span>Sous-Total HT:</span>
+                        <span>{formatMonetaire(sousTotalHT)} Ar</span>
+                    </div>
+                    <div className="flex justify-between font-medium text-gray-600">
+                        <span>Total TVA:</span>
+                        <span>{formatMonetaire(totalTVA)} Ar</span>
+                    </div>
+                    <div className="flex justify-between font-bold text-xl pt-2 border-t border-gray-300 text-blue-600">
+                        <span>TOTAL TTC:</span>
+                        <span>{formatMonetaire(montantTotalTTC)} Ar</span>
+                    </div>
+                </div>
+
+                <div className="mt-6">
+                    <button onClick={enregistrerFacture}
+                        className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-200 transform hover:scale-[1.01]">
+                        💾 Enregistrer la Facture {facture.typeDocument}
+                    </button>
+                </div>
+            </div>
         </div>
 
-        {/* --- Bouton enregistrer --- */}
-        <button
-          type="submit"
-          disabled={isLoadingSaveFacture}
-          className="mx-auto w-full lg:w-1/3 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 text-lg"
-        >
-          Enregistrer la Facture
-        </button>
-      </form>
+      </div>
     </div>
   );
 }

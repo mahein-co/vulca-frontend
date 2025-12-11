@@ -23,6 +23,7 @@ export const PATHS = {
 export const SIDEBAR_NAVIGATIONS = [
   { title: "Dashboard", path: "/app", icon: IconDashboarb },
   { title: "classification", path: "/app/classification", icon: IconAdd },
+  { title: "grandlivre", path: "/app/grandlivre", icon: IconAdd },
   { title: "Finance", path: "/app/finance", icon: IconFinance },
   { title: "Formulaire", path: "/app/forms", icon: IconAdd },
   { title: "Import file", path: "/app/ocr", icon: IconOcr },

@@ -27,8 +27,8 @@ const Header = ({ currentPage, onNavigate }) => { // Réception des props
     const displayActiveKey = isTransactionViewActive ? 'gestion-transactions-cr' : currentPage;
 
     return (
-        <header className="bg-white shadow-sm border-b border-gray-100 sticky top-0 z-10">
-            <div className="max-w-full mx-auto px-1 sm:px-6 lg:px-8">
+        <header className="bg-white shadow-md border-b border-gray-200 fixed top-0 left-0 right-0 w-full z-20">
+            <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     
                     {/* Logo et Nom de l'App */}

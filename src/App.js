@@ -53,30 +53,25 @@ import GestionPiecesBoard from './views/piece/GestionPiecesBoard';
 
 // --- IMPORT DU COMPOSANT D'IMPORTATION OCR ---
 import ImportFichier from './views/ocr/pages/ImportFichier';
-const NewInvoiceForm = ImportFichier; // Alias ou renommage pour la réutilisation dans la modale
+const NewInvoiceForm = ImportFichier; // Alias pour réutilisation dans la modale
 // ---------------------------------------------
 
 
-// Composant Simple de Modale (Overlay) - INCHANGÉ
+// Composant Simple de Modale (Overlay) 
 const SaisieModal = ({ children, onClose }) => (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex justify-center items-center p-4">
-        {/* Conteneur de la modale: on clique en dehors pour fermer */}
         <div 
             className="absolute inset-0" 
             onClick={onClose}
         /> 
         
-        {/* Contenu, ajusté pour prendre une grande partie de l'écran */}
         <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-7xl h-[90vh] overflow-y-auto">
-            {/* Bouton de fermeture visible */}
             <button 
                 onClick={onClose} 
                 className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 z-10 p-2 bg-white rounded-full shadow-lg"
             >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            
-            {/* Contenu réel du formulaire */}
             {children}
         </div>
     </div>
@@ -85,7 +80,7 @@ const SaisieModal = ({ children, onClose }) => (
 
 function App() {
     
-    const [currentPage, setCurrentPage] = useState('gestion-pieces');
+    const [currentPage, setCurrentPage] = useState('gestion-pieces'); // Démarrage sur la vue des pièces
     const [isSaisieModalOpen, setIsSaisieModalOpen] = useState(false);
     const [formTypeToOpen, setFormTypeToOpen] = useState(null); 
 
@@ -119,12 +114,11 @@ function App() {
                 
             case 'gestion-pieces':
                 return <GestionPiecesBoard />;
-                
-            // NOUVEAU CASE POUR L'IMPORTATION OCR
-            case 'import-ocr':
-                // Affiche le composant d'importation sur toute la page
-                return <ImportFichier type="OCR" isFullScreen={true} onSaisieCompleted={() => navigate('gestion-pieces')} />;
-                
+                
+            // L'importation OCR prend tout l'espace de la fenêtre principale
+            case 'import-ocr':
+                return <ImportFichier type="OCR" isFullScreen={true} onSaisieCompleted={() => navigate('gestion-pieces')} />;
+                
             case 'gestion-salaire':
                 return <ContentWrapper><h2 className="text-2xl">Module Gestion Salaires</h2></ContentWrapper>; 
             
@@ -137,22 +131,20 @@ function App() {
         }
     };
     
-    // --- Fonction pour déterminer le formulaire à rendre dans la modale - INCHANGÉE ---
+    // --- Fonction pour déterminer le formulaire à rendre dans la modale ---
     const renderFormInModal = () => {
         const onFormCompleted = closeSaisieModal; 
 
         switch (formTypeToOpen) {
             case 'CompteResultat':
                 return <CompteResultatForm onSaisieCompleted={onFormCompleted} />;
-            
             case 'Vente':
                 return <NewInvoiceForm type="Vente" onSaisieCompleted={onFormCompleted} />;
-                
             case 'Achat':
                 return <NewInvoiceForm type="Achat" onSaisieCompleted={onFormCompleted} />;
 
             case 'SaisieMenu':
-                // Menu de sélection de saisie (comme dans l'image 1)
+                // Menu de sélection de saisie (basé sur Capture d'écran 2025-12-11 022007.png)
                 return (
                     <div className="p-8 h-full flex flex-col justify-center items-center">
                         <h2 className="text-3xl font-serif font-bold italic mb-10 text-gray-800">Sélectionnez le type de saisie</h2>
@@ -192,7 +184,8 @@ function App() {
                 onNavigate={navigate} 
             />
             
-            <main className="pt-0">
+            {/* pt-0 s'assure qu'il n'y a pas de marge supplémentaire entre le Header et le contenu */}
+            <main className="pt-0"> 
                 {renderPage()}
             </main>
 

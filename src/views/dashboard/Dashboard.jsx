@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import BalanceModal from '../balance/BalanceModal';
-import FactureForm from '../ocr/forms/NewInvoiceForm';
+
+// import FactureForm from '../ocr/forms/NewInvoiceForm';
 
 // --- 1. Données Statiques (inchangées) ---
 

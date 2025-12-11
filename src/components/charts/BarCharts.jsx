@@ -5,81 +5,76 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Legend,
   ResponsiveContainer,
 } from 'recharts';
 
-const verticalData = [
-  { month: 'Jan', ventes: 4000 },
-  { month: 'Fév', ventes: 3200 },
-  { month: 'Mar', ventes: 5100 },
-  { month: 'Avr', ventes: 4800 },
-  { month: 'Mai', ventes: 6200 },
-  { month: 'Juin', ventes: 5900 },
-];
-
-const horizontalData = [
-  { category: 'Salaires', charges: 50000 },
-  { category: 'Loyer', charges: 15000 },
-  { category: 'Électricité', charges: 8000 },
-  { category: 'Fournitures', charges: 5000 },
-  { category: 'Transport', charges: 12000 },
+const top10AccountsData = [
+  { account: '411000', label: 'Clients', movement: 450000000, pcg: 'PCG 2005' },
+  { account: '401000', label: 'Fournisseurs', movement: 320000000, pcg: 'PCG 2005' },
+  { account: '512000', label: 'Banques', movement: 280000000, pcg: 'PCG 2005' },
+  { account: '411100', label: 'Clients - Ventes', movement: 245000000, pcg: 'PCG 2005' },
+  { account: '401100', label: 'Fournisseurs - Achats', movement: 195000000, pcg: 'PCG 2005' },
+  { account: '701000', label: 'Ventes de marchandises', movement: 180000000, pcg: 'PCG 2005' },
+  { account: '601000', label: 'Achats de marchandises', movement: 165000000, pcg: 'PCG 2005' },
+  { account: '411200', label: 'Clients - Services', movement: 145000000, pcg: 'PCG 2005' },
+  { account: '521000', label: 'Caisse', movement: 128000000, pcg: 'PCG 2005' },
+  { account: '401200', label: 'Fournisseurs - Services', movement: 112000000, pcg: 'PCG 2005' },
 ];
 
 export default function BarCharts() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      {/* --- Vertical Chart --- */}
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
-          Ventes par Mois (Vertical)
-        </h2>
-
-        <div className="w-full h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={verticalData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="month" stroke="#6b7280" />
-              <YAxis stroke="#6b7280" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                }}
-              />
-              <Bar dataKey="ventes" fill="#3b82f6" radius={[8, 8, 0, 0]} name="Ventes" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800">Top 10 des comptes les plus mouvementés</h3>
+        <span className="text-xs sm:text-sm font-medium text-gray-500 mt-2 sm:mt-0">Référence : PCG 2005</span>
       </div>
-
-      {/* --- Horizontal Chart --- */}
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">
-          Comparaison des Charges (Horizontal)
-        </h2>
-
-        <div className="w-full h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={horizontalData}
-              layout="vertical"
-              margin={{ top: 5, right: 30, left: 120, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis type="number" stroke="#6b7280" />
-              <YAxis type="category" dataKey="category" stroke="#6b7280" width={115} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                }}
-              />
-              <Bar dataKey="charges" fill="#10b981" radius={[0, 8, 8, 0]} name="Charges" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+      
+      <div className="w-full h-96 sm:h-[500px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={top10AccountsData} margin={{ top: 10, right: 30, left: 60, bottom: 100 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <XAxis 
+              dataKey="label" 
+              angle={-45}
+              textAnchor="end"
+              height={100}
+              tick={{ fontSize: 12 }}
+              stroke="#4b5563"
+            />
+            <YAxis 
+              stroke="#4b5563" 
+              width={60}
+              tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#fff',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              }}
+              labelStyle={{ fontWeight: 'bold', color: '#1f2937' }}
+              formatter={(value, name) => {
+                if (name === 'movement') {
+                  return [value.toLocaleString('fr-FR') + ' Ar', 'Montant'];
+                }
+                return value;
+              }}
+              labelFormatter={(label) => {
+                const data = top10AccountsData.find(d => d.account === label);
+                return data ? `${data.account} - ${data.label}` : label;
+              }}
+            />
+            <Legend wrapperStyle={{ paddingTop: '20px' }} />
+            <Bar
+              dataKey="movement"
+              fill="#3b82f6"
+              name="Montant Mouvementé"
+              radius={[8, 8, 0, 0]}
+            />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

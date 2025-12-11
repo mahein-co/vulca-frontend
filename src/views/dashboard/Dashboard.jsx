@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import BalanceModal from '../balance/BalanceModal';
 import FactureForm from '../ocr/forms/NewInvoiceForm';
+import BarCharts from '../../components/charts/BarCharts';
+import PieChartRepartition from '../../components/charts/PieChartRepartition';
+import LineChartCAEvolution from '../../components/charts/LineChartCAEvolution';
 
 // --- 1. Données Statiques (inchangées) ---
 
 const summaryCards = [
-  { title: 'FACTURES CLIENTS À RELANCER', value: '3', unit: 'En retard de paiement', bgColor: 'bg-orange-100', icon: '📄', borderColor: 'border-orange-500', action: 'none' },
-  { title: 'FACTURES FOURNISSEURS À RELANCER', value: '4', unit: 'Litiges en cours', bgColor: 'bg-yellow-100', icon: '🔔', borderColor: 'border-yellow-500', action: 'none' },
-  { title: 'TVA À PAYER', value: 'Ar 7 678 300', unit: 'TVA à décaisser', bgColor: 'bg-red-100', icon: '🚨', borderColor: 'border-red-500', action: 'none' },
-  { title: 'BALANCE', value: 'Ar 209 202 800', unit: 'Volume d\'activité', bgColor: 'bg-blue-100', icon: '✉️', borderColor: 'border-blue-500', action: 'openBalance' },
-  { title: 'RÉSULTAT', value: 'Ar 35 641 500', unit: 'Depuis le début de l\'exercice', bgColor: 'bg-green-100', icon: '💲', borderColor: 'border-green-500', action: 'none' },
+  { title: 'Chiffre d\'affaires', value: 'Ar 37 800 000', bgColor: 'bg-orange-100', icon: '📄', borderColor: 'border-orange-500', action: 'none' },
+  { title: 'EBE', value: 'Ar 45350', unit: 'Excédent Brut d’Exploitation', bgColor: 'bg-yellow-100', icon: '🔔', borderColor: 'border-yellow-500', action: 'none' },
+  { title: 'Bénéfice net', value: 'Ar 7 678 300', unit: 'Marge nette', bgColor: 'bg-red-100', icon: '🚨', borderColor: 'border-red-500', action: 'none' },
+  { title: 'BFR', value: 'Ar 209 202 800', unit: 'Besoin en Fonds de Roulement', bgColor: 'bg-blue-100', icon: '✉️', borderColor: 'border-blue-500', action: 'openBalance' },
+  { title: 'Leverage brut', value: 'Ar 35 641 500', unit: '', bgColor: 'bg-green-100', icon: '💲', borderColor: 'border-green-500', action: 'none' },
 ];
 
 const evolutionLegend = [
@@ -54,7 +57,7 @@ const ChartPlaceholder = ({ title, legendItems, height = 'h-64' }) => (
       ))}
     </div>
     <div className={`${height} bg-gray-50 border border-dashed flex items-center justify-center text-gray-400 text-sm`}>
-      Placeholder Graphique (Simulation Visuelle)
+      Placeholder Graphique (Simulation Visuelle) papa 
     </div>
   </div>
 );
@@ -144,45 +147,22 @@ const Dashboard = () => {
       </div>
 
       {/* 3. Graphique d'Évolution du Chiffre d'Affaires */}
-      <ChartPlaceholder 
-        title="Évolution du Chiffre d'Affaires"
-        legendItems={evolutionLegend}
-        height="h-64 sm:h-72" 
-      />
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Évolution du Chiffre d'Affaires</h3>
+        <LineChartCAEvolution />
+      </div>
 
-      {/* 4. Graphique TVA Collectée vs Déductible */}
-      <ChartPlaceholder 
-        title="TVA Collectée vs Déductible"
-        legendItems={tvaLegend}
-        height="h-48 sm:h-56" 
-      />
+      {/* 4. Graphique Top 10 des comptes les plus mouvementés */}
+      <BarCharts />
 
-      {/* 5. Répartition des Charges (Avec Résumé Textuel) */}
+      {/* 5. Produits et Charges */}
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-800">Répartition des Charges</h3>
-          <div className="text-xs sm:text-sm font-medium text-gray-500 mt-2 sm:mt-0">
-            <div className="text-red-600 font-bold">Total des charges : Ar 52 167 500</div>
-            <div className="hidden sm:block">Principaux par poste : <span className="text-blue-600">Achats de marchandises (93.3%)</span></div>
-          </div>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800">Répartition Produits et Charges</h3>
         </div>
         
-        {/* Placeholder pour le Donut Chart */}
-        <div className="flex justify-center items-center h-48 mb-4">
-            <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full bg-gray-100 border-8 border-gray-300 flex items-center justify-center text-xs text-gray-400">
-                Donut Chart (Charges)
-            </div>
-        </div>
-        
-        {/* Légende en bas du graphique de charges (Responsive wrap) */}
-        <div className="flex flex-wrap justify-center text-xs sm:text-sm mt-4">
-          {chargesLegend.map((item) => (
-            <span key={item.label} className="flex items-center ml-2 sm:ml-4 text-gray-600 mt-2">
-              <span className={`w-3 h-3 rounded-full mr-1 ${item.color}`}></span>
-              {item.label}
-            </span>
-          ))}
-        </div>
+        {/* PieChart Repartition */}
+        <PieChartRepartition />
       </div>
       
       {/* 6. Répartition par Journal */}

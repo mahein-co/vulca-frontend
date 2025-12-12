@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import BalanceModal from '../balance/BalanceModal';
 import FactureForm from '../ocr/forms/NewInvoiceForm';
 import BarCharts from '../../components/charts/BarCharts';
+import TvaBarChart from '../../components/charts/TvaBarChart';
 import PieChartRepartition from '../../components/charts/PieChartRepartition';
 import LineChartCAEvolution from '../../components/charts/LineChartCAEvolution';
 
@@ -11,8 +12,8 @@ const summaryCards = [
   { title: 'Chiffre d\'affaires', value: 'Ar 37 800 000', bgColor: 'bg-orange-100', icon: '📄', borderColor: 'border-orange-500', action: 'none' },
   { title: 'EBE', value: 'Ar 45350', unit: 'Excédent Brut d’Exploitation', bgColor: 'bg-yellow-100', icon: '🔔', borderColor: 'border-yellow-500', action: 'none' },
   { title: 'Bénéfice net', value: 'Ar 7 678 300', unit: 'Marge nette', bgColor: 'bg-red-100', icon: '🚨', borderColor: 'border-red-500', action: 'none' },
-  { title: 'BFR', value: 'Ar 209 202 800', unit: 'Besoin en Fonds de Roulement', bgColor: 'bg-blue-100', icon: '✉️', borderColor: 'border-blue-500', action: 'openBalance' },
-  { title: 'Leverage brut', value: 'Ar 35 641 500', unit: '', bgColor: 'bg-green-100', icon: '💲', borderColor: 'border-green-500', action: 'none' },
+  { title: 'BALANCE', value: 'Ar 209 202 800', unit: '', bgColor: 'bg-blue-100', icon: '✉️', borderColor: 'border-blue-500', action: 'openBalance' },
+  { title: 'BFR', value: 'Ar 35 641 500', unit: 'Besoin en Fonds de Roulement', bgColor: 'bg-green-100', icon: '💲', borderColor: 'border-green-500', action: 'none' },
 ];
 
 const evolutionLegend = [
@@ -94,6 +95,8 @@ const JournalRepartition = () => {
 
 const Dashboard = () => {
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
+  const [isAlertesModalOpen, setIsAlertesModalOpen] = useState(false);
+  const [isRentabiliteModalOpen, setIsRentabiliteModalOpen] = useState(false);
 
   const handleCardClick = (action) => {
     if (action === 'openBalance') {
@@ -152,8 +155,15 @@ const Dashboard = () => {
         <LineChartCAEvolution />
       </div>
 
-      {/* 4. Graphique Top 10 des comptes les plus mouvementés */}
-      <BarCharts />
+      {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch mb-6">
+        <div className="h-full">
+          <BarCharts />
+        </div>
+        <div className="h-full">
+          <TvaBarChart />
+        </div>
+      </div>
 
       {/* 5. Produits et Charges */}
       <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
@@ -164,7 +174,24 @@ const Dashboard = () => {
         {/* PieChart Repartition */}
         <PieChartRepartition />
       </div>
-      
+
+      {/* 5. Produits et Charges */}
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800">Autres Indicateurs</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100" onClick={() => setIsAlertesModalOpen(true)}>
+            <h4 className="text-lg font-semibold text-gray-800">Alertes & risques</h4>
+            <p className="text-sm text-gray-600">Cliquez pour voir les alertes et risques</p>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100" onClick={() => setIsRentabiliteModalOpen(true)}>
+            <h4 className="text-lg font-semibold text-gray-800">Rentabilité</h4>
+            <p className="text-sm text-gray-600">Cliquez pour voir la rentabilité</p>
+          </div>
+        </div>
+      </div>
+
       {/* 6. Répartition par Journal */}
       <JournalRepartition />
 
@@ -173,6 +200,28 @@ const Dashboard = () => {
         isOpen={isBalanceModalOpen} 
         onClose={() => setIsBalanceModalOpen(false)} 
       />
+
+      {/* Modale Alertes & Risques */}
+      {isAlertesModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
+            <button onClick={() => setIsAlertesModalOpen(false)} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">×</button>
+            <h3 className="text-lg font-semibold mb-4">Alertes & Risques</h3>
+            <p className="text-gray-600 mb-4">Contenu des alertes et risques ici...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Modale Rentabilité */}
+      {isRentabiliteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
+            <button onClick={() => setIsRentabiliteModalOpen(false)} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">×</button>
+            <h3 className="text-lg font-semibold mb-4">Rentabilité</h3>
+            <p className="text-gray-600 mb-4">Contenu de la rentabilité ici...</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

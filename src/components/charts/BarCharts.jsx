@@ -24,13 +24,13 @@ const top10AccountsData = [
 
 export default function BarCharts() {
   return (
-    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md mb-6">
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md h-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
         <h3 className="text-base sm:text-lg font-semibold text-gray-800">Top 10 des comptes les plus mouvementés</h3>
         <span className="text-xs sm:text-sm font-medium text-gray-500 mt-2 sm:mt-0">Référence : PCG 2005</span>
       </div>
       
-      <div className="w-full h-96 sm:h-[500px]">
+      <div className="w-full h-96 lg:h-[520px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={top10AccountsData} margin={{ top: 10, right: 30, left: 60, bottom: 100 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />

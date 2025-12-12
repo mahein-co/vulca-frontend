@@ -105,10 +105,10 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+    <div className="px-4 sm:px-0 bg-gray-50 min-h-screen">
       
       {/* 1. Sélecteur de Période (Responsive) */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-white p-4 rounded-lg shadow-sm">
+      <div className=" flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 bg-white p-4 rounded-lg shadow-sm">
         <div className="mb-3 sm:mb-0">
           <p className="font-medium text-gray-700">Période d'exercice</p>
           <p className="text-xs text-gray-500">Sélectionnez la période à analyser</p>

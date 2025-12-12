@@ -1,80 +1,110 @@
-import React, { useState } from 'react';
-// import BackToFormsPage from "../../../components/button/BackToFormsPage"; 
-// import { BASE_URL_API } from '../../../constants/globalConstants'; 
+import React, { useState, useCallback, useMemo } from 'react';
 
-// Constantes pour simuler les imports
+// --- Constantes pour simuler les imports ---
 const BASE_URL_API = 'http://api.exemple.com';
 const BackToFormsPage = () => <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center">
     <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
     Retour
 </button>;
 
-
 export default function CompteResultatForm({ onSaisieCompleted }) {
     const [lignes, setLignes] = useState([]);
     const [nouvelleLigne, setNouvelleLigne] = useState({
         numeroCompte: '',
         libelle: '',
-        montant: '',
+        montant: '', // Montant en chaîne pour la saisie
         nature: 'Charge',
         date: ''
     });
     const [ligneEnModification, setLigneEnModification] = useState(null);
     const [errorNumeroCompte, setErrorNumeroCompte] = useState(false);
     
-    // --- Fonctions de Gestion des États ---
+    // --- Utilitaires et Logique de Saisie ---
+    
+    // Formatte un montant en devise (ex: 1 234,56 Ar)
+    const formatMontant = useCallback((montant) => {
+        if (typeof montant === 'string') {
+            montant = parseFloat(montant.replace(/,/g, '.'));
+        }
+        if (isNaN(montant)) return '0,00';
+        return montant.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }, []);
 
-    const handleChange = (e) => {
+    // Gère les changements dans le formulaire de saisie
+    const handleChange = useCallback((e) => {
         const { name, value } = e.target;
+        
+        let newValue = value;
+        let newNature = nouvelleLigne.nature;
+        let newErrorNumeroCompte = false;
 
         if (name === 'numeroCompte') {
+            // 1. Nettoyer les caractères non numériques
+            newValue = value.replace(/\D/g, ''); 
             
-            // LOGIQUE DE BLOCAGE AMÉLIORÉE :
-            if (value !== '') {
-                const firstChar = value[0];
+            // 2. Limiter la taille (ex: à 5 chiffres)
+            newValue = newValue.substring(0, 5); 
+            
+            if (newValue !== '') {
+                const firstChar = newValue[0];
                 
-                // 1. Si le premier caractère n'est ni '6' ni '7', ignorer la saisie
+                // 3. Valider la première classification (6 ou 7)
                 if (!['6', '7'].includes(firstChar)) {
-                    // Si on essaie de taper un caractère invalide, on ne met pas à jour le state.
-                    // On peut aussi conserver l'ancien numéro s'il y en avait un.
-                    setErrorNumeroCompte(true);
-                    return; // Stoppe la mise à jour
+                    // Bloque l'action de déduction/validation si le premier chiffre est invalide
+                    newErrorNumeroCompte = true;
+                } else {
+                    // 4. Déduire la nature si le premier chiffre est valide
+                    newNature = firstChar === '6' ? 'Charge' : 'Produit';
                 }
+            } else {
+                 // 5. Si le champ est vidé, nature par défaut
+                 newNature = 'Charge';
             }
             
-            // Si le premier caractère est '6' ou '7' (ou si le champ est vide) :
-            setNouvelleLigne(prev => ({ ...prev, [name]: value }));
-            setErrorNumeroCompte(false); // Réinitialiser l'erreur si la saisie est valide
-
-            // Déduire la nature
-            if (value.startsWith('6')) {
-                setNouvelleLigne(prev => ({ ...prev, nature: 'Charge' }));
-            } else if (value.startsWith('7')) {
-                setNouvelleLigne(prev => ({ ...prev, nature: 'Produit' }));
-            } else if (value === '') {
-                 // Si le champ est vidé, réinitialiser la nature à Charge par défaut
-                 setNouvelleLigne(prev => ({ ...prev, nature: 'Charge' }));
+            setErrorNumeroCompte(newErrorNumeroCompte);
+            setNouvelleLigne(prev => ({ 
+                ...prev, 
+                [name]: newValue,
+                nature: newNature // Mise à jour immédiate de la nature
+            }));
+            
+        } else if (name === 'montant') {
+            // 1. Autoriser uniquement les chiffres et un point décimal
+            newValue = value.replace(/[^0-9.]/g, '');
+            // Assurer qu'il n'y ait qu'un seul point
+            const parts = newValue.split('.');
+            if (parts.length > 2) {
+                newValue = parts[0] + '.' + parts.slice(1).join('');
             }
+            
+            setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
             
         } else {
             setNouvelleLigne(prev => ({ ...prev, [name]: value }));
         }
-    };
-    // ... Reste des fonctions inchangé (resetNouvelleLigne, ajouterLigne, modifierLigne, etc.)
-    
+    }, [nouvelleLigne.nature]); // Dépendance de nature pour garantir une déduction correcte
+
     const resetNouvelleLigne = (keepDate = false) => {
-        setNouvelleLigne({
+        setNouvelleLigne(prev => ({
             numeroCompte: '',
             libelle: '',
             montant: '',
             nature: 'Charge',
-            date: keepDate ? nouvelleLigne.date : ''
-        });
+            date: keepDate ? prev.date : ''
+        }));
     }
 
     const ajouterLigne = () => {
+        // Validation des champs obligatoires
         if (!nouvelleLigne.numeroCompte || !nouvelleLigne.libelle || !nouvelleLigne.montant || !nouvelleLigne.date) {
-            alert('Veuillez remplir tous les champs obligatoires');
+            alert('Veuillez remplir tous les champs obligatoires.');
+            return;
+        }
+
+        // Validation du format du montant
+        const montantValue = parseFloat(nouvelleLigne.montant);
+        if (isNaN(montantValue) || montantValue <= 0) {
+            alert('Le montant doit être un nombre positif valide.');
             return;
         }
 
@@ -92,10 +122,11 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
         const ligne = {
             ...nouvelleLigne,
             id: Date.now(),
-            montant: parseFloat(nouvelleLigne.montant)
+            montant: montantValue
         };
 
         setLignes([...lignes, ligne]);
+        // Conserver la date pour une saisie rapide
         resetNouvelleLigne(true); 
     };
 
@@ -104,7 +135,7 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
         setNouvelleLigne({
             numeroCompte: ligne.numeroCompte,
             libelle: ligne.libelle,
-            montant: ligne.montant.toString(),
+            montant: ligne.montant.toString(), // Convertir en chaîne pour l'édition
             nature: ligne.nature,
             date: ligne.date
         });
@@ -123,9 +154,15 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
             return;
         }
 
+        const montantValue = parseFloat(nouvelleLigne.montant);
+        if (isNaN(montantValue) || montantValue <= 0) {
+            alert('Le montant doit être un nombre positif valide.');
+            return;
+        }
+
         setLignes(lignes.map(ligne =>
             ligne.id === ligneEnModification
-                ? { ...ligne, ...nouvelleLigne, montant: parseFloat(nouvelleLigne.montant) }
+                ? { ...ligne, ...nouvelleLigne, montant: montantValue }
                 : ligne
         ));
 
@@ -138,9 +175,8 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
         }
     };
     
-    const formatMontant = (montant) => montant.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
     const enregistrerCompteResultat = async () => {
+        // ... Logique d'enregistrement (inchangée) ...
         if (lignes.length === 0) {
             alert('Ajoutez au moins une ligne avant d\'enregistrer');
             return;
@@ -165,8 +201,24 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
         }
     };
 
+    // --- Calcul des Totaux (USEMEMO) ---
+    const { totalCharges, totalProduits, resultatNet } = useMemo(() => {
+        const charges = lignes
+            .filter(l => l.nature === 'Charge')
+            .reduce((sum, l) => sum + l.montant, 0);
+        
+        const produits = lignes
+            .filter(l => l.nature === 'Produit')
+            .reduce((sum, l) => sum + l.montant, 0);
+            
+        return {
+            totalCharges: charges,
+            totalProduits: produits,
+            resultatNet: produits - charges
+        };
+    }, [lignes]);
     
-    // --- Rendu du Composant (inchangé dans la structure IHM) ---
+    // --- Rendu du Composant ---
     return (
         <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto">
@@ -199,10 +251,11 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                                     errorNumeroCompte ? 'border-red-500 bg-red-50' : 'border-gray-300'
                                 }`}
                                 placeholder="Ex: 601"
+                                maxLength={5} // MaxLength visuelle
                             />
-                            {/* L'affichage de l'erreur est conservé pour informer l'utilisateur *pourquoi* sa saisie est bloquée */}
+                            {/* Affichage de l'erreur */}
                             {errorNumeroCompte && (
-                                <p className="text-red-600 text-xs mt-1">Doit commencer par 6 (Charges) ou 7 (Produits)</p>
+                                <p className="text-red-600 text-xs mt-1">Doit commencer par **6** (Charges) ou **7** (Produits)</p>
                             )}
                         </div>
 
@@ -223,24 +276,28 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Montant (Ar) *</label>
                             <input
-                                type="number"
+                                type="text" // Changement en type="text" pour mieux gérer la saisie des décimales/caractères
                                 name="montant"
                                 value={nouvelleLigne.montant}
                                 onChange={handleChange}
-                                step="0.01"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right"
                                 placeholder="0.00"
                             />
                         </div>
 
-                        {/* Nature */}
+                        {/* Nature (Champ non modifiable si le compte est saisi) */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Nature *</label>
                             <select
                                 name="nature"
                                 value={nouvelleLigne.nature}
                                 onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 bg-white"
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${
+                                    ['6', '7'].includes(nouvelleLigne.numeroCompte[0]) 
+                                        ? 'bg-gray-100 cursor-not-allowed border-gray-200' 
+                                        : 'bg-white border-gray-300'
+                                }`}
+                                // Désactivation si le compte est saisi (car la nature est déduite)
                                 disabled={['6', '7'].includes(nouvelleLigne.numeroCompte[0])} 
                             >
                                 <option value="Charge">Charge</option>
@@ -277,7 +334,9 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                         )}
                         <button
                             onClick={ajouterLigne}
-                            className={`${ligneEnModification ? 'bg-blue-600 hover:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-200 flex items-center`}
+                            // Désactiver le bouton d'ajout/sauvegarde si le numéro de compte est en erreur
+                            disabled={errorNumeroCompte} 
+                            className={`${ligneEnModification ? 'bg-blue-600 hover:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-200 flex items-center disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                             <svg className="w-5 h-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                             {ligneEnModification ? 'Sauvegarder la modification' : 'Ajouter cette ligne'}
@@ -318,10 +377,20 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                                             <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-right text-gray-900">{formatMontant(ligne.montant)}</td>
                                             <td className="px-4 py-3 whitespace-nowrap text-center">
                                                 <div className='flex justify-center gap-2'>
-                                                    <button onClick={() => modifierLigne(ligne)} className="text-blue-500 hover:text-blue-700 transition" title="Modifier">
+                                                    <button 
+                                                        onClick={() => modifierLigne(ligne)} 
+                                                        className="text-blue-500 hover:text-blue-700 transition" 
+                                                        title="Modifier"
+                                                        disabled={ligneEnModification !== null} // Désactiver les autres boutons Modifier pendant l'édition
+                                                    >
                                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-9l7 7m-7-7v7h7" /></svg>
                                                     </button>
-                                                    <button onClick={() => supprimerLigne(ligne.id)} className="text-red-500 hover:text-red-700 transition" title="Supprimer">
+                                                    <button 
+                                                        onClick={() => supprimerLigne(ligne.id)} 
+                                                        className="text-red-500 hover:text-red-700 transition" 
+                                                        title="Supprimer"
+                                                        disabled={ligneEnModification !== null} // Désactiver pendant l'édition
+                                                    >
                                                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                                     </button>
                                                 </div>
@@ -329,6 +398,24 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                                         </tr>
                                     ))}
                                 </tbody>
+                                {/* Pied de tableau pour les totaux */}
+                                <tfoot>
+                                    <tr className="bg-gray-100 font-bold border-t-2 border-gray-300">
+                                        <td colSpan="4" className="px-4 py-3 text-right text-sm text-gray-700">TOTAL CHARGES (6xx) :</td>
+                                        <td className="px-4 py-3 text-right text-sm text-red-700">{formatMontant(totalCharges)}</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr className="bg-gray-100 font-bold">
+                                        <td colSpan="4" className="px-4 py-3 text-right text-sm text-gray-700">TOTAL PRODUITS (7xx) :</td>
+                                        <td className="px-4 py-3 text-right text-sm text-green-700">{formatMontant(totalProduits)}</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr className={`font-extrabold border-t-2 border-indigo-400 ${resultatNet >= 0 ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                                        <td colSpan="4" className="px-4 py-3 text-right text-base">RÉSULTAT NET :</td>
+                                        <td className="px-4 py-3 text-right text-base">{formatMontant(resultatNet)}</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
                             </table>
                         </div>
 
@@ -336,11 +423,11 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                         <div className="mt-6 p-6 flex justify-end bg-gray-50 border-t">
                             <button
                                 onClick={enregistrerCompteResultat}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-10 rounded-lg shadow-lg transition duration-200 transform hover:scale-[1.02] flex items-center"
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-10 rounded-lg shadow-lg transition duration-200 transform hover:scale-[1.02] flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                                 disabled={lignes.length === 0}
                             >
                                 <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Valider
+                                Valider  ({lignes.length} lignes)
                             </button>
                         </div>
                     </div>

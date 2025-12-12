@@ -15,17 +15,20 @@ const MAX_FILE_UPLOAD = 5;
 
 // --- Utilitaires ---
 const formatCurrency = (value) => {
+    // Supprime tous les caractères non numériques et non point (pour décimal)
     const numberValue = parseFloat(String(value).replace(/[^0-9.]/g, ''));
     if (isNaN(numberValue)) return '';
+    // Utilise le format de la locale pour la lisibilité
     return numberValue.toLocaleString('fr-MG', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
 const readExcelPreview = async (file) => {
+    // Simulation de lecture basique pour les fichiers CSV uniquement
     return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => {
             const text = e.target.result;
-            const lines = text.split('\n').slice(0, 20);
+            const lines = text.split('\n').slice(0, 20); // Limite aux 20 premières lignes
             resolve(lines);
         };
         reader.readAsText(file);
@@ -37,15 +40,18 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
     const isLoaded = !!file;
     const [excelPreview, setExcelPreview] = useState(null);
     
+    // Crée une URL pour l'objet fichier pour l'affichage
     const fileUrl = useMemo(() => {
         if (file instanceof File || file instanceof Blob) { return URL.createObjectURL(file); }
         return null; 
     }, [file]);
     
+    // Nettoie l'URL à la destruction du composant ou au changement de fichier
     useEffect(() => {
         return () => { if (fileUrl) { URL.revokeObjectURL(fileUrl); } };
     }, [fileUrl]);
 
+    // Génère l'aperçu CSV
     useEffect(() => {
         if (file && file.name.match(/\.csv$/i)) {
             readExcelPreview(file).then(lines => setExcelPreview(lines));
@@ -74,6 +80,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
             return (
                 <div className="w-full bg-white rounded-lg shadow-md p-3 sm:p-4 text-left">
                     <div className="flex items-center mb-3">
+                        {/* Icône Excel/CSV */}
                         <svg className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 mr-2" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18.5,9H13V3.5L18.5,9M8,11H16V13H8V11M8,15H16V17H8V15Z" />
                         </svg>
@@ -112,6 +119,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
             );
         }
         
+        // Fichier générique
         let iconPath = "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z";
         let iconColor = "text-indigo-500";
 
@@ -190,8 +198,9 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
 
 // --- 2. Composant : OcrValidationForm ---
 const OcrValidationForm = ({ 
-    formData, onFormChange, onValider, isDocumentLoaded, isExtracted, onExtractText, onCancelExtraction, documentsCount
+    formData, onFormChange, onValider, isDocumentLoaded, isExtracted, onExtractText, onCancelExtraction, documentsCount, isLotValidatable // AJOUT: isLotValidatable
 }) => {
+    // Calcul de la TVA et du Taux
     const totalTTC = parseFloat(String(formData.montant).replace(/[^0-9.]/g, '')) || 0;
     const totalHT = parseFloat(String(formData.totalHT).replace(/[^0-9.]/g, '')) || 0;
     const totalTVA = totalTTC - totalHT;
@@ -348,9 +357,10 @@ const OcrValidationForm = ({
                 <button 
                     type="submit"
                     onClick={onValider}
-                    disabled={documentsCount === 0 || !isExtracted}
+                    // MODIFIÉ: Utilise la validation du lot
+                    disabled={!isLotValidatable} 
                     className={`w-full sm:w-auto py-2 px-4 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white transition duration-150
-                        ${(documentsCount > 0 && isExtracted) ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-gray-400 cursor-not-allowed'}`
+                        ${isLotValidatable ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-gray-400 cursor-not-allowed'}`
                     }
                 >
                     {documentsCount > 1 ? `Valider le Lot (${documentsCount})` : 'Importer et Valider'}
@@ -367,10 +377,16 @@ export default function ImportFichier() {
     const [isDragActive, setIsDragActive] = useState(false); 
     const [showFormOnMobile, setShowFormOnMobile] = useState(false);
 
+    // Données du document actuellement sélectionné
     const currentDocument = documents[currentIndex];
     const currentFile = currentDocument ? currentDocument.file : null;
     const currentFormData = currentDocument ? currentDocument.data : EMPTY_FORM_DATA;
     const currentIsExtracted = currentDocument ? currentDocument.isExtracted : false;
+
+    // NOUVEAU: Vérifie si TOUS les documents sont extraits pour valider le lot
+    const isLotValidatable = useMemo(() => {
+        return documents.length > 0 && documents.every(doc => doc.isExtracted);
+    }, [documents]);
 
     const updateCurrentDocument = useCallback((updates) => {
         setDocuments(prevDocuments => {
@@ -397,13 +413,15 @@ export default function ImportFichier() {
         if (!currentDocument) return;
         let value = rawValue;
         if (name === 'montant' || name === 'totalHT') {
-             value = String(rawValue).replace(/[^0-9.]/g, ''); 
+             // Nettoie la valeur des séparateurs de milliers pour le stockage interne
+             value = String(rawValue).replace(/[^\d.]/g, ''); 
         }
         updateCurrentDocument({
             data: { ...currentFormData, [name]: value }
         });
     }, [currentDocument, currentFormData, updateCurrentDocument]);
     
+    // Simule l'extraction OCR
     const handleExtractText = useCallback(() => {
         if (!currentFile) return;
         updateCurrentDocument({
@@ -412,6 +430,7 @@ export default function ImportFichier() {
         });
     }, [currentFile, updateCurrentDocument]);
 
+    // Annule l'extraction (réinitialise le formulaire)
     const handleCancelExtraction = useCallback(() => {
         if (!currentFile) return;
         updateCurrentDocument({
@@ -438,6 +457,7 @@ export default function ImportFichier() {
 
         setDocuments(prev => [...prev, ...newDocuments]);
         
+        // Se positionne sur le premier document si la liste était vide
         if (documents.length === 0 && newDocuments.length > 0) {
              setCurrentIndex(0);
         }
@@ -484,15 +504,9 @@ export default function ImportFichier() {
     };
 
     const handleValiderAll = () => {
-        const remainingUnextracted = documents.filter(doc => !doc.isExtracted);
-        
-        if (documents.length === 0) {
-            alert("Veuillez importer au moins un document.");
-            return;
-        }
-
-        if (remainingUnextracted.length > 0) {
-            alert(`Attention : ${remainingUnextracted.length} document(s) non extraits.`);
+        // Double vérification, même si le bouton est déjà désactivé par isLotValidatable
+        if (!isLotValidatable) {
+            alert(`Attention : Veuillez extraire les données de TOUS les documents (${documents.filter(doc => !doc.isExtracted).length} restant) avant de valider le lot.`);
             return;
         }
 
@@ -528,6 +542,7 @@ export default function ImportFichier() {
                     </button>
                 </div>
             )}
+             
 
             {/* Conteneur principal */}
             <div className="flex-grow min-h-0 overflow-hidden">
@@ -588,7 +603,8 @@ export default function ImportFichier() {
                             isExtracted={currentIsExtracted}
                             onExtractText={handleExtractText}
                             onCancelExtraction={handleCancelExtraction}
-                            documentsCount={documents.length} 
+                            documentsCount={documents.length}
+                            isLotValidatable={isLotValidatable} // PROPAGATION
                         />
                     </div>
                 </div>

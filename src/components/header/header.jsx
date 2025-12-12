@@ -1,17 +1,12 @@
-// ============================================
-// Fichier : ./components/header/header.jsx
-// ============================================
-
 import React, { useState } from 'react';
 
 const navItems = [
-    { name: 'Tableau de bord', key: 'dashboard', icon: '📊' },
+    { name: 'Gestion pièces', key: 'gestion-pieces', icon: '📝' },
     { name: 'Import OCR', key: 'import-ocr', icon: '📎' },
     { name: 'Bilan', key: 'gestion-transactions-bilan', icon: '⚖️' },
     { name: 'Compte de Resultat', key: 'gestion-transactions-cr', icon: '📦' },
     { name: 'Gestion salaire', key: 'gestion-salaire', icon: '💲' },
-     { name: 'Gestion pièces', key: 'gestion-pieces', icon: '📝' },
-    
+    { name: 'Tableau de bord', key: 'dashboard', icon: '📊' },
 ];
 
 const Header = ({ currentPage, onNavigate }) => {
@@ -110,4 +105,3 @@ const Header = ({ currentPage, onNavigate }) => {
 };
 
 export default Header;
-

@@ -287,49 +287,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* 2. Actions Rapides (Modern UI) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="group relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm border border-gray-100 hover:shadow-lg hover:border-indigo-100 transition-all duration-300 cursor-pointer">
-          <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-indigo-50 group-hover:bg-indigo-100 transition-all opacity-50 blur-2xl"></div>
-          <div className="relative z-10 flex items-center space-x-4">
-            <div className="p-3 rounded-xl bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300 shadow-sm">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-800 text-base group-hover:text-indigo-700 transition-colors">Import OCR</h3>
-              <p className="text-xs text-gray-500 mt-1">Scanner et importer des factures automatiquement</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="group relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm border border-gray-100 hover:shadow-lg hover:border-emerald-100 transition-all duration-300 cursor-pointer">
-          <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-emerald-50 group-hover:bg-emerald-100 transition-all opacity-50 blur-2xl"></div>
-          <div className="relative z-10 flex items-center space-x-4">
-            <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300 shadow-sm">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-800 text-base group-hover:text-emerald-700 transition-colors">Saisie Facture</h3>
-              <p className="text-xs text-gray-500 mt-1">Créer une nouvelle pièce comptable</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="group relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm border border-gray-100 hover:shadow-lg hover:border-amber-100 transition-all duration-300 cursor-pointer">
-          <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 rounded-full bg-amber-50 group-hover:bg-amber-100 transition-all opacity-50 blur-2xl"></div>
-          <div className="relative z-10 flex items-center space-x-4">
-            <div className="p-3 rounded-xl bg-amber-50 text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition-colors duration-300 shadow-sm">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-800 text-base group-hover:text-amber-700 transition-colors">Bilan & États</h3>
-              <p className="text-xs text-gray-500 mt-1">Visualiser les états financiers et le bilan</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 3. Cartes de Résumé */}
+      {/* 2. Cartes de Résumé */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-6">
         {summaryCards.map((card, index) => (
           <div
@@ -350,13 +308,13 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* 4. Graphique d'Évolution du Chiffre d'Affaires */}
+      {/* 3. Graphique d'Évolution du Chiffre d'Affaires */}
       <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
         <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">Évolution du Chiffre d'Affaires</h3>
         <LineChartCAEvolution />
       </div>
 
-      {/* 5. Top 10 comptes mouvementés + TVA côte à côte */}
+      {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
         <div className="h-full">
           <BarCharts />
@@ -366,7 +324,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* 6. Produits et Charges */}
+      {/* 5. Produits et Charges */}
       <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
           <h3 className="text-base sm:text-lg font-semibold text-gray-800">Répartition Produits et Charges</h3>
@@ -374,7 +332,7 @@ const Dashboard = () => {
         <PieChartRepartition />
       </div>
 
-      {/* 7. Autres Indicateurs */}
+      {/* 6. Autres Indicateurs */}
       <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
           <h3 className="text-base sm:text-lg font-semibold text-gray-800">Autres Indicateurs</h3>
@@ -399,7 +357,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* 8. Répartition par Journal */}
+      {/* 7. Répartition par Journal */}
       <JournalRepartition />
 
       {/* La modale de la Balance */}

@@ -204,10 +204,12 @@ const Dashboard = () => {
       {/* Modale Alertes & Risques */}
       {isAlertesModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
-            <button onClick={() => setIsAlertesModalOpen(false)} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">×</button>
-            <h3 className="text-lg font-semibold mb-4">Alertes & Risques</h3>
-            <p className="text-gray-600 mb-4">Contenu des alertes et risques ici...</p>
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Alertes & Risques</h3>
+              <button onClick={() => setIsAlertesModalOpen(false)} className="text-gray-500 hover:text-gray-700 text-xl">×</button>
+            </div>
+            <p className="text-gray-600">Contenu des alertes et risques ici...</p>
           </div>
         </div>
       )}
@@ -215,10 +217,12 @@ const Dashboard = () => {
       {/* Modale Rentabilité */}
       {isRentabiliteModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full relative">
-            <button onClick={() => setIsRentabiliteModalOpen(false)} className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl">×</button>
-            <h3 className="text-lg font-semibold mb-4">Rentabilité</h3>
-            <p className="text-gray-600 mb-4">Contenu de la rentabilité ici...</p>
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">Rentabilité</h3>
+              <button onClick={() => setIsRentabiliteModalOpen(false)} className="text-gray-500 hover:text-gray-700 text-xl">×</button>
+            </div>
+            <p className="text-gray-600">Contenu de la rentabilité ici...</p>
           </div>
         </div>
       )}

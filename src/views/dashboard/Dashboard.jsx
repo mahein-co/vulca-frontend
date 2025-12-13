@@ -95,8 +95,6 @@ const JournalRepartition = () => {
 
 const Dashboard = () => {
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
-  const [isAlertesModalOpen, setIsAlertesModalOpen] = useState(false);
-  const [isRentabiliteModalOpen, setIsRentabiliteModalOpen] = useState(false);
 
   const handleCardClick = (action) => {
     if (action === 'openBalance') {
@@ -181,13 +179,95 @@ const Dashboard = () => {
           <h3 className="text-base sm:text-lg font-semibold text-gray-800">Autres Indicateurs</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100" onClick={() => setIsAlertesModalOpen(true)}>
-            <h4 className="text-lg font-semibold text-gray-800">Alertes & risques</h4>
-            <p className="text-sm text-gray-600">Cliquez pour voir les alertes et risques</p>
+          <div className="p-0">
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">Alertes & risques</h4>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-left divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th className="px-3 py-2 font-medium text-gray-700">Risque</th>
+                    <th className="px-3 py-2 font-medium text-gray-700">Ratio</th>
+                    <th className="px-3 py-2 font-medium text-gray-700">Seuil</th>
+                    <th className="px-3 py-2 font-medium text-gray-700">État</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  <tr>
+                    <td className="px-3 py-3">Annuité d'emprunt / CAF</td>
+                    <td className="px-3 py-3 font-semibold">0.40</td>
+                    <td className="px-3 py-3">&lt; 0.50</td>
+                    <td className="px-3 py-3 text-red-600 font-semibold">Alerte</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-3">Dette LMT / CAF</td>
+                    <td className="px-3 py-3 font-semibold">3.20</td>
+                    <td className="px-3 py-3">&lt; 3.50</td>
+                    <td className="px-3 py-3 text-red-600 font-semibold">Alerte</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-3">Résultat net / Chiffre d'affaires</td>
+                    <td className="px-3 py-3 font-semibold">-1.2%</td>
+                    <td className="px-3 py-3">(seuil interne)</td>
+                    <td className="px-3 py-3 text-red-600 font-semibold">Alerte</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-3">Charge financière / EBE</td>
+                    <td className="px-3 py-3 font-semibold">35%</td>
+                    <td className="px-3 py-3">&lt; 30%</td>
+                    <td className="px-3 py-3 text-red-600 font-semibold">Alerte</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-3">Charge financière / CA</td>
+                    <td className="px-3 py-3 font-semibold">6%</td>
+                    <td className="px-3 py-3">&lt; 5%</td>
+                    <td className="px-3 py-3 text-red-600 font-semibold">Alerte</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-3">Marge d'endettement (Endettement CMLT / Fonds propres)</td>
+                    <td className="px-3 py-3 font-semibold">1.10</td>
+                    <td className="px-3 py-3">&lt; 1.30</td>
+                    <td className="px-3 py-3 text-red-600 font-semibold">Alerte</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
-          <div className="bg-gray-50 p-4 rounded-lg cursor-pointer hover:bg-gray-100" onClick={() => setIsRentabiliteModalOpen(true)}>
-            <h4 className="text-lg font-semibold text-gray-800">Rentabilité</h4>
-            <p className="text-sm text-gray-600">Cliquez pour voir la rentabilité</p>
+
+          <div className="p-0">
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">Rentabilité</h4>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-left divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th className="px-3 py-2 font-medium text-gray-700">Indicateur</th>
+                    <th className="px-3 py-2 font-medium text-gray-700">Valeur</th>
+                    <th className="px-3 py-2 font-medium text-gray-700">Variation</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  <tr>
+                    <td className="px-3 py-3">Return on Equity (ROE)</td>
+                    <td className="px-3 py-3 font-semibold">12.5%</td>
+                    <td className="px-3 py-3 text-red-600">-1.5%</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-3">Return on Assets (ROA)</td>
+                    <td className="px-3 py-3 font-semibold">8.7%</td>
+                    <td className="px-3 py-3 text-green-600">+0.8%</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-3">Capacité d'autofinancement (CAF)</td>
+                    <td className="px-3 py-3 font-semibold">Ar 1 200 000</td>
+                    <td className="px-3 py-3 text-green-600">+5.2%</td>
+                  </tr>
+                  <tr>
+                    <td className="px-3 py-3">Marge opérationnelle</td>
+                    <td className="px-3 py-3 font-semibold">15.3%</td>
+                    <td className="px-3 py-3 text-green-600">+2.1%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -201,31 +281,9 @@ const Dashboard = () => {
         onClose={() => setIsBalanceModalOpen(false)} 
       />
 
-      {/* Modale Alertes & Risques */}
-      {isAlertesModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Alertes & Risques</h3>
-              <button onClick={() => setIsAlertesModalOpen(false)} className="text-gray-500 hover:text-gray-700 text-xl">×</button>
-            </div>
-            <p className="text-gray-600">Contenu des alertes et risques ici...</p>
-          </div>
-        </div>
-      )}
+      
 
-      {/* Modale Rentabilité */}
-      {isRentabiliteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Rentabilité</h3>
-              <button onClick={() => setIsRentabiliteModalOpen(false)} className="text-gray-500 hover:text-gray-700 text-xl">×</button>
-            </div>
-            <p className="text-gray-600">Contenu de la rentabilité ici...</p>
-          </div>
-        </div>
-      )}
+      
     </div>
   );
 };

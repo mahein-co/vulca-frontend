@@ -1,15 +1,13 @@
 import React, { useState, useMemo } from 'react';
+import { Trash2, X, FileText } from 'lucide-react';
 
-// --- 0. NOUVEAU COMPOSANT : Confirmation Modale (inchangé) ---
+// --- 0. COMPOSANT : Modale de Confirmation ---
 const ConfirmationModal = ({ isOpen, document, onConfirm, onClose }) => {
     if (!isOpen || !document) return null;
 
     return (
-        // Conteneur de la modale (fixed, overlay)
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            
-            {/* Contenu de la Modale */}
-            <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md mx-4 transform transition-all">
+            <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-md mx-4">
                 <h3 className="text-xl font-bold text-red-600 border-b pb-3 mb-4">
                     Confirmation de suppression
                 </h3>
@@ -22,7 +20,6 @@ const ConfirmationModal = ({ isOpen, document, onConfirm, onClose }) => {
                     ⚠️ Cette action entraînera la suppression de toutes les écritures comptables associées à ce fichier.
                 </p>
 
-                {/* Boutons d'action */}
                 <div className="flex justify-end space-x-3">
                     <button 
                         onClick={onClose} 
@@ -42,8 +39,7 @@ const ConfirmationModal = ({ isOpen, document, onConfirm, onClose }) => {
     );
 };
 
-
-// --- 1. DONNÉES ET CONFIGURATION (inchangées) ---
+// --- 1. DONNÉES INITIALES ---
 const PIECES_INITIALES = [
     { id: 1, type: 'Factures', nom: 'facture_achat_santatra.png', detail: 'Facture', date: '2025-11-29', ref: 'FAC-2024-124' },
     { id: 2, type: 'Factures', nom: 'FAC-2024-098889', detail: 'Facture', date: '2025-11-29', ref: 'FA-2024-1876' },
@@ -72,7 +68,7 @@ const CATEGORIES = [
     { key: 'Autres', label: 'Autres', color: 'border-yellow-500', badge: 'bg-orange-500', bgCard: 'bg-orange-50' },
 ];
 
-// --- 2. SOUS-COMPOSANT : Carte de Pièce (inchangé) ---
+// --- 2. COMPOSANT : Carte de Document ---
 const DocumentCard = ({ piece, onClick, onDelete, categoryConfig }) => {
     const borderColor = categoryConfig.color;
     const cardBgColor = categoryConfig.bgCard; 
@@ -88,11 +84,8 @@ const DocumentCard = ({ piece, onClick, onDelete, categoryConfig }) => {
             onClick={() => onClick(piece)}
         >
             <div className="flex items-start space-x-2">
-                
                 <span className="text-sm pt-0.5 text-blue-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                    <FileText size={16} />
                 </span>
                 
                 <div className="flex-grow">
@@ -105,9 +98,7 @@ const DocumentCard = ({ piece, onClick, onDelete, categoryConfig }) => {
                     className="absolute top-2 right-2 text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-100 transition duration-150 focus:outline-none"
                     aria-label={`Supprimer ${piece.nom}`}
                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
+                    <Trash2 size={16} />
                 </button>
             </div>
             
@@ -119,18 +110,14 @@ const DocumentCard = ({ piece, onClick, onDelete, categoryConfig }) => {
     );
 };
 
-
-// --- 3. COMPOSANT PRINCIPAL : GestionPiecesBoard ---
+// --- 3. COMPOSANT PRINCIPAL ---
 export default function GestionPiecesBoard() {
     const [documents, setDocuments] = useState(PIECES_INITIALES);
     const [recherche, setRecherche] = useState('');
-    
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [documentToDelete, setDocumentToDelete] = useState(null);
-
     const [dateDebut, setDateDebut] = useState('2024-12-10'); 
     const [dateFin, setDateFin] = useState('2025-10-25'); 
-    const periodeLabel = '11 déc. 2024 - 10 déc. 2025'; 
 
     const handleDocumentClick = (piece) => {
         console.log(`Ouverture du document pour traitement : ${piece.nom}`);
@@ -168,54 +155,44 @@ export default function GestionPiecesBoard() {
         }, {});
     }, [documents, recherche]);
 
-
-    // --- Rendu avec Tailwind CSS ---
     return (
         <div className="pt-20 pb-6 h-screen bg-gray-50 overflow-hidden flex flex-col"> 
             
             <div className="px-6 space-y-4 flex-shrink-0">
                 
-                {/* 1. SECTION PÉRIODE D'EXERCICE (Mise à jour pour le Responsive) */}
-                <div className="bg-white p-4 rounded-xl shadow-lg border border-gray-100"> 
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-sm">
-                        
-                        <div className="flex flex-col flex-shrink-0 mb-3 sm:mb-0">
-                            <span className="text-base font-semibold text-gray-900 whitespace-nowrap"> 
-                                Période d'exercice
-                            </span>
-                            <span className="text-gray-500 text-xs mt-0.5">
-                                Sélectionnez la période à analyser
-                            </span>
+                {/* 1. PÉRIODE D'EXERCICE - Style Dashboard */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow-sm">
+                    <div className="mb-3 sm:mb-0">
+                        <p className="font-medium text-gray-700">Période d'exercice</p>
+                        <p className="text-xs text-gray-500">Sélectionnez la période à analyser</p>
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2 sm:space-x-4 items-center text-sm">
+                        <div className="flex items-center space-x-2">
+                            <label className="text-gray-500 text-xs sm:text-sm">Du</label>
+                            <input 
+                                type="date" 
+                                value={dateDebut} 
+                                className="p-1 sm:p-2 border rounded-lg text-xs sm:text-sm" 
+                                onChange={(e) => setDateDebut(e.target.value)}
+                            />
                         </div>
-
-                        {/* Les sélecteurs s'enveloppent sur mobile (flex-wrap) */}
-                        <div className="flex flex-wrap gap-2 sm:space-x-4 items-center text-sm">
-                            <div className="flex items-center space-x-2">
-                                <label className="text-gray-500 text-xs sm:text-sm">Du</label>
-                                <input 
-                                    type="date" 
-                                    defaultValue={dateDebut} 
-                                    className="p-1 sm:p-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto" 
-                                    onChange={(e) => setDateDebut(e.target.value)}
-                                />
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <label className="text-gray-500 text-xs sm:text-sm">Au</label>
-                                <input 
-                                    type="date" 
-                                    defaultValue={dateFin} 
-                                    className="p-1 sm:p-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-auto" 
-                                    onChange={(e) => setDateFin(e.target.value)}
-                                />
-                            </div>
-                            <button className="bg-gray-100 text-gray-700 px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-200 border border-gray-300 w-full sm:w-auto mt-2 sm:mt-0">
-                                {periodeLabel}
-                            </button>
+                        <div className="flex items-center space-x-2">
+                            <label className="text-gray-500 text-xs sm:text-sm">Au</label>
+                            <input 
+                                type="date" 
+                                value={dateFin} 
+                                className="p-1 sm:p-2 border rounded-lg text-xs sm:text-sm" 
+                                onChange={(e) => setDateFin(e.target.value)}
+                            />
                         </div>
+                        <button className="bg-gray-100 text-gray-700 px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm hover:bg-gray-200">
+                            11 déc. 2024 - 10 déc. 2025
+                        </button>
                     </div>
                 </div>
 
-                {/* 2. BARRE DE RECHERCHE (inchangée, déjà bien adaptée) */}
+                {/* 2. BARRE DE RECHERCHE */}
                 <div className="bg-white p-2 rounded-xl shadow-lg border border-gray-100"> 
                     <div className="flex items-center space-x-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 ml-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -232,13 +209,9 @@ export default function GestionPiecesBoard() {
                 </div>
             </div>
 
-            {/* 3. ZONE DE COLONNES (Workflow) - ADAPTATION CRITIQUE */}
+            {/* 3. ZONE DE COLONNES (Workflow) */}
             <div className="flex-1 overflow-hidden px-6 pt-4"> 
-                
-                {/* 🛑 CLÉS DU RESPONSIVE ICI 🛑 */}
-                <div 
-                    className="flex flex-col space-x-0 space-y-4 lg:flex-row lg:space-x-6 lg:space-y-0 items-stretch h-full overflow-y-auto lg:overflow-x-auto pb-4"
-                > 
+                <div className="flex flex-col space-x-0 space-y-4 lg:flex-row lg:space-x-6 lg:space-y-0 items-stretch h-full overflow-y-auto lg:overflow-x-auto pb-4"> 
                     {CATEGORIES.map((category) => {
                         const pieces = groupedDocuments[category.key] || [];
                         const piecesCount = pieces.length;
@@ -246,11 +219,8 @@ export default function GestionPiecesBoard() {
                         return (
                             <div 
                                 key={category.key} 
-                                // Mobile (défaut): w-full, h-auto. Desktop (lg): flex-1, min-w-[280px], h-full.
                                 className="flex-shrink-0 w-full lg:flex-1 lg:min-w-[280px] bg-gray-50 rounded-xl shadow-lg p-4 flex flex-col h-auto lg:h-full border border-gray-200"
                             >
-                                
-                                {/* En-tête de la Colonne (inchangé) */}
                                 <div className={`flex items-center justify-between pb-3 mb-3 border-b border-gray-200 flex-shrink-0`}>
                                     <h3 className="text-base font-semibold text-gray-800">{category.label}</h3>
                                     <span className={`text-xs font-bold text-white px-3 py-0.5 rounded-full ${category.badge}`}>
@@ -258,8 +228,6 @@ export default function GestionPiecesBoard() {
                                     </span>
                                 </div>
 
-                                {/* Corps de la Colonne : Défilement Vertical */}
-                                {/* Sur mobile, la colonne entière s'étire verticalement, donc pas de scroll forcé dans cette div. */}
                                 <div className="flex-grow overflow-y-auto pr-1"> 
                                     {piecesCount > 0 ? (
                                         pieces.map(piece => (
@@ -283,7 +251,7 @@ export default function GestionPiecesBoard() {
                 </div>
             </div>
 
-            {/* MODALE AFFICHÉE ICI (inchangée) */}
+            {/* MODALE */}
             <ConfirmationModal
                 isOpen={isModalOpen}
                 document={documentToDelete}

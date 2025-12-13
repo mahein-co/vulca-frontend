@@ -241,7 +241,7 @@ const TransactionView = () => {
         ['Capitaux Propres', calculations.capitauxPropres, null, false, Users, 'Fonds propres '],
         ['Passif Courant', calculations.passifCourant, null, false, Briefcase, 'Dettes à court terme'],
         ['Passif Non Courant', calculations.passifNonCourant, null, false, Briefcase, 'Dettes à long terme'],
-        ['Résultat Net', calculations.resultatNet, calculations.resultatNetChange, false, TrendingUp, ''],
+        ['Résultat Net', calculations.resultatNet, calculations.resultatNetChange, false, TrendingUp, 'benefice,perte'],
         ['Ratio Endettement', calculations.endettementRatio, calculations.endettementChange, true, FileText, 'Dettes/CP']
     ];
 

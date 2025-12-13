@@ -1,103 +1,107 @@
-/*import "@fontsource/roboto";
-import React from "react";
-import { BrowserRouter } from "react-router-dom";
-import Routes from "./Routes";
-import { Toaster } from "react-hot-toast";
+    /*import "@fontsource/roboto";
+    import React from "react";
+    import { BrowserRouter } from "react-router-dom";
+    import Routes from "./Routes";
+    import { Toaster } from "react-hot-toast";
 
-function App() {
-  return (
-    <React.Fragment>
-      <BrowserRouter>
-        <Routes />
-        <Toaster
-          position="top-right"
-          reverseOrder={false}
-          toastOptions={{
-            style: {
-              duration: 5000,
-              fontSize: "0.85rem",
-              borderRadius: "8px",
-              padding: "12px 16px",
-              background: "#fff",
-            },
-            success: {
-              style: {
-                color: "#1f2937",
-              },
-            },
-            error: {
-              duration: 6000,
-              style: {
-                color: "#1f2937",
-              },
-            },
-          }}
-        />
-      </BrowserRouter>
-    </React.Fragment>
-  );
-}
+    function App() {
+    return (
+        <React.Fragment>
+        <BrowserRouter>
+            <Routes />
+            <Toaster
+            position="top-right"
+            reverseOrder={false}
+            toastOptions={{
+                style: {
+                duration: 5000,
+                fontSize: "0.85rem",
+                borderRadius: "8px",
+                padding: "12px 16px",
+                background: "#fff",
+                },
+                success: {
+                style: {
+                    color: "#1f2937",
+                },
+                },
+                error: {
+                duration: 6000,
+                style: {
+                    color: "#1f2937",
+                },
+                },
+            }}
+            />
+        </BrowserRouter>
+        </React.Fragment>
+    );
+    }
 
-export default App;
-*/
-/*import "@fontsource/roboto";
-import React from "react";
-import { BrowserRouter } from "react-router-dom";
-import Routes from "./Routes";
-import { Toaster } from "react-hot-toast";
+    export default App;
+    */
+    /*import "@fontsource/roboto";
+    import React from "react";
+    import { BrowserRouter } from "react-router-dom";
+    import Routes from "./Routes";
+    import { Toaster } from "react-hot-toast";
 
-function App() {
-  return (
-    <React.Fragment>
-      <BrowserRouter>
-        <Routes />
-        <Toaster
-          position="top-right"
-          reverseOrder={false}
-          toastOptions={{
-            style: {
-              duration: 5000,
-              fontSize: "0.85rem",
-              borderRadius: "8px",
-              padding: "12px 16px",
-              background: "#fff",
-            },
-            success: {
-              style: {
-                color: "#1f2937",
-              },
-            },
-            error: {
-              duration: 6000,
-              style: {
-                color: "#1f2937",
-              },
-            },
-          }}
-        />
-      </BrowserRouter>
-    </React.Fragment>
-  );
-}
+    function App() {
+    return (
+        <React.Fragment>
+        <BrowserRouter>
+            <Routes />
+            <Toaster
+            position="top-right"
+            reverseOrder={false}
+            toastOptions={{
+                style: {
+                duration: 5000,
+                fontSize: "0.85rem",
+                borderRadius: "8px",
+                padding: "12px 16px",
+                background: "#fff",
+                },
+                success: {
+                style: {
+                    color: "#1f2937",
+                },
+                },
+                error: {
+                duration: 6000,
+                style: {
+                    color: "#1f2937",
+                },
+                },
+            }}
+            />
+        </BrowserRouter>
+        </React.Fragment>
+    );
+    }
 
-export default App;
-*/
+    export default App;
+    */
 
-// Fichier : App.js
+    // Fichier : App.js
+
+    // Fichier : App.js
 
 import React, { useState } from 'react';
-// Import pour la gestion des notifications (issu de la version 'prod')
 import { Toaster } from "react-hot-toast"; 
 
-// --- Imports de vos composants de pages/vues ---
+// --- Imports des composants ---
 import Header from './components/header/header';
 import Dashboard from './views/dashboard/Dashboard';
 import TransactionView from './views/finance/TransactionView';
-import CompteResultatForm from './views/ocr/forms/CompteResultatFormulaire'; 
 import GestionPiecesBoard from './views/piece/GestionPiecesBoard';
 import ImportFichier from './views/ocr/pages/ImportFichier';
+import IndexAddByFormsPage from './views/ocr/pages/IndexAddByFormsPage'; 
 
-const NewInvoiceForm = ImportFichier; 
+// 🎯 NOUVEL IMPORT : Le formulaire de Bilan
+import BilanForm from './views/ocr/forms/BilanForm'; // <--- ASSUREZ-VOUS QUE LE CHEMIN EST CORRECT
+import CompteResultatForm from './views/ocr/forms/CompteResultatFormulaire'; // Si vous l'avez
+import FactureForm from './views/ocr/forms/FactureForm'; // Si vous l'avez
 
 // Composant Simple de Modale (Overlay) 
 const SaisieModal = ({ children, onClose }) => (
@@ -114,7 +118,10 @@ const SaisieModal = ({ children, onClose }) => (
             >
                 <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            {children}
+            
+            <div className="p-4 sm:p-6 md:p-8 h-full"> 
+                {children}
+            </div>
         </div>
     </div>
 );
@@ -135,19 +142,66 @@ function App() {
     const closeSaisieModal = () => {
         setIsSaisieModalOpen(false);
         setFormTypeToOpen(null); 
+        // 🛑 Retourne au dashboard si on était sur l'onglet 'saisie-manuelle'
+        if (currentPage === 'saisie-manuelle') {
+            setCurrentPage('dashboard'); 
+        }
+    };
+    const handleGoBackToSaisieMenu = () => {
+        // Ramène l'état du contenu de la modale à l'écran du menu de saisie
+        setFormTypeToOpen('SaisieMenu');
+    };
+
+    // 🎯 FONCTION CRÉÉE ET PASSÉE AU HEADER
+    const openSaisieMenuFromHeader = () => {
+        openSaisieModal('SaisieMenu'); // Ouvre la modale avec le menu de sélection
     };
     // ------------------------------------------
 
     const navigate = (page) => {
         setCurrentPage(page);
-        closeSaisieModal(); 
+        // Ferme la modale sauf si on clique à nouveau sur 'saisie-manuelle'
+        if (page !== 'saisie-manuelle') {
+            closeSaisieModal(); 
+        }
     };
-
+    
+    const renderModalForm = () => {
+        switch (formTypeToOpen) {
+            case 'bilan':
+                // 🎯 CHANGEMENT ICI : Intégration de BilanForm avec les callbacks
+                return (
+                    <BilanForm 
+                        onSaisieCompleted={handleGoBackToSaisieMenu}
+                        onSaveComplete={closeSaisieModal}
+                    />
+                );
+            case 'compteResultat':
+                return <CompteResultatForm 
+                    onSaisieCompleted={handleGoBackToSaisieMenu} 
+                    onSaveComplete={closeSaisieModal}
+                    />;
+            case 'facture':
+                return <FactureForm 
+                            onSaisieCompleted={handleGoBackToSaisieMenu} 
+                            onSaveComplete={closeSaisieModal} 
+                        />; 
+            case 'achat':
+                return <h2 className="text-2xl p-8">Formulaire Saisie Bon d'Achat (TODO)</h2>; 
+            case 'banque':
+                return <h2 className="text-2xl p-8">Formulaire Saisie Relevé Bancaire (TODO)</h2>; 
+            case 'ficheDePaie':
+                return <h2 className="text-2xl p-8">Formulaire Saisie Fiche de Paie (TODO)</h2>;
+            case 'SaisieMenu':
+            default:
+                // Passe openSaisieModal pour que le menu puisse changer le contenu de la modale
+                return <IndexAddByFormsPage onOpenForm={openSaisieModal} />; 
+        }
+    };
+    
     const renderPage = () => {
-        // Wrapper par défaut avec padding (utilisé pour toutes les pages SAUF celles qui doivent être pleine largeur/hauteur)
+        // Wrapper par défaut avec padding pour les vues internes qui ne gèrent pas le Header fixe
         const ContentWrapper = ({ children }) => (
-            // On utilise un padding supérieur pour laisser de la place au Header fixe s'il y en a un
-            // J'ajoute pt-16 ici pour laisser de la place au Header si le contenu n'a pas été conçu pour le prendre en compte.
             <div className="pt-20 p-6 max-w-full mx-auto">{children}</div>
         );
         
@@ -156,95 +210,57 @@ function App() {
                 return <ContentWrapper><Dashboard /></ContentWrapper>;
                 
             case 'gestion-pieces':
-                // 🛑 CORRECTION ICI : Ne pas utiliser de ContentWrapper pour enlever le padding
-                // Le composant GestionPiecesBoard doit gérer son propre espace interne.
-                return <GestionPiecesBoard />; 
+                // Utilise pt-16 pour libérer la place du Header
+                return <div className="pt-0"><GestionPiecesBoard /></div>; 
                 
             case 'import-ocr':
-                // L'importation OCR est déjà gérée pour être pleine largeur/hauteur
                 return <ImportFichier type="OCR" isFullScreen={true} onSaisieCompleted={() => navigate('gestion-pieces')} />;
                 
+            case 'saisie-manuelle':
+                // 🛑 Affiche le Dashboard en arrière-plan lorsque la modale est ouverte
+                return <ContentWrapper><Dashboard /></ContentWrapper>; 
+                
             case 'gestion-salaire':
-                return <ContentWrapper><h2 className="text-2xl">Module Gestion Salaires</h2></ContentWrapper>; 
+                return <ContentWrapper><h2 className="text-2xl">Module Gestion Salaires (TODO)</h2></ContentWrapper>; 
             
             case 'gestion-transactions-bilan':
             case 'gestion-transactions-cr':
-                // Note : Vous devrez peut-être ajuster TransactionView pour qu'il gère le pt-16 s'il est utilisé en plein écran
-                return <ContentWrapper><TransactionView onNewSaisieClick={() => openSaisieModal('SaisieMenu')} viewType={currentPage} /></ContentWrapper>; 
-            
+                // Passer la fonction au composant TransactionView pour qu'il puisse ouvrir la modale si besoin
+                return <ContentWrapper><TransactionView onNewSaisieClick={openSaisieMenuFromHeader} viewType={currentPage} /></ContentWrapper>; 
+                
             default:
                 return <ContentWrapper><Dashboard /></ContentWrapper>;
         }
     };
     
-    // --- Fonction pour déterminer le formulaire à rendre dans la modale ---
-    const renderFormInModal = () => {
-        const onFormCompleted = closeSaisieModal; 
-
-        switch (formTypeToOpen) {
-            case 'CompteResultat':
-                return <CompteResultatForm onSaisieCompleted={onFormCompleted} />;
-            case 'Vente':
-                return <NewInvoiceForm type="Vente" onSaisieCompleted={onFormCompleted} />;
-            case 'Achat':
-                return <NewInvoiceForm type="Achat" onSaisieCompleted={onFormCompleted} />;
-
-            case 'SaisieMenu':
-                return (
-                    <div className="p-8 h-full flex flex-col justify-center items-center">
-                        <h2 className="text-3xl font-serif font-bold italic mb-10 text-gray-800">Sélectionnez le type de saisie</h2>
-                        <div className="space-y-4 w-full max-w-md">
-                            <button className="w-full p-4 bg-indigo-600 text-white rounded-lg shadow-md hover:bg-indigo-700 transition flex items-center justify-center text-lg" onClick={() => openSaisieModal('Vente')}>📝 Facture de Vente</button>
-                            <button className="w-full p-4 bg-gray-700 text-white rounded-lg shadow-md hover:bg-gray-800 transition flex items-center justify-center text-lg" onClick={() => openSaisieModal('Achat')}>📝 Facture d'Achat</button>
-                            <button className="w-full p-4 bg-amber-600 text-white rounded-lg shadow-md hover:bg-amber-700 transition flex items-center justify-center text-lg" onClick={() => openSaisieModal('CompteResultat')}>📝 Ligne de Compte de Résultat</button>
-                        </div>
-                    </div>
-                );
-
-            default:
-                return <div>Sélectionnez un formulaire.</div>;
-        }
-    };
-    
-    // Le Toaster a été intégré dans le JSX final
     return (
         <div className="min-h-screen bg-gray-50">
+            {/* CORRECTION : Passer la fonction openSaisieMenuFromHeader au Header */}
             <Header 
                 currentPage={currentPage} 
                 onNavigate={navigate} 
+                onOpenSaisieMenu={openSaisieMenuFromHeader} // <--- C'est ici que ça se joue
             />
             
-            {/* L'utilisation de pt-0 ici est nécessaire pour annuler tout padding par défaut du main */}
             <main className="pt-0 min-h-screen"> 
                 {renderPage()}
             </main>
 
-            {/* Affichage Conditionnel de la Modale */}
-            {isSaisieModalOpen && formTypeToOpen && ( 
+            {/* Affiche la modale si l'état le permet */}
+            {isSaisieModalOpen && (
                 <SaisieModal onClose={closeSaisieModal}>
-                    {renderFormInModal()} 
+                    {renderModalForm()} 
                 </SaisieModal>
             )}
 
-            {/* 📢 Toaster intégré pour les notifications (issu de la version 'prod') */}
+            {/* ... Toaster ... */}
             <Toaster
                 position="top-right"
                 reverseOrder={false}
                 toastOptions={{
-                    style: {
-                        duration: 5000,
-                        fontSize: "0.85rem",
-                        borderRadius: "8px",
-                        padding: "12px 16px",
-                        background: "#fff",
-                    },
-                    success: {
-                        style: { color: "#1f2937" },
-                    },
-                    error: {
-                        duration: 6000,
-                        style: { color: "#1f2937" },
-                    },
+                    style: { duration: 5000, fontSize: "0.85rem", borderRadius: "8px", padding: "12px 16px", background: "#fff" },
+                    success: { style: { color: "#1f2937" } },
+                    error: { duration: 6000, style: { color: "#1f2937" } },
                 }}
             />
         </div>

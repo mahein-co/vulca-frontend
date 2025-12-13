@@ -1,301 +1,564 @@
-import { useState } from 'react';
-import BackToFormsPage from "../../../components/button/BackToFormsPage";
-import { BASE_URL_API } from '../../../constants/globalConstants';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 
-export default function BilanForm() {
-  const [lignes, setLignes] = useState([]);
-  const [nouvelleLigne, setNouvelleLigne] = useState({
-    numeroCompte: '',
-    libelle: '',
-    montant: '',
-    date: '',
-    type: 'Actif',
-    categorie: 'Actif non courants'
-  });
-  const [ligneEnModification, setLigneEnModification] = useState(null);
-  const [erreurNumeroCompte, setErreurNumeroCompte] = useState('');
+const BASE_URL_API = 'http://api.exemple.com';
 
-  const categoriesActif = ['Actif non courants', 'Actif courants'];
-  const categoriesPassif = ['Capitaux propres', 'Passifs non courants', 'Passifs courants'];
+const BackToFormsPage = ({ onClick }) => (
+    <button
+        onClick={onClick}
+        className="text-indigo-500 hover:text-indigo-700 text-xs font-medium flex items-center transition duration-150"
+        title="Retour au menu de saisie"
+    >
+        <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+        Retour
+    </button>
+);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+const PCG_MAPPING = {
+    '10': { 'libelle': 'Capital social', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
+    '11': { 'libelle': 'Réserves', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
+    '12': { 'libelle': 'Report à nouveau / Résultat', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
+    '13': { 'libelle': 'Subventions', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
+    '15': { 'libelle': 'Provisions LT', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
+    '16': { 'libelle': 'Emprunts long terme', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
+    '17': { 'libelle': 'Dettes financières LT', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
+    '18': { 'libelle': 'Ecarts de réévaluation', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
+    '20': { 'libelle': 'Immobilisations incorporelles', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
+    '21': { 'libelle': 'Immobilisations corporelles', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
+    '22': { 'libelle': 'Immobilisations financières', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
+    '28': { 'libelle': 'Amortissements', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
+    '29': { 'libelle': 'Provisions pour dépréciation', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
+    '30': { 'libelle': 'Stocks de matières premières', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '31': { 'libelle': 'Stocks de produits en cours', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '32': { 'libelle': 'Stocks de produits finis', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '35': { 'libelle': 'Stocks de marchandises', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '37': { 'libelle': 'Stocks en consignation', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '39': { 'libelle': 'Provisions pour dépréciation stocks', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '40': { 'libelle': 'Fournisseurs', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '41': { 'libelle': 'Clients', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '42': { 'libelle': 'Dettes fiscales', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '43': { 'libelle': 'Dettes sociales', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '44': { 'libelle': 'TVA générale', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '4456': { 'libelle': 'TVA déductible', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '4457': { 'libelle': 'TVA collectée', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '45': { 'libelle': 'Associés - Comptes courants', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '46': { 'libelle': 'Dettes diverses', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
+    '47': { 'libelle': 'Dettes diverses', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
+    '48': { 'libelle': 'Dettes diverses', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
+    '50': { 'libelle': 'Capital souscrit non appelé', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '51': { 'libelle': 'Banque', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '52': { 'libelle': 'Banque', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '53': { 'libelle': 'Caisse', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '57': { 'libelle': 'Disponibilités', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+};
 
-    if (name === 'numeroCompte') {
-      // ✅ Bloquer tout sauf valeurs commençant par 1-5
-      if (value === '' || ['1','2','3','4','5'].includes(value[0])) {
-        setNouvelleLigne(prev => ({ ...prev, [name]: value }));
-        setErreurNumeroCompte('');
-      } else {
-        setErreurNumeroCompte('⚠️ Le numéro doit commencer par 1,2,3,4 ou 5');
-        return;
-      }
-    } else if (name === 'type') {
-      setNouvelleLigne(prev => ({
-        ...prev,
-        [name]: value,
-        categorie: value === 'Actif' ? 'Actif non courants' : 'Capitaux propres'
-      }));
-    } else {
-      setNouvelleLigne(prev => ({ ...prev, [name]: value }));
-    }
-  };
+const categoriesActif = ['Actif non courants', 'Actif courants'];
+const categoriesPassif = ['Capitaux propres', 'Passifs non courants', 'Passifs courants'];
 
-  const ajouterLigne = () => {
-    if (!nouvelleLigne.numeroCompte || !nouvelleLigne.libelle || !nouvelleLigne.montant || !nouvelleLigne.date) {
-      alert('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
+const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
-    if (erreurNumeroCompte) {
-      alert('Numéro de compte invalide');
-      return;
-    }
+export default function BilanForm({ onSaisieCompleted }) {
 
-    if (ligneEnModification) {
-      setLignes(lignes.map(ligne =>
-        ligne.id === ligneEnModification
-          ? { ...nouvelleLigne, id: ligneEnModification, montant: parseFloat(nouvelleLigne.montant) }
-          : ligne
-      ));
-      setLigneEnModification(null);
-    } else {
-      setLignes([...lignes, { ...nouvelleLigne, id: Date.now(), montant: parseFloat(nouvelleLigne.montant) }]);
-    }
-
-    setNouvelleLigne({
-      numeroCompte: '',
-      libelle: '',
-      montant: '',
-      date: nouvelleLigne.date,
-      type: 'Actif',
-      categorie: 'Actif non courants'
+    const [lignes, setLignes] = useState([]);
+    const [nouvelleLigne, setNouvelleLigne] = useState({
+        numeroCompte: '',
+        libelle: '',
+        montant: '',
+        date: getTodayDate(),
+        type: 'Actif',
+        categorie: 'Actif non courants'
     });
-    setErreurNumeroCompte('');
-  };
+    const [ligneEnModification, setLigneEnModification] = useState(null);
+    const [erreurNumeroCompte, setErreurNumeroCompte] = useState(false);
 
-  const modifierLigne = (ligne) => {
-    setNouvelleLigne({ ...ligne, montant: ligne.montant.toString() });
-    setLigneEnModification(ligne.id);
-    setErreurNumeroCompte('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    useEffect(() => {
+        if (!nouvelleLigne.date) {
+            setNouvelleLigne(prev => ({ ...prev, date: getTodayDate() }));
+        }
+    }, []);
 
-  const annulerModification = () => {
-    setLigneEnModification(null);
-    setNouvelleLigne({
-      numeroCompte: '',
-      libelle: '',
-      montant: '',
-      date: '',
-      type: 'Actif',
-      categorie: 'Actif non courants'
-    });
-    setErreurNumeroCompte('');
-  };
+    const formatMontant = useCallback((montant) => {
+        if (typeof montant === 'string') {
+            montant = parseFloat(montant.replace(/,/g, '.'));
+        }
+        if (isNaN(montant)) return '0,00';
+        return montant.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }, []);
 
-  const supprimerLigne = (id) => setLignes(lignes.filter(ligne => ligne.id !== id));
+    const formatDate = useCallback((dateString) => {
+        if (!dateString) return '';
+        try {
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        } catch (e) {
+            return dateString;
+        }
+    }, []);
 
-  const enregistrerBilan = async () => {
-    if (lignes.length === 0) {
-      alert("Ajoutez au moins une ligne avant d'enregistrer");
-      return;
+    const resetNouvelleLigne = useCallback((keepDate = false) => {
+        setNouvelleLigne(prev => ({
+            numeroCompte: '',
+            libelle: '',
+            montant: '',
+            date: keepDate ? prev.date : getTodayDate(),
+            type: 'Actif',
+            categorie: 'Actif non courants'
+        }));
+        setLigneEnModification(null);
+        setErreurNumeroCompte(false);
+    }, []);
+
+    const handleChange = useCallback((e) => {
+        const { name, value } = e.target;
+        let newValue = value;
+        let newType = nouvelleLigne.type;
+        let newCategorie = nouvelleLigne.categorie;
+        let newLibelle = nouvelleLigne.libelle;
+        let newErreurNumeroCompte = false;
+
+        if (name === 'numeroCompte') {
+            newValue = value.replace(/\D/g, '').substring(0, 5);
+
+            if (newValue.length > 0) {
+                const firstChar = newValue[0];
+
+                if (!['1', '2', '3', '4', '5'].includes(firstChar)) {
+                    newErreurNumeroCompte = true;
+                    newType = 'Actif';
+                    newCategorie = 'Actif non courants';
+                    newLibelle = '';
+                } else {
+                    let infoCompte = null;
+                    if (newValue.length >= 4 && PCG_MAPPING[newValue.substring(0, 4)]) {
+                        infoCompte = PCG_MAPPING[newValue.substring(0, 4)];
+                    } else if (newValue.length >= 3 && PCG_MAPPING[newValue.substring(0, 3)]) {
+                        infoCompte = PCG_MAPPING[newValue.substring(0, 3)];
+                    } else if (newValue.length >= 2 && PCG_MAPPING[newValue.substring(0, 2)]) {
+                        infoCompte = PCG_MAPPING[newValue.substring(0, 2)];
+                    }
+
+                    if (infoCompte) {
+                        newLibelle = infoCompte.libelle;
+                        newType = infoCompte.type_bilan;
+                        newCategorie = infoCompte.categorie;
+                        newErreurNumeroCompte = false;
+                    } else {
+                        newLibelle = '';
+                        if (firstChar === '1') {
+                            newType = 'Passif';
+                            newCategorie = 'Capitaux propres';
+                        } else if (firstChar === '2') {
+                            newType = 'Actif';
+                            newCategorie = 'Actif non courants';
+                        } else {
+                            newType = ['3', '5'].includes(firstChar) ? 'Actif' : 'Passif';
+                            newCategorie = newType === 'Actif' ? 'Actif courants' : 'Passifs courants';
+                        }
+                    }
+                }
+            } else {
+                newType = 'Actif';
+                newCategorie = 'Actif non courants';
+                newLibelle = '';
+            }
+
+            setErreurNumeroCompte(newErreurNumeroCompte);
+            setNouvelleLigne(prev => ({
+                ...prev,
+                [name]: newValue,
+                libelle: newLibelle,
+                type: newType,
+                categorie: newCategorie
+            }));
+
+        } else if (name === 'montant') {
+            newValue = value.replace(/[^0-9.]/g, '');
+            const parts = newValue.split('.');
+            if (parts.length > 2) {
+                newValue = parts[0] + '.' + parts.slice(1).join('');
+            }
+            setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
+
+        } else if (name === 'type') {
+            setNouvelleLigne(prev => ({
+                ...prev,
+                [name]: value,
+                categorie: value === 'Actif' ? 'Actif non courants' : 'Capitaux propres'
+            }));
+        } else {
+            setNouvelleLigne(prev => ({ ...prev, [name]: value }));
+        }
+    }, [nouvelleLigne]);
+
+    const validateAndGetMontant = () => {
+        if (!nouvelleLigne.numeroCompte || !nouvelleLigne.libelle || !nouvelleLigne.montant || !nouvelleLigne.date) {
+            alert('Veuillez remplir tous les champs obligatoires.');
+            return null;
+        }
+        const montantValue = parseFloat(nouvelleLigne.montant);
+        if (isNaN(montantValue) || montantValue <= 0) {
+            alert('Le montant doit être un nombre positif valide.');
+            return null;
+        }
+        if (erreurNumeroCompte || !['1', '2', '3', '4', '5'].includes(nouvelleLigne.numeroCompte[0])) {
+            alert('Numéro de compte invalide. Doit commencer par 1, 2, 3, 4 ou 5.');
+            return null;
+        }
+        return montantValue;
     }
 
-    const typeMapping = {
-      "Actif": "ACTIF",
-      "Passif": "PASSIF"
+    const ajouterLigne = () => {
+        if (ligneEnModification) {
+            sauvegarderModification();
+            return;
+        }
+        const montantValue = validateAndGetMontant();
+        if (montantValue === null) return;
+
+        const ligne = {
+            ...nouvelleLigne,
+            id: Date.now(),
+            montant: montantValue
+        };
+        setLignes([...lignes, ligne]);
+        resetNouvelleLigne(true);
     };
 
-    const categorieMapping = {
-      "Actif courants": "ACTIF_COURANTS",
-      "Actif non courants": "ACTIF_NON_COURANTS",
-      "Capitaux propres": "CAPITAUX_PROPRES",
-      "Passifs non courants": "PASSIFS_NON_COURANTS",
-      "Passifs courants": "PASSIFS_COURANTS"
+    const modifierLigne = (ligne) => {
+        setLigneEnModification(ligne.id);
+        setNouvelleLigne({
+            numeroCompte: ligne.numeroCompte,
+            libelle: ligne.libelle,
+            montant: ligne.montant.toString(),
+            type: ligne.type,
+            categorie: ligne.categorie,
+            date: ligne.date
+        });
+        setErreurNumeroCompte(false);
     };
 
-    try {
-      for (let i = 0; i < lignes.length; i++) {
-        const element = lignes[i];
+    const sauvegarderModification = () => {
+        const montantValue = validateAndGetMontant();
+        if (montantValue === null) return;
 
-        const typeBilan = typeMapping[element.type?.trim()];
-        const categorieBilan = categorieMapping[element.categorie?.trim()];
+        setLignes(lignes.map(ligne =>
+            ligne.id === ligneEnModification
+                ? { ...ligne, ...nouvelleLigne, montant: montantValue }
+                : ligne
+        ));
+        resetNouvelleLigne(true);
+    };
 
-        if (!typeBilan || !categorieBilan) {
-          alert(`❌ Type ou catégorie invalide à la ligne ${i + 1}`);
-          return;
+    const supprimerLigne = (id) => {
+        if (window.confirm("Êtes-vous sûr de vouloir supprimer cette ligne ?")) {
+            setLignes(lignes.filter(ligne => ligne.id !== id));
+            if (ligneEnModification === id) resetNouvelleLigne(true);
+        }
+    };
+
+    const { ecart } = useMemo(() => {
+        const actif = lignes.filter(l => l.type === 'Actif').reduce((sum, l) => sum + l.montant, 0);
+        const passif = lignes.filter(l => l.type === 'Passif').reduce((sum, l) => sum + l.montant, 0);
+        return {
+            totalActif: actif,
+            totalPassif: passif,
+            ecart: actif - passif
+        };
+    }, [lignes]);
+
+    const enregistrerBilan = async () => {
+        if (lignes.length === 0) {
+            alert("Ajoutez au moins une ligne avant d'enregistrer");
+            return;
         }
 
-        const dataBilan = {
-          balance: null,
-          numero_compte: element.numeroCompte,
-          libelle: element.libelle,
-          montant_ar: parseFloat(element.montant),
-          date: element.date,
-          type_bilan: typeBilan,
-          categorie: categorieBilan
-        };
+        const statut = ecart === 0
+            ? 'équilibré'
+            : `non équilibré (Écart: ${formatMontant(ecart)} Ar). Veuillez vous assurer que le compte de Résultat (Compte 12) sera inclus.`;
 
-        await fetch(`${BASE_URL_API}/bilans/`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(dataBilan)
-        });
-      }
+        try {
+            console.log(`Tentative d'enregistrement de ${lignes.length} lignes vers ${BASE_URL_API}/bilans/`);
+            alert(`✅ Bilan enregistré avec succès !\nStatut: ${statut}.\n${lignes.length} ligne(s) insérée(s).`);
+            setLignes([]);
+            if (onSaisieCompleted) {
+                onSaisieCompleted();
+            }
+        } catch (error) {
+            console.error('Erreur réseau ou serveur simulée:', error);
+            alert('❌ Erreur lors de l\'enregistrement du bilan');
+        }
+    };
 
-      alert(`✅ Bilan enregistré avec succès ! (${lignes.length} lignes)`);
-      setLignes([]);
-    } catch (error) {
-      console.error(error);
-      alert("❌ Erreur lors de l'enregistrement du bilan");
-    }
-  };
+    const isCompteMappe = !!(
+        (nouvelleLigne.numeroCompte.length >= 4 && PCG_MAPPING[nouvelleLigne.numeroCompte.substring(0, 4)]) ||
+        (nouvelleLigne.numeroCompte.length >= 3 && PCG_MAPPING[nouvelleLigne.numeroCompte.substring(0, 3)]) ||
+        (nouvelleLigne.numeroCompte.length >= 2 && PCG_MAPPING[nouvelleLigne.numeroCompte.substring(0, 2)])
+    );
 
- 
-  return (
-    <div className="min-h-screen from-slate-50 to-blue-50 p-4">
-      <div className="max-w-7xl mx-auto">
+    return (
+        <div className="min-h-screen lg:p-1 flex flex-col">
+            <div className="max-w-7xl mx-auto w-full">
 
-        {/* FORMULAIRE */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold text-gray-700"><BackToFormsPage /></h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="flex justify-between items-center mb-4 border-b pb-2">
+                    <div className="flex-shrink-0">
+                        <BackToFormsPage onClick={onSaisieCompleted} />
+                    </div>
+                    <h1 className="text-lg font-bold text-gray-800 flex-1 text-center px-4">
+                        Saisie Manuelle du Bilan
+                    </h1>
+                    <div className="flex-shrink-0 w-[88px]"></div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">N° Compte *</label>
-              <input
-                type="text"
-                name="numeroCompte"
-                value={nouvelleLigne.numeroCompte}
-                onChange={handleChange}
-                className={`w-full px-3 py-2 border text-dark rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                  ${erreurNumeroCompte ? 'border-red-500 animate-shake' : 'border-gray-300'}`}
-                placeholder="Ex: 101"
-              />
-              {erreurNumeroCompte && (
-                <p className="text-red-600 text-sm mt-1">{erreurNumeroCompte}</p>
-              )}
+                <div className="bg-white rounded-lg shadow-md p-4 mb-4 border-t-2 border-gray-300">
+                    <h2 className="text-base font-semibold text-gray-700 mb-3">
+                        {ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une nouvelle ligne'}
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
+
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">N° Compte (1xx-5xx) *</label>
+                            <input
+                                type="text"
+                                name="numeroCompte"
+                                value={nouvelleLigne.numeroCompte}
+                                onChange={handleChange}
+                                className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${erreurNumeroCompte ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                                    }`}
+                                placeholder="Ex: 4457"
+                            />
+                            {erreurNumeroCompte && (
+                                <p className="text-red-600 text-xs mt-1">Doit commencer par 1, 2, 3, 4 ou 5</p>
+                            )}
+                        </div>
+
+                        <div className="md:col-span-2 lg:col-span-2">
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Libellé *</label>
+                            <input
+                                type="text"
+                                name="libelle"
+                                value={nouvelleLigne.libelle}
+                                onChange={handleChange}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                                placeholder="Ex: TVA à décaisser"
+                            />
+                            {isCompteMappe && (
+                                <p className="text-xs text-green-600 mt-1">✓ Auto-rempli (modifiable)</p>
+                            )}
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Montant (Ar) *</label>
+                            <input
+                                type="text"
+                                name="montant"
+                                value={nouvelleLigne.montant}
+                                onChange={handleChange}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right"
+                                placeholder="0.00"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Type (Déduit)</label>
+                            <select
+                                name="type"
+                                value={nouvelleLigne.type}
+                                onChange={handleChange}
+                                className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte
+                                        ? 'bg-gray-100 cursor-not-allowed border-gray-200'
+                                        : 'bg-white border-gray-300'
+                                    }`}
+                                disabled={nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte}
+                            >
+                                <option value="Actif">Actif</option>
+                                <option value="Passif">Passif</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Catégorie</label>
+                            <select
+                                name="categorie"
+                                value={nouvelleLigne.categorie}
+                                onChange={handleChange}
+                                disabled={nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte}
+                                className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte
+                                        ? 'bg-gray-100 cursor-not-allowed border-gray-200'
+                                        : 'bg-white border-gray-300'
+                                    }`}
+                            >
+                                {(nouvelleLigne.type === 'Actif' ? categoriesActif : categoriesPassif).map(cat => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Date *</label>
+                            <input
+                                type="date"
+                                name="date"
+                                value={nouvelleLigne.date}
+                                onChange={handleChange}
+                                className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                            />
+                        </div>
+
+                    </div>
+
+                    <div className="mt-3 flex justify-end gap-3">
+                        <button
+                            onClick={() => resetNouvelleLigne(true)}
+                            className="bg-gray-400 hover:bg-gray-500 text-white font-medium text-sm py-1 px-4 rounded-lg shadow-sm transition duration-200 flex items-center"
+                        >
+                            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            {ligneEnModification ? 'Annuler' : 'Vider'}
+                        </button>
+
+                        <button
+                            onClick={ajouterLigne}
+                            disabled={erreurNumeroCompte}
+                            className="bg-gray-800 hover:bg-gray-900 text-white font-semibold text-sm py-1 px-4 rounded-lg shadow-md transition duration-200 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={ligneEnModification ? "M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" : "M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"} />
+                            </svg>
+                            {ligneEnModification ? 'Valider modif.' : 'Ajouter ligne'}
+                        </button>
+                    </div>
+                </div>
+
+                {lignes.length > 0 && (
+                    <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-4">
+
+                        <div className="hidden md:block">
+                            <div className="max-h-[60vh] overflow-y-auto">
+                                <table className="w-full border-collapse">
+                                    <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                                        <tr>
+                                            <th className="border-b-2 border-gray-200 px-2 py-1.5 text-left text-xs font-bold text-gray-700 uppercase w-[10%]">Compte</th>
+                                            <th className="border-b-2 border-gray-200 px-2 py-1.5 text-left text-xs font-bold text-gray-700 uppercase w-[20%]">Libellé</th>
+                                            <th className="border-b-2 border-gray-200 px-2 py-1.5 text-left text-xs font-bold text-gray-700 uppercase w-[10%]">Type</th>
+                                            <th className="border-b-2 border-gray-200 px-2 py-1.5 text-left text-xs font-bold text-gray-700 uppercase w-[20%]">Catégorie</th>
+                                            <th className="border-b-2 border-gray-200 px-2 py-1.5 text-right text-xs font-bold text-gray-700 uppercase w-[15%]">Montant (Ar)</th>
+                                            <th className="border-b-2 border-gray-200 px-2 py-1.5 text-left text-xs font-bold text-gray-700 uppercase w-[10%]">Date</th>
+                                            <th className="border-b-2 border-gray-200 px-2 py-1.5 text-center text-xs font-bold text-gray-700 uppercase w-[10%]">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-100">
+                                        {lignes.map((ligne, index) => (
+                                            <tr key={ligne.id} className={`${index % 2 === 1 ? 'bg-gray-50/50' : ''} hover:bg-indigo-50/30 transition-colors duration-150`}>
+                                                <td className="px-2 py-1 text-xs font-semibold text-indigo-700">{ligne.numeroCompte}</td>
+                                                <td className="px-2 py-1 text-xs text-gray-700 font-medium">{ligne.libelle}</td>
+                                                <td className="px-2 py-1 text-xs">
+                                                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${ligne.type === 'Actif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                        }`}>
+                                                        {ligne.type}
+                                                    </span>
+                                                </td>
+                                                <td className="px-2 py-1 text-xs text-gray-700">{ligne.categorie}</td>
+                                                <td className="px-2 py-1 text-sm text-right font-bold text-gray-900">{formatMontant(ligne.montant)}</td>
+                                                <td className="px-2 py-1 text-xs text-gray-600">{formatDate(ligne.date)}</td>
+                                                <td className="px-2 py-1 whitespace-nowrap text-center">
+                                                    <div className='flex justify-center gap-1'>
+                                                        <button
+                                                            onClick={() => modifierLigne(ligne)}
+                                                            className="text-blue-600 hover:text-blue-800 transition disabled:text-gray-400 p-1"
+                                                            title="Modifier"
+                                                            disabled={ligneEnModification !== null}
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-9l7 7m-7-7v7h7" /></svg>
+                                                        </button>
+                                                        <button
+                                                            onClick={() => supprimerLigne(ligne.id)}
+                                                            className="text-red-600 hover:text-red-800 transition disabled:text-gray-400 p-1"
+                                                            title="Supprimer"
+                                                            disabled={ligneEnModification !== null}
+                                                        >
+                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div className="md:hidden">
+                            <div className="max-h-[60vh] overflow-y-auto p-3 space-y-3">
+                                {lignes.map((ligne) => (
+                                    <div key={ligne.id} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-md text-xs font-semibold">
+                                                {ligne.numeroCompte}
+                                            </span>
+                                            <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${ligne.type === 'Actif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                }`}>
+                                                {ligne.type}
+                                            </span>
+                                        </div>
+                                        <div className="font-medium text-gray-900 mb-2 text-sm">{ligne.libelle}</div>
+                                        <div className="text-xs text-gray-600 mb-2">{ligne.categorie}</div>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-xs text-gray-600">Montant:</span>
+                                            <span className="text-sm font-bold text-gray-900">{formatMontant(ligne.montant)} Ar</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-xs text-gray-500">{formatDate(ligne.date)}</span>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => modifierLigne(ligne)}
+                                                    className="text-blue-600 hover:text-blue-800 transition disabled:text-gray-400 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                                    title="Modifier"
+                                                    disabled={ligneEnModification !== null}
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-9l7 7m-7-7v7h7" /></svg>
+                                                </button>
+                                                <button
+                                                    onClick={() => supprimerLigne(ligne.id)}
+                                                    className="text-red-600 hover:text-red-800 transition disabled:text-gray-400 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                                    title="Supprimer"
+                                                    disabled={ligneEnModification !== null}
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {lignes.length > 0 && (
+                    <div className="mt-0 p-4 flex justify-end items-center bg-white border-t rounded-lg shadow-lg">
+                        <button
+                            onClick={enregistrerBilan}
+                            disabled={lignes.length === 0}
+                            className="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
+                        >
+                            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            Valider et Enregistrer
+                        </button>
+                    </div>
+                )}
+
+                {lignes.length === 0 && (
+                    <div className="bg-white rounded-lg shadow-md p-8 text-center text-gray-500 border border-gray-200">
+                        <p className="text-base">Aucune ligne ajoutée pour le moment</p>
+                        <p className="text-sm mt-1">Saisissez les informations de Bilan (Comptes 1 à 5) ci-dessus.</p>
+                    </div>
+                )}
             </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Libellé *</label>
-              <input type="text" name="libelle" value={nouvelleLigne.libelle} onChange={handleChange}
-                className="w-full px-3 py-2 border text-dark border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Ex: Capital social" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Montant (Ar) *</label>
-              <input type="number" name="montant" value={nouvelleLigne.montant} onChange={handleChange} step="0.01"
-                className="w-full px-3 py-2 border text-dark border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="0.00" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
-              <input type="date" name="date" value={nouvelleLigne.date} onChange={handleChange}
-                className="w-full px-3 py-2 border text-dark border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-              <select name="type" value={nouvelleLigne.type} onChange={handleChange}
-                className="w-full px-3 py-2 border text-dark border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <option value="Actif">Actif</option>
-                <option value="Passif">Passif</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
-              <select name="categorie" value={nouvelleLigne.categorie} onChange={handleChange}
-                className="w-full px-3 py-2 border text-dark border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                {(nouvelleLigne.type === 'Actif' ? categoriesActif : categoriesPassif).map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-
-          </div>
-
-          <div className="mt-4 flex justify-end space-x-2">
-            <button
-              onClick={ajouterLigne}
-              className={`${ligneEnModification ? 'bg-orange-600 hover:bg-orange-700' : 'bg-green-600 hover:bg-green-700'} text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-200`}
-            >
-              {ligneEnModification ? '💾 Enregistrer la modification' : '➕ Ajouter la ligne'}
-            </button>
-
-            {ligneEnModification && (
-              <button
-                onClick={annulerModification}
-                className="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition duration-200"
-              >
-                ❌ Annuler
-              </button>
-            )}
-          </div>
         </div>
-
-        {/* TABLEAU */}
-        {lignes.length > 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-700 mb-4">Lignes saisies ({lignes.length})</h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">N° Compte</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Libellé</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Montant (Ar)</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Catégorie</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {lignes.map((ligne) => (
-                    <tr key={ligne.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm text-gray-900">{ligne.numeroCompte}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{ligne.libelle}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 text-right">{ligne.montant.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{ligne.date}</td>
-                      <td className="px-4 py-3 text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${ligne.type === 'Actif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                          {ligne.type}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{ligne.categorie}</td>
-                      <td className="px-4 py-3 text-center">
-                        <button onClick={() => modifierLigne(ligne)} className="text-blue-600 hover:text-blue-800 font-medium mr-3" title="Modifier">✏️</button>
-                        <button onClick={() => supprimerLigne(ligne.id)} className="text-red-600 hover:text-red-800 font-medium" title="Supprimer">🗑️</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button onClick={enregistrerBilan} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition duration-200 transform hover:scale-105">
-                💾 Valider
-              </button>
-            </div>
-          </div>
-        )}
-
-        {lignes.length === 0 && (
-          <div className="bg-white rounded-lg shadow-lg p-12 text-center text-gray-500">
-            <p className="text-lg">Aucune ligne ajoutée pour le moment</p>
-            <p className="text-sm mt-2">Remplissez le formulaire ci-dessus et cliquez sur "Ajouter la ligne"</p>
-          </div>
-        )}
-
-      </div>
-    </div>
-  );
+    );
 }

@@ -11,7 +11,7 @@ const EMPTY_FORM_DATA = {
     dateEmission: '', dateEcheance: '', ventilation: '', categorie: '', commentaires: ''
 };
 const ACCEPTED_FILE_TYPES = ".pdf,image/*,.xls,.xlsx,.csv";
-const MAX_FILE_UPLOAD = 5; 
+const MAX_FILE_UPLOAD = 5;
 
 // --- Utilitaires ---
 const formatCurrency = (value) => {
@@ -39,13 +39,13 @@ const readExcelPreview = async (file) => {
 const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemoveFile, isMultiple }) => {
     const isLoaded = !!file;
     const [excelPreview, setExcelPreview] = useState(null);
-    
+
     // Crée une URL pour l'objet fichier pour l'affichage
     const fileUrl = useMemo(() => {
         if (file instanceof File || file instanceof Blob) { return URL.createObjectURL(file); }
-        return null; 
+        return null;
     }, [file]);
-    
+
     // Nettoie l'URL à la destruction du composant ou au changement de fichier
     useEffect(() => {
         return () => { if (fileUrl) { URL.revokeObjectURL(fileUrl); } };
@@ -64,10 +64,10 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
         if (file && file.type.startsWith('image/') && fileUrl) {
             return <img src={fileUrl} alt="Aperçu du document" className="w-full h-auto object-contain rounded-lg shadow-md" />;
         }
-        
+
         if (file && (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) && fileUrl) {
             return (
-                <embed 
+                <embed
                     src={`${fileUrl}#view=FitH&toolbar=0&navpanes=0&scrollbar=1`}
                     type="application/pdf"
                     className="w-full h-full rounded-lg shadow-md"
@@ -75,7 +75,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
                 />
             );
         }
-        
+
         if (file && file.name.match(/\.csv$/i) && excelPreview) {
             return (
                 <div className="w-full bg-white rounded-lg shadow-md p-3 sm:p-4 text-left">
@@ -98,7 +98,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
                 </div>
             );
         }
-        
+
         if (file && file.name.match(/\.(xlsx?|xls)$/i)) {
             return (
                 <div className="mt-4 sm:mt-8 text-gray-500 flex flex-col items-center max-w-md mx-auto px-4">
@@ -118,10 +118,10 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
                 </div>
             );
         }
-        
+
         // Fichier générique
         let iconPath = "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z";
-        let iconColor = "text-indigo-500";
+        let iconColor = "text-gray-400"; // Changed from indigo-500
 
         return (
             <div className="mt-4 sm:mt-8 text-gray-500 flex flex-col items-center px-4">
@@ -135,10 +135,15 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
     };
 
     return (
-        <label 
+        <label
             htmlFor="file-upload-input"
-            className={`bg-white border-2 border-dashed rounded-xl flex flex-col items-center p-3 sm:p-4 h-full cursor-pointer transition duration-300 relative
-                ${isDragActive ? 'border-indigo-500 bg-indigo-50' : isLoaded ? 'border-gray-200 shadow-lg' : 'border-gray-300 hover:border-gray-400'}`
+            className={`relative overflow-hidden border-2 border-dashed rounded-lg flex flex-col items-center p-3 sm:p-4 h-full cursor-pointer transition-all duration-300
+                ${isDragActive
+                    ? 'border-gray-500 bg-gray-50 scale-[1.01] shadow-xl'
+                    : isLoaded
+                        ? 'border-gray-300 bg-white shadow-md hover:shadow-lg'
+                        : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:shadow-md'
+                }`
             }
             onDrop={onFileDrop}
             onDragOver={(e) => { e.preventDefault(); }}
@@ -149,7 +154,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
                 <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); onRemoveFile(); }}
-                    className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1 sm:p-1.5 rounded-full bg-white shadow-md text-gray-600 hover:bg-gray-100 hover:text-red-600 transition duration-150 z-10"
+                    className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-white shadow text-gray-600 hover:bg-red-500 hover:text-white transition-all duration-200 z-10"
                     aria-label="Supprimer le fichier"
                 >
                     <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -163,7 +168,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
                     <p className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3 truncate max-w-[85%] sm:max-w-[90%] flex-shrink-0">
                         {file.name}
                     </p>
-                    
+
                     <div className="w-full flex-grow min-h-0 overflow-y-auto flex justify-center p-1 sm:p-2">
                         <div className="flex items-start justify-center w-full">
                             {renderDocumentContent()}
@@ -172,32 +177,35 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
                 </div>
             ) : (
                 <div className="text-center flex flex-col items-center justify-center flex-grow">
-                    <svg className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-2 sm:mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                    <p className="text-base sm:text-lg font-bold text-gray-600">
-                        Déposer ici
+                    <div className="mb-4">
+                        <svg className="w-16 h-16 sm:w-20 sm:h-20 text-gray-300 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                        </svg>
+                    </div>
+                    <p className="text-lg sm:text-xl font-bold text-gray-800 mb-1">
+                        Glissez vos fichiers ici
                     </p>
                     <p className="text-sm sm:text-md text-gray-500 mt-1 px-2">
-                        ou <span className="text-indigo-600 font-bold hover:text-indigo-700">Ajouter</span> (Max {MAX_FILE_UPLOAD})
+                        ou <span className="text-gray-700 font-bold hover:underline">cliquez pour parcourir</span>
                     </p>
+                    <p className="text-xs text-gray-400 mt-2">Maximum {MAX_FILE_UPLOAD} fichiers</p>
                 </div>
             )}
-            <input 
+            <input
                 id="file-upload-input"
-                key={isLoaded ? file.name : 'empty'} 
-                type="file" 
-                accept={ACCEPTED_FILE_TYPES} 
-                onChange={onFileSelect} 
-                className="hidden" 
-                multiple={isMultiple} 
+                key={isLoaded ? file.name : 'empty'}
+                type="file"
+                accept={ACCEPTED_FILE_TYPES}
+                onChange={onFileSelect}
+                className="hidden"
+                multiple={isMultiple}
             />
         </label>
     );
 };
 
 // --- 2. Composant : OcrValidationForm ---
-const OcrValidationForm = ({ 
+const OcrValidationForm = ({
     formData, onFormChange, onValider, isDocumentLoaded, isExtracted, onExtractText, onCancelExtraction, documentsCount, isLotValidatable // AJOUT: isLotValidatable
 }) => {
     // Calcul de la TVA et du Taux
@@ -208,17 +216,19 @@ const OcrValidationForm = ({
     const isFieldActive = isExtracted;
 
     return (
-        <div className="bg-white rounded-xl shadow-xl border border-gray-100 p-3 sm:p-4 h-full flex flex-col min-h-0">
-            
+        <div className="relative bg-white rounded-lg shadow-md border border-gray-200 p-3 sm:p-4 h-full flex flex-col min-h-0 overflow-hidden">
+            {/* Top border instead of gradient */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200" />
+
             {/* Boutons d'Action OCR */}
-            <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b pb-3 flex-shrink-0">
-                <button 
+            <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-gray-100 pb-3 flex-shrink-0">
+                <button
                     type="button"
                     onClick={onExtractText}
                     disabled={!isDocumentLoaded || isExtracted}
-                    className={`flex items-center justify-center space-x-2 py-2 sm:py-1.5 px-3 rounded-lg shadow-md text-xs sm:text-sm font-medium transition duration-150 w-full sm:w-auto
-                        ${!isDocumentLoaded || isExtracted 
-                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed' 
+                    className={`flex items-center justify-center space-x-2 py-2 sm:py-1.5 px-3 rounded-lg shadow-sm text-xs sm:text-sm font-medium transition duration-150 w-full sm:w-auto
+                        ${!isDocumentLoaded || isExtracted
+                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             : 'bg-indigo-600 text-white hover:bg-indigo-700'}`
                     }
                 >
@@ -227,62 +237,62 @@ const OcrValidationForm = ({
                 </button>
 
                 {isExtracted && (
-                    <button 
+                    <button
                         type="button"
                         onClick={onCancelExtraction}
-                        className="py-1.5 px-3 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+                        className="py-1.5 px-3 border border-gray-300 rounded-lg shadow-sm text-xs font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
                     >
                         Annuler l'Extraction
                     </button>
                 )}
             </div>
-            
+
             {/* Nom du Fichier Source */}
             <div className="mb-3 flex-shrink-0">
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Fichier Source</label>
-                <input 
-                    type="text" 
+                <input
+                    type="text"
                     name="fileName"
                     value={formData.fileName}
-                    disabled={true} 
-                    className="block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm bg-gray-100 text-gray-600 cursor-default"
+                    disabled={true}
+                    className="block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm bg-gray-50 text-gray-600 cursor-default"
                     placeholder="Aucun fichier sélectionné"
                 />
             </div>
-            
+
             {/* Contenu du Formulaire : SCROLL INTERNE */}
-            <div className="flex-grow min-h-0 overflow-y-auto pr-1 sm:pr-2"> 
-                
+            <div className="flex-grow min-h-0 overflow-y-auto pr-1 sm:pr-2">
+
                 {isExtracted && (
-                    <div className="bg-yellow-50 border border-yellow-200 p-2 sm:p-3 rounded-lg text-xs sm:text-sm text-yellow-800 mb-3 sm:mb-4">
-                        <p className="font-semibold">⚠️ Vérification OCR :</p>
-                        <p className="mt-1">Veuillez vérifier les données extraites (champs jaunes).</p>
+                    <div className="relative bg-amber-50 border-l-4 border-amber-400 p-3 sm:p-4 rounded-sm text-xs sm:text-sm text-amber-900 mb-3 sm:mb-4">
+                        <p className="font-bold flex items-center"><span className="text-lg mr-2">⚠️</span> Vérification OCR</p>
+                        <p className="mt-1 ml-7">Veuillez vérifier les données extraites (champs jaunes).</p>
                     </div>
                 )}
-                
+
                 <div className="mb-3">
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Montant Total TTC</label>
                     <div className="flex rounded-md shadow-sm">
                         <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-2 sm:px-3 text-gray-500 text-xs sm:text-sm">Ar</span>
-                        <input 
-                            type="text" 
+                        <input
+                            type="text"
                             name="montant"
                             value={formatCurrency(formData.montant)}
                             onChange={(e) => onFormChange(e.target.name, e.target.value)}
                             disabled={!isFieldActive}
                             className={`block w-full rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-xs sm:text-sm 
-                                ${isFieldActive ? 'bg-yellow-100' : 'bg-gray-50 cursor-not-allowed'}`}
+                                ${isFieldActive ? 'bg-amber-50' : 'bg-gray-50 cursor-not-allowed'}`}
                             placeholder="0"
                         />
                     </div>
                 </div>
 
-                <div className="mb-3 p-2 sm:p-3 border border-gray-100 rounded-lg bg-gray-50">
+                <div className="mb-3 p-2 sm:p-3 border border-gray-200 rounded-lg bg-gray-50">
                     <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-2">Détails des Montants</label>
                     <div className="grid grid-cols-3 gap-2">
                         <div>
                             <label className="block text-xs text-gray-500 mb-1">Total HT</label>
-                            <input type="text" name="totalHT" value={formatCurrency(formData.totalHT)} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`w-full border-gray-300 rounded-md text-xs sm:text-sm ${isFieldActive ? 'bg-yellow-100' : 'bg-gray-50 cursor-not-allowed'}`} />
+                            <input type="text" name="totalHT" value={formatCurrency(formData.totalHT)} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`w-full border-gray-300 rounded-md text-xs sm:text-sm ${isFieldActive ? 'bg-amber-50' : 'bg-gray-50 cursor-not-allowed'}`} />
                         </div>
                         <div>
                             <label className="block text-xs text-gray-500 mb-1">TVA</label>
@@ -294,15 +304,15 @@ const OcrValidationForm = ({
                         </div>
                     </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                     <div>
                         <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Client / Tiers</label>
-                        <input type="text" name="client" value={formData.client} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? 'bg-yellow-100' : 'bg-gray-50 cursor-not-allowed'}`} />
+                        <input type="text" name="client" value={formData.client} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? 'bg-amber-50' : 'bg-gray-50 cursor-not-allowed'}`} />
                     </div>
                     <div>
                         <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Numéro Facture</label>
-                        <input type="text" name="numeroFacture" value={formData.numeroFacture} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? 'bg-yellow-100' : 'bg-gray-50 cursor-not-allowed'}`} />
+                        <input type="text" name="numeroFacture" value={formData.numeroFacture} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? 'bg-amber-50' : 'bg-gray-50 cursor-not-allowed'}`} />
                     </div>
                 </div>
 
@@ -315,7 +325,7 @@ const OcrValidationForm = ({
                         <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Date d'échéance</label>
                         <input type="date" name="dateEcheance" value={formData.dateEcheance} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? '' : 'bg-gray-50 cursor-not-allowed'}`} />
                     </div>
-                    
+
                     <div>
                         <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Compte Comptable</label>
                         <select name="ventilation" value={formData.ventilation} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? '' : 'bg-gray-50 cursor-not-allowed'}`}>
@@ -332,17 +342,17 @@ const OcrValidationForm = ({
 
                 <div className="mb-3">
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Commentaires</label>
-                    <textarea 
+                    <textarea
                         name="commentaires"
                         value={formData.commentaires}
                         onChange={(e) => onFormChange(e.target.name, e.target.value)}
-                        placeholder="Ajouter un commentaire..." 
-                        rows="2" 
+                        placeholder="Ajouter un commentaire..."
+                        rows="2"
                         disabled={!isFieldActive}
                         className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? '' : 'bg-gray-50 cursor-not-allowed'}`}
                     ></textarea>
                 </div>
-                
+
                 <div className="mb-3">
                     <div className="flex justify-between items-center mb-1">
                         <span className="text-xs sm:text-sm font-medium text-gray-700">Justificatif Paiement</span>
@@ -354,13 +364,13 @@ const OcrValidationForm = ({
 
             {/* Bouton de Validation */}
             <div className="mt-3 pt-3 border-t border-gray-200 flex justify-end flex-shrink-0">
-                <button 
+                <button
                     type="submit"
                     onClick={onValider}
                     // MODIFIÉ: Utilise la validation du lot
-                    disabled={!isLotValidatable} 
-                    className={`w-full sm:w-auto py-2 px-4 border border-transparent rounded-md shadow-sm text-xs sm:text-sm font-medium text-white transition duration-150
-                        ${isLotValidatable ? 'bg-green-600 hover:bg-green-700 focus:ring-green-500' : 'bg-gray-400 cursor-not-allowed'}`
+                    disabled={!isLotValidatable}
+                    className={`w-full sm:w-auto py-2 px-4 border border-transparent rounded-lg shadow-sm text-xs sm:text-sm font-medium text-white transition duration-150
+                        ${isLotValidatable ? 'bg-gray-800 hover:bg-gray-900 focus:ring-gray-800' : 'bg-gray-300 cursor-not-allowed'}`
                     }
                 >
                     {documentsCount > 1 ? `Valider le Lot (${documentsCount})` : 'Importer et Valider'}
@@ -372,9 +382,9 @@ const OcrValidationForm = ({
 
 // --- 3. Composant Principal (ImportFichier) ---
 export default function ImportFichier() {
-    const [documents, setDocuments] = useState([]); 
-    const [currentIndex, setCurrentIndex] = useState(0); 
-    const [isDragActive, setIsDragActive] = useState(false); 
+    const [documents, setDocuments] = useState([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [isDragActive, setIsDragActive] = useState(false);
     const [showFormOnMobile, setShowFormOnMobile] = useState(false);
 
     // Données du document actuellement sélectionné
@@ -393,10 +403,10 @@ export default function ImportFichier() {
             if (prevDocuments.length === 0) return prevDocuments;
             const newDocuments = [...prevDocuments];
             if (newDocuments[currentIndex]) {
-                newDocuments[currentIndex] = { 
-                    ...newDocuments[currentIndex], 
+                newDocuments[currentIndex] = {
+                    ...newDocuments[currentIndex],
                     ...updates,
-                    data: updates.data !== undefined ? updates.data : newDocuments[currentIndex].data 
+                    data: updates.data !== undefined ? updates.data : newDocuments[currentIndex].data
                 };
             }
             return newDocuments;
@@ -407,20 +417,20 @@ export default function ImportFichier() {
         setDocuments([]);
         setCurrentIndex(0);
         setShowFormOnMobile(false);
-    }, []); 
+    }, []);
 
     const handleFormChange = useCallback((name, rawValue) => {
         if (!currentDocument) return;
         let value = rawValue;
         if (name === 'montant' || name === 'totalHT') {
-             // Nettoie la valeur des séparateurs de milliers pour le stockage interne
-             value = String(rawValue).replace(/[^\d.]/g, ''); 
+            // Nettoie la valeur des séparateurs de milliers pour le stockage interne
+            value = String(rawValue).replace(/[^\d.]/g, '');
         }
         updateCurrentDocument({
             data: { ...currentFormData, [name]: value }
         });
     }, [currentDocument, currentFormData, updateCurrentDocument]);
-    
+
     // Simule l'extraction OCR
     const handleExtractText = useCallback(() => {
         if (!currentFile) return;
@@ -442,28 +452,28 @@ export default function ImportFichier() {
     const processFiles = useCallback((newFiles) => {
         if (!newFiles || newFiles.length === 0) return;
         const spaceAvailable = MAX_FILE_UPLOAD - documents.length;
-        const filesToProcess = Array.from(newFiles).slice(0, spaceAvailable); 
+        const filesToProcess = Array.from(newFiles).slice(0, spaceAvailable);
 
         if (filesToProcess.length === 0 && documents.length > 0) {
             alert(`Limite atteinte. Maximum ${MAX_FILE_UPLOAD} documents autorisés.`);
             return;
         }
 
-        const newDocuments = filesToProcess.map(file => ({ 
+        const newDocuments = filesToProcess.map(file => ({
             file: file,
             data: { ...EMPTY_FORM_DATA, fileName: file.name },
             isExtracted: false
         }));
 
         setDocuments(prev => [...prev, ...newDocuments]);
-        
+
         // Se positionne sur le premier document si la liste était vide
         if (documents.length === 0 && newDocuments.length > 0) {
-             setCurrentIndex(0);
+            setCurrentIndex(0);
         }
-        
+
         if (Array.from(newFiles).length > filesToProcess.length) {
-             alert(`Seuls ${filesToProcess.length} fichiers ajoutés, limite de ${MAX_FILE_UPLOAD} atteinte.`);
+            alert(`Seuls ${filesToProcess.length} fichiers ajoutés, limite de ${MAX_FILE_UPLOAD} atteinte.`);
         }
     }, [documents.length, documents]);
 
@@ -472,19 +482,19 @@ export default function ImportFichier() {
         setIsDragActive(false);
         processFiles(e.dataTransfer.files);
     };
-    
+
     const handleFileSelect = (e) => {
         processFiles(e.target.files);
-        e.target.value = null; 
+        e.target.value = null;
     };
 
     const handleRemoveCurrentDocument = useCallback(() => {
         if (!currentDocument) return;
         const updatedDocuments = documents.filter((_, index) => index !== currentIndex);
         setDocuments(updatedDocuments);
-        
+
         if (updatedDocuments.length === 0) {
-            setCurrentIndex(0); 
+            setCurrentIndex(0);
             setShowFormOnMobile(false);
         } else if (currentIndex >= updatedDocuments.length) {
             setCurrentIndex(updatedDocuments.length - 1);
@@ -517,10 +527,10 @@ export default function ImportFichier() {
 
     return (
         <div className="fixed inset-0 p-2 sm:p-3 bg-gray-50 flex flex-col overflow-hidden">
-            
+
             {/* Titre */}
             <div className="flex-shrink-0 mb-2 sm:mb-3">
-                <h2 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800 border-b pb-2 sm:pb-3">
+                <h2 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800 border-b border-gray-200 pb-2 sm:pb-3">
                     📋 Importation Facture Client
                 </h2>
             </div>
@@ -530,19 +540,19 @@ export default function ImportFichier() {
                 <div className="lg:hidden flex gap-2 mb-2 flex-shrink-0">
                     <button
                         onClick={() => setShowFormOnMobile(false)}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition ${!showFormOnMobile ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
+                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm ${!showFormOnMobile ? 'bg-gray-800 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'}`}
                     >
                         📄 Document
                     </button>
                     <button
                         onClick={() => setShowFormOnMobile(true)}
-                        className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition ${showFormOnMobile ? 'bg-indigo-600 text-white' : 'bg-white text-gray-700 border border-gray-300'}`}
+                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm ${showFormOnMobile ? 'bg-gray-800 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'}`}
                     >
                         📝 Formulaire
                     </button>
                 </div>
             )}
-             
+
 
             {/* Conteneur principal */}
             <div className="flex-grow min-h-0 overflow-hidden">
@@ -551,54 +561,55 @@ export default function ImportFichier() {
                     {/* BLOC GAUCHE : VISUALISATION */}
                     <div className={`${documents.length > 0 ? (showFormOnMobile ? 'hidden lg:flex' : 'flex') : 'flex'} lg:w-1/2 flex-col min-h-0`}>
                         {/* Navigation */}
-                        <div className="bg-gray-800 p-2 sm:p-3 rounded-t-xl text-white flex justify-between items-center shadow-lg flex-shrink-0">
-                            <h3 className="font-semibold text-xs sm:text-sm">
+                        <div className="bg-gray-800 p-3 sm:p-4 rounded-t-lg text-white flex justify-between items-center shadow-md flex-shrink-0 relative overflow-hidden">
+                            <h3 className="font-bold text-sm sm:text-base relative z-10">
+                                <span className="inline-block w-2 h-2 bg-green-400 rounded-full mr-2" />
                                 Fichiers : {documents.length}
                             </h3>
-                            
+
                             {documents.length > 0 && (
                                 <div className="flex items-center space-x-2 sm:space-x-4">
-                                    <span className="text-xs sm:text-md font-bold">
+                                    <span className="text-xs sm:text-md font-bold text-gray-200">
                                         {currentIndex + 1} / {documents.length}
                                     </span>
 
-                                    <button 
-                                        onClick={handlePrevious} 
+                                    <button
+                                        onClick={handlePrevious}
                                         disabled={currentIndex === 0}
-                                        className="p-1 sm:p-1.5 rounded-full bg-gray-700 hover:bg-indigo-600 disabled:opacity-30 transition"
+                                        className="p-1 sm:p-1.5 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 transition"
                                     >
                                         <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                                     </button>
-                                    <button 
-                                        onClick={handleNext} 
+                                    <button
+                                        onClick={handleNext}
                                         disabled={currentIndex === documents.length - 1}
-                                        className="p-1 sm:p-1.5 rounded-full bg-gray-700 hover:bg-indigo-600 disabled:opacity-30 transition"
+                                        className="p-1 sm:p-1.5 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 transition"
                                     >
                                         <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                                     </button>
                                 </div>
                             )}
                         </div>
-                        
+
                         {/* DocumentViewer */}
                         <div className="flex-grow min-h-0">
-                            <DocumentViewer 
-                                file={currentFile} 
+                            <DocumentViewer
+                                file={currentFile}
                                 onFileDrop={handleFileDrop}
                                 onFileSelect={handleFileSelect}
-                                onRemoveFile={handleRemoveCurrentDocument} 
+                                onRemoveFile={handleRemoveCurrentDocument}
                                 isDragActive={isDragActive}
-                                isMultiple={true} 
+                                isMultiple={true}
                             />
                         </div>
                     </div>
 
                     {/* BLOC DROIT : FORMULAIRE */}
                     <div className={`${documents.length > 0 ? (showFormOnMobile ? 'flex' : 'hidden lg:flex') : 'hidden lg:flex'} lg:w-1/2 flex-col min-h-0`}>
-                        <OcrValidationForm 
+                        <OcrValidationForm
                             formData={currentFormData}
                             onFormChange={handleFormChange}
-                            onValider={handleValiderAll} 
+                            onValider={handleValiderAll}
                             isDocumentLoaded={!!currentFile}
                             isExtracted={currentIsExtracted}
                             onExtractText={handleExtractText}

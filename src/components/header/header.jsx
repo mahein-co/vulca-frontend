@@ -1,23 +1,36 @@
 import React, { useState } from 'react';
 
 const navItems = [
-    { name: 'Gestion pièces', key: 'gestion-pieces', icon: '📝' },
-    { name: 'Import OCR', key: 'import-ocr', icon: '📎' },
-    { name: 'Bilan', key: 'gestion-transactions-bilan', icon: '⚖️' },
-    { name: 'Compte de Resultat', key: 'gestion-transactions-cr', icon: '📦' },
+    { name: 'Pièces comptables', key: 'gestion-pieces', icon: '📝' },
+    { name: 'Importation OCR', key: 'import-ocr', icon: '📎' },
+    { name: 'Saisie manuelle', key: 'saisie-manuelle', icon: '✍️' },
+    { name: 'États financiers', key: 'gestion-transactions-cr', icon: '📦' },
     { name: 'Gestion salaire', key: 'gestion-salaire', icon: '💲' },
     { name: 'Tableau de bord', key: 'dashboard', icon: '📊' },
 ];
 
-const Header = ({ currentPage, onNavigate }) => {
+// Ajout de la prop onOpenSaisieMenu
+const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     
+    // Détermine la clé active pour l'affichage (gère le cas des transactions qui sont groupées)
     const isTransactionViewActive = currentPage.startsWith('gestion-transactions-');
-    const displayActiveKey = isTransactionViewActive ? currentPage : currentPage;
+    
+    // Si la page est 'gestion-transactions-...' elle active 'États financiers'
+    const displayActiveKey = isTransactionViewActive ? 'gestion-transactions-cr' : currentPage; 
 
     const handleNavClick = (key) => {
-        onNavigate(key);
         setMobileMenuOpen(false); // Fermer le menu mobile après navigation
+
+        if (key === 'saisie-manuelle') {
+            // 🛑 L'action pour 'Saisie manuelle' est d'ouvrir la modale.
+            onOpenSaisieMenu();
+            // On navigue aussi pour que l'onglet 'Saisie manuelle' s'active visuellement
+            onNavigate('saisie-manuelle'); 
+        } else {
+            // Pour toutes les autres pages, on navigue normalement
+            onNavigate(key);
+        }
     };
 
     return (

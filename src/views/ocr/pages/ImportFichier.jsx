@@ -1,4 +1,54 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { useExtractDataFromFileMutation, useSaveOneFileSourceMutation } from '../../../states/ocr/ocrApiSlice';
+
+
+const determinePieceType = (data) => {
+    if (!data) return 'Autres';
+    const typeDoc = (data.type_document || '').toUpperCase();
+    if (typeDoc === 'VENTE' || typeDoc === 'ACHAT' || data.numeroFacture) return 'facture';
+    if (typeDoc === 'VIREMENT') return 'virement bancaire';
+    if (typeDoc === 'RELEVES') return 'relevé bancaire';
+    if (typeDoc === 'BON_DE_CAISSE' || typeDoc === 'FICHE_PAYE') return typeDoc.replace('_', ' ').toLowerCase();
+    return 'Autres';
+};
+// Styles CSS pour les animations
+const styles = `
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60px) scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+        transform: translate(-50%, 0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translate(-50%, -60px) scale(0.9);
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translate(-50%, 0) rotate(0deg); }
+    10%, 30%, 50%, 70%, 90% { transform: translate(-50%, 0) rotate(-2deg); }
+    20%, 40%, 60%, 80% { transform: translate(-50%, 0) rotate(2deg); }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.4s ease-out forwards, shake 0.5s ease-in-out 0.3s;
+}
+
+.animate-fadeOut {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+`;
 
 // --- Constantes et Données MOCK ---
 const INITIAL_FORM_DATA = {
@@ -14,13 +64,6 @@ const ACCEPTED_FILE_TYPES = ".pdf,image/*,.xls,.xlsx,.csv";
 const MAX_FILE_UPLOAD = 5;
 
 // --- Utilitaires ---
-const formatCurrency = (value) => {
-    // Supprime tous les caractères non numériques et non point (pour décimal)
-    const numberValue = parseFloat(String(value).replace(/[^0-9.]/g, ''));
-    if (isNaN(numberValue)) return '';
-    // Utilise le format de la locale pour la lisibilité
-    return numberValue.toLocaleString('fr-MG', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-};
 
 const readExcelPreview = async (file) => {
     // Simulation de lecture basique pour les fichiers CSV uniquement
@@ -121,7 +164,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
 
         // Fichier générique
         let iconPath = "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z";
-        let iconColor = "text-gray-400"; // Changed from indigo-500
+        let iconColor = "text-gray-400";
 
         return (
             <div className="mt-4 sm:mt-8 text-gray-500 flex flex-col items-center px-4">
@@ -206,174 +249,213 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
 
 // --- 2. Composant : OcrValidationForm ---
 const OcrValidationForm = ({
-    formData, onFormChange, onValider, isDocumentLoaded, isExtracted, onExtractText, onCancelExtraction, documentsCount, isLotValidatable // AJOUT: isLotValidatable
+    formData, onFormChange, onValider, isDocumentLoaded, isExtracted, onExtractText, onCancelExtraction, documentsCount, isLotValidatable, isLoading, errorNotification, onCloseError
 }) => {
     // Calcul de la TVA et du Taux
-    const totalTTC = parseFloat(String(formData.montant).replace(/[^0-9.]/g, '')) || 0;
-    const totalHT = parseFloat(String(formData.totalHT).replace(/[^0-9.]/g, '')) || 0;
+    const totalTTC = parseFloat(String(formData.montant || '0').replace(/[^0-9.]/g, '')) || 0;
+    const totalHT = parseFloat(String(formData.totalHT || '0').replace(/[^0-9.]/g, '')) || 0;
     const totalTVA = totalTTC - totalHT;
-    const tauxTVA = totalHT > 0 ? ((totalTVA / totalHT) * 100).toFixed(2) : 0;
-    const isFieldActive = isExtracted;
 
     return (
-        <div className="relative bg-white rounded-lg shadow-md border border-gray-200 p-3 sm:p-4 h-full flex flex-col min-h-0 overflow-hidden">
+        <div className="relative bg-white rounded-lg shadow-md border border-gray-200 p-2 sm:p-3 h-full flex flex-col min-h-0 overflow-hidden text-sm">
             {/* Top border instead of gradient */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200" />
 
             {/* Boutons d'Action OCR */}
-            <div className="mb-3 sm:mb-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-gray-100 pb-3 flex-shrink-0">
+            <div className="mb-2 sm:mb-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-gray-100 pb-2 flex-shrink-0">
                 <button
                     type="button"
                     onClick={onExtractText}
-                    disabled={!isDocumentLoaded || isExtracted}
-                    className={`flex items-center justify-center space-x-2 py-2 sm:py-1.5 px-3 rounded-lg shadow-sm text-xs sm:text-sm font-medium transition duration-150 w-full sm:w-auto
-                        ${!isDocumentLoaded || isExtracted
+                    disabled={!isDocumentLoaded || isExtracted || isLoading}
+                    className={`flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded text-xs font-medium transition duration-150 w-full sm:w-auto
+                        ${!isDocumentLoaded || isExtracted || isLoading
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                             : 'bg-indigo-600 text-white hover:bg-indigo-700'}`
                     }
                 >
-                    <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13l-3 3m0 0l-3-3m3 3V8m0 8-3-3m3 3l3-3m-3 3zM12 21a9 9 0 100-18 9 9 0 000 18z" /></svg>
-                    <span>Extraire Texte (OCR)</span>
+                    {isLoading ? (
+                        <>
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Extraction...</span>
+                        </>
+                    ) : (
+                        <>
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13l-3 3m0 0l-3-3m3 3V8m0 8-3-3m3 3l3-3m-3 3zM12 21a9 9 0 100-18 9 9 0 000 18z" /></svg>
+                            <span>Extraire (OCR)</span>
+                        </>
+                    )}
                 </button>
 
                 {isExtracted && (
                     <button
                         type="button"
                         onClick={onCancelExtraction}
-                        className="py-1.5 px-3 border border-gray-300 rounded-lg shadow-sm text-xs font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+                        className="py-1.5 px-2 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
                     >
-                        Annuler l'Extraction
+                        Annuler
                     </button>
                 )}
             </div>
 
             {/* Nom du Fichier Source */}
-            <div className="mb-3 flex-shrink-0">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Fichier Source</label>
+            <div className="mb-2 flex-shrink-0">
+                <label className="block text-xs font-medium text-gray-700 mb-0.5">Fichier Source</label>
                 <input
                     type="text"
                     name="fileName"
                     value={formData.fileName}
                     disabled={true}
-                    className="block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm bg-gray-50 text-gray-600 cursor-default"
+                    className="block w-full rounded border-gray-300 shadow-sm text-xs bg-gray-50 text-gray-600 cursor-default py-1"
                     placeholder="Aucun fichier sélectionné"
                 />
             </div>
 
             {/* Contenu du Formulaire : SCROLL INTERNE */}
-            <div className="flex-grow min-h-0 overflow-y-auto pr-1 sm:pr-2">
+            <div className="flex-grow min-h-0 overflow-y-auto pr-1">
 
-                {isExtracted && (
-                    <div className="relative bg-amber-50 border-l-4 border-amber-400 p-3 sm:p-4 rounded-sm text-xs sm:text-sm text-amber-900 mb-3 sm:mb-4">
-                        <p className="font-bold flex items-center"><span className="text-lg mr-2">⚠️</span> Vérification OCR</p>
-                        <p className="mt-1 ml-7">Veuillez vérifier les données extraites (champs jaunes).</p>
+                {isExtracted ? (
+                    <div className="relative bg-amber-50 border-l-2 border-amber-400 p-2 rounded-sm text-xs text-amber-900 mb-2">
+                        <p className="font-bold flex items-center">⚠️ Vérification OCR</p>
                     </div>
+                ) : (
+                    isDocumentLoaded && (
+                        <div className="relative bg-blue-50 border-l-2 border-blue-400 p-2 rounded-sm text-xs text-blue-900 mb-2">
+                            <h4 className="font-bold mb-0.5 mb-1">{isLoading ? 'Extraction en cours...' : 'En attente d\'extraction'}</h4>
+                            <p className="leading-tight">
+                                {isLoading ? 'Veuillez patienter pendant l\'analyse de votre document.' : 'Cliquez sur "Extraire (OCR)" pour remplir le formulaire.'}
+                            </p>
+                        </div>
+                    )
                 )}
 
-                <div className="mb-3">
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Montant Total TTC</label>
-                    <div className="flex rounded-md shadow-sm">
-                        <span className="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-2 sm:px-3 text-gray-500 text-xs sm:text-sm">Ar</span>
-                        <input
-                            type="text"
-                            name="montant"
-                            value={formatCurrency(formData.montant)}
-                            onChange={(e) => onFormChange(e.target.name, e.target.value)}
-                            disabled={!isFieldActive}
-                            className={`block w-full rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 text-xs sm:text-sm 
-                                ${isFieldActive ? 'bg-amber-50' : 'bg-gray-50 cursor-not-allowed'}`}
-                            placeholder="0"
-                        />
-                    </div>
-                </div>
 
-                <div className="mb-3 p-2 sm:p-3 border border-gray-200 rounded-lg bg-gray-50">
-                    <label className="block text-xs sm:text-sm font-bold text-gray-700 mb-2">Détails des Montants</label>
-                    <div className="grid grid-cols-3 gap-2">
-                        <div>
-                            <label className="block text-xs text-gray-500 mb-1">Total HT</label>
-                            <input type="text" name="totalHT" value={formatCurrency(formData.totalHT)} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`w-full border-gray-300 rounded-md text-xs sm:text-sm ${isFieldActive ? 'bg-amber-50' : 'bg-gray-50 cursor-not-allowed'}`} />
+
+
+                {isExtracted && (
+                    <>
+                        {/* HEADER DU DOCUMENT */}
+                        <div className="mb-3 grid grid-cols-2 gap-2">
+                            <div className="col-span-2">
+                                <label className="block text-xs font-bold text-gray-700 mb-0.5">Type de Document</label>
+                                <input
+                                    type="text"
+                                    name="typeDocument"
+                                    value={formData.typeDocument || ''}
+                                    onChange={(e) => onFormChange('typeDocument', e.target.value)}
+                                    className="block w-full rounded border-indigo-200 shadow-sm text-xs py-1 text-indigo-700 font-bold uppercase bg-indigo-50 placeholder-indigo-300"
+                                    placeholder="NON DÉTECTÉ"
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-xs text-gray-500 mb-1">TVA</label>
-                            <input type="text" value={formatCurrency(totalTVA)} readOnly className="w-full border-gray-300 bg-gray-200 rounded-md text-xs sm:text-sm cursor-not-allowed" />
-                        </div>
-                        <div>
-                            <label className="block text-xs text-gray-500 mb-1">Taux %</label>
-                            <input type="text" value={tauxTVA} readOnly className="w-full border-gray-300 bg-gray-200 rounded-md text-xs sm:text-sm cursor-not-allowed" />
-                        </div>
-                    </div>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                    <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Client / Tiers</label>
-                        <input type="text" name="client" value={formData.client} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? 'bg-amber-50' : 'bg-gray-50 cursor-not-allowed'}`} />
-                    </div>
-                    <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Numéro Facture</label>
-                        <input type="text" name="numeroFacture" value={formData.numeroFacture} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? 'bg-amber-50' : 'bg-gray-50 cursor-not-allowed'}`} />
-                    </div>
-                </div>
+                        {/* FORMULAIRE DYNAMIQUE BASÉ SUR LE JSON EXTRAIT */}
+                        {formData.extractedJson && (
+                            <div className="space-y-3">
+                                {Object.entries(formData.extractedJson).map(([key, value]) => {
+                                    // Ignorer le type de document car déjà affiché en haut
+                                    if (key === 'type_document' || key === 'typeDocument') return null;
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                    <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Date d'émission</label>
-                        <input type="date" name="dateEmission" value={formData.dateEmission} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? '' : 'bg-gray-50 cursor-not-allowed'}`} />
-                    </div>
-                    <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Date d'échéance</label>
-                        <input type="date" name="dateEcheance" value={formData.dateEcheance} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? '' : 'bg-gray-50 cursor-not-allowed'}`} />
-                    </div>
+                                    // Ignorer les champs vides ou nulls pour l'affichage compact
+                                    if (value === null || value === '' || value === undefined) return null;
 
-                    <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Compte Comptable</label>
-                        <select name="ventilation" value={formData.ventilation} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? '' : 'bg-gray-50 cursor-not-allowed'}`}>
-                            <option value="">Sélectionner...</option>
-                            <option value="701">701 - Ventes de produits finis</option>
-                            <option value="411">411 - Clients</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Catégorie</label>
-                        <input type="text" name="categorie" value={formData.categorie} onChange={(e) => onFormChange(e.target.name, e.target.value)} disabled={!isFieldActive} className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? '' : 'bg-gray-50 cursor-not-allowed'}`} />
-                    </div>
-                </div>
+                                    // Cas tableau : affichage tableau (ex: produits)
+                                    if (Array.isArray(value)) {
+                                        if (value.length === 0) return null;
+                                        return (
+                                            <div key={key} className="mb-2">
+                                                <h5 className="font-bold text-xs text-gray-800 mb-1 capitalize border-b border-gray-100 pb-1">
+                                                    {key.replace(/_/g, ' ')}
+                                                </h5>
+                                                <div className="border border-gray-200 rounded overflow-x-auto">
+                                                    <table className="min-w-full divide-y divide-gray-200">
+                                                        <thead className="bg-gray-50">
+                                                            <tr>
+                                                                {Object.keys(value[0] || {}).map((header) => (
+                                                                    <th key={header} className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                                                                        {header.replace(/_/g, ' ')}
+                                                                    </th>
+                                                                ))}
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="bg-white divide-y divide-gray-200">
+                                                            {value.map((item, idx) => (
+                                                                <tr key={idx}>
+                                                                    {Object.values(item).map((val, vIdx) => (
+                                                                        <td key={vIdx} className="px-2 py-1 text-[10px] text-gray-900 whitespace-nowrap">
+                                                                            {typeof val === 'object' ? JSON.stringify(val) : String(val)}
+                                                                        </td>
+                                                                    ))}
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        );
+                                    }
 
-                <div className="mb-3">
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Commentaires</label>
-                    <textarea
-                        name="commentaires"
-                        value={formData.commentaires}
-                        onChange={(e) => onFormChange(e.target.name, e.target.value)}
-                        placeholder="Ajouter un commentaire..."
-                        rows="2"
-                        disabled={!isFieldActive}
-                        className={`block w-full rounded-md border-gray-300 shadow-sm text-xs sm:text-sm ${isFieldActive ? '' : 'bg-gray-50 cursor-not-allowed'}`}
-                    ></textarea>
-                </div>
+                                    // Cas objet (nested) : Affichage en sous-formulaire formatté
+                                    if (typeof value === 'object') {
+                                        return (
+                                            <div key={key} className="mb-3 mt-1 p-2 bg-gray-50 rounded border border-gray-200">
+                                                <h6 className="text-[10px] font-bold text-gray-700 uppercase mb-2 border-b border-gray-200 pb-1">
+                                                    {key.replace(/_/g, ' ')}
+                                                </h6>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                                    {Object.entries(value).map(([subKey, subValue]) => (
+                                                        <div key={subKey}>
+                                                            <label className="block text-[10px] text-gray-500 mb-0.5 capitalize font-medium">
+                                                                {subKey.replace(/_/g, ' ')}
+                                                            </label>
+                                                            <input
+                                                                type="text"
+                                                                defaultValue={String(subValue)}
+                                                                className="block w-full rounded border-gray-300 shadow-sm text-xs py-1 text-left bg-white"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    }
 
-                <div className="mb-3">
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs sm:text-sm font-medium text-gray-700">Justificatif Paiement</span>
-                        <button type="button" disabled={!isFieldActive} className={`text-xs sm:text-sm font-medium ${isFieldActive ? 'text-indigo-600 hover:text-indigo-700' : 'text-gray-400 cursor-not-allowed'}`}>+ Ajouter</button>
-                    </div>
-                    <p className="text-xs text-gray-500">Reçu de virement ou quittance (optionnel).</p>
-                </div>
+                                    // Cas standard : champ texte
+                                    let isDate = key.toLowerCase().includes('date');
+                                    const displayValue = isDate && typeof value === 'string' ? value.slice(0, 10) : value;
+
+                                    return (
+                                        <div key={key} className="mb-2">
+                                            <label className="block text-[10px] uppercase text-gray-500 mb-0.5 font-bold">
+                                                {key.replace(/_/g, ' ')}
+                                            </label>
+                                            <input
+                                                type={isDate ? "date" : "text"}
+                                                defaultValue={displayValue}
+                                                className={`block w-full rounded border-gray-300 shadow-sm text-xs py-1 text-left`}
+                                            />
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </>
+                )}
             </div>
 
             {/* Bouton de Validation */}
-            <div className="mt-3 pt-3 border-t border-gray-200 flex justify-end flex-shrink-0">
+            <div className="mt-2 pt-2 border-t border-gray-200 flex justify-end flex-shrink-0">
                 <button
                     type="submit"
                     onClick={onValider}
-                    // MODIFIÉ: Utilise la validation du lot
                     disabled={!isLotValidatable}
-                    className={`w-full sm:w-auto py-2 px-4 border border-transparent rounded-lg shadow-sm text-xs sm:text-sm font-medium text-white transition duration-150
+                    className={`w-full sm:w-auto py-1.5 px-4 border border-transparent rounded shadow-sm text-xs font-medium text-white transition duration-150
                         ${isLotValidatable ? 'bg-gray-800 hover:bg-gray-900 focus:ring-gray-800' : 'bg-gray-300 cursor-not-allowed'}`
                     }
                 >
-                    {documentsCount > 1 ? `Valider le Lot (${documentsCount})` : 'Importer et Valider'}
+                    {documentsCount > 1 ? `Valider Lot (${documentsCount})` : 'Valider'}
                 </button>
             </div>
         </div>
@@ -386,6 +468,18 @@ export default function ImportFichier() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isDragActive, setIsDragActive] = useState(false);
     const [showFormOnMobile, setShowFormOnMobile] = useState(false);
+    const [errorNotification, setErrorNotification] = useState(null);
+    const [notification, setNotification] = useState(null); // { type: 'success'|'warning'|'error', message: '' }
+
+    // API Hooks
+    const [extractData, { isLoading: isExtracting }] = useExtractDataFromFileMutation();
+    const [saveFile, { isLoading: isSaving }] = useSaveOneFileSourceMutation();
+
+    // Fonction pour afficher une notification d'erreur animée
+    const showErrorNotification = useCallback((message) => {
+        setErrorNotification(message);
+        // Ne disparaît pas automatiquement, l'utilisateur doit cliquer
+    }, []);
 
     // Données du document actuellement sélectionné
     const currentDocument = documents[currentIndex];
@@ -393,10 +487,10 @@ export default function ImportFichier() {
     const currentFormData = currentDocument ? currentDocument.data : EMPTY_FORM_DATA;
     const currentIsExtracted = currentDocument ? currentDocument.isExtracted : false;
 
-    // NOUVEAU: Vérifie si TOUS les documents sont extraits pour valider le lot
+    // Vérifie si TOUS les documents sont extraits pour valider le lot
     const isLotValidatable = useMemo(() => {
-        return documents.length > 0 && documents.every(doc => doc.isExtracted);
-    }, [documents]);
+        return documents.length > 0 && documents.every(doc => doc.isExtracted) && !isSaving;
+    }, [documents, isSaving]);
 
     const updateCurrentDocument = useCallback((updates) => {
         setDocuments(prevDocuments => {
@@ -423,7 +517,6 @@ export default function ImportFichier() {
         if (!currentDocument) return;
         let value = rawValue;
         if (name === 'montant' || name === 'totalHT') {
-            // Nettoie la valeur des séparateurs de milliers pour le stockage interne
             value = String(rawValue).replace(/[^\d.]/g, '');
         }
         updateCurrentDocument({
@@ -431,21 +524,115 @@ export default function ImportFichier() {
         });
     }, [currentDocument, currentFormData, updateCurrentDocument]);
 
-    // Simule l'extraction OCR
-    const handleExtractText = useCallback(() => {
+    const handleRemoveCurrentDocument = useCallback(() => {
+        if (!currentDocument) return;
+        const updatedDocuments = documents.filter((_, index) => index !== currentIndex);
+        setDocuments(updatedDocuments);
+
+        if (updatedDocuments.length === 0) {
+            setCurrentIndex(0);
+            setShowFormOnMobile(false);
+        } else if (currentIndex >= updatedDocuments.length) {
+            setCurrentIndex(updatedDocuments.length - 1);
+        }
+    }, [documents, currentIndex, currentDocument]);
+
+    // Extraction OCR via API (DRF) - AVEC GESTION D'ERREUR
+    const handleExtractText = useCallback(async () => {
         if (!currentFile) return;
-        updateCurrentDocument({
-            data: { ...INITIAL_FORM_DATA, fileName: currentFile.name },
-            isExtracted: true
-        });
-    }, [currentFile, updateCurrentDocument]);
+
+        const formData = new FormData();
+        formData.append('file', currentFile);
+
+        try {
+            const response = await extractData(formData).unwrap();
+            console.log("OCR Response:", response);
+
+            // ✅ Vérifier si le document est non reconnu
+            if (response.error && response.error.includes("Document non reconnu")) {
+                throw new Error("Document non reconnu");
+            }
+
+            // Extraction du sous-objet JSON s'il existe
+            const extractedJson = response.extracted_json || response;
+
+            // Mapping intelligent des données extraites
+            const mappedData = {
+                ...EMPTY_FORM_DATA,
+                fileName: currentFile.name,
+                typeDocument: response.type_document || extractedJson.type_document || '',
+                extractedJson: extractedJson,
+
+                montant: extractedJson.montant_total_facture_ttc || extractedJson.montant_ttc || extractedJson.amount_total || '',
+                // Calcul du HT si manquant : TTC - TVA
+                totalHT: (() => {
+                    let ht = extractedJson.montant_ht || extractedJson.total_ht;
+                    if (ht) return ht;
+
+                    // Essayer de trouver la TVA
+                    const tva = extractedJson.montant_tva || extractedJson.tax_amount || extractedJson.vat_amount || extractedJson.tva || extractedJson.montant_taxe;
+                    const ttc = extractedJson.montant_total_facture_ttc || extractedJson.montant_ttc || extractedJson.amount_total;
+
+                    if (ttc && tva) {
+                        const ttcVal = parseFloat(String(ttc).replace(/[^0-9.]/g, ''));
+                        const tvaVal = parseFloat(String(tva).replace(/[^0-9.]/g, ''));
+                        if (!isNaN(ttcVal) && !isNaN(tvaVal)) {
+                            return (ttcVal - tvaVal).toFixed(2); // Calcul HT = TTC - TVA
+                        }
+                    }
+                    return '';
+                })(),
+                client: extractedJson.nom_client || extractedJson.client || extractedJson.supplier || '',
+                adresse_client: extractedJson.adresse_client || '',
+                telephone_client: extractedJson.telephone_client || '',
+                telephone_commercial: extractedJson.telephone_commercial || '',
+                numeroFacture: extractedJson.numero_facture || extractedJson.invoice_number || '',
+                produits: extractedJson.description_produits || [],
+                garantie: extractedJson.garantie || '',
+                sav: extractedJson.sav || '',
+                dateEmission: (extractedJson.date_facture || extractedJson.date_emission || extractedJson.date || '').slice(0, 10),
+                dateEcheance: (extractedJson.date_echeance || extractedJson.due_date || '').slice(0, 10),
+                fileId: response.id || response.file_id || null,
+                ventilation: '',
+                categorie: ''
+            };
+
+            updateCurrentDocument({
+                data: mappedData,
+                isExtracted: true,
+                rawResponse: response
+            });
+
+        } catch (error) {
+            console.error("Erreur Extraction:", error);
+
+            // Réinitialiser le formulaire en cas d'erreur
+            updateCurrentDocument({
+                data: { ...EMPTY_FORM_DATA, fileName: currentFile.name },
+                isExtracted: false,
+                rawResponse: null
+            });
+
+            // ✅ Vérifier si l'erreur contient le message "Document non reconnu"
+            const errorMessage = error.data?.error || error.data?.detail || error.message || 'Erreur inconnue';
+
+            if (errorMessage.includes("Document non reconnu")) {
+                showErrorNotification("Document non reconnu comme pièce comptable. Veuillez vérifier que le fichier est bien une facture, un devis ou un document comptable valide.");
+                // Supprimer le fichier de la liste car invalide
+                handleRemoveCurrentDocument();
+            } else {
+                showErrorNotification(`Erreur lors de l'extraction: ${errorMessage}`);
+            }
+        }
+    }, [currentFile, extractData, updateCurrentDocument, showErrorNotification, handleRemoveCurrentDocument]);
 
     // Annule l'extraction (réinitialise le formulaire)
     const handleCancelExtraction = useCallback(() => {
         if (!currentFile) return;
         updateCurrentDocument({
             data: { ...EMPTY_FORM_DATA, fileName: currentFile.name },
-            isExtracted: false
+            isExtracted: false,
+            rawResponse: null
         });
     }, [currentFile, updateCurrentDocument]);
 
@@ -467,7 +654,6 @@ export default function ImportFichier() {
 
         setDocuments(prev => [...prev, ...newDocuments]);
 
-        // Se positionne sur le premier document si la liste était vide
         if (documents.length === 0 && newDocuments.length > 0) {
             setCurrentIndex(0);
         }
@@ -475,7 +661,7 @@ export default function ImportFichier() {
         if (Array.from(newFiles).length > filesToProcess.length) {
             alert(`Seuls ${filesToProcess.length} fichiers ajoutés, limite de ${MAX_FILE_UPLOAD} atteinte.`);
         }
-    }, [documents.length, documents]);
+    }, [documents.length]);
 
     const handleFileDrop = (e) => {
         e.preventDefault();
@@ -488,18 +674,7 @@ export default function ImportFichier() {
         e.target.value = null;
     };
 
-    const handleRemoveCurrentDocument = useCallback(() => {
-        if (!currentDocument) return;
-        const updatedDocuments = documents.filter((_, index) => index !== currentIndex);
-        setDocuments(updatedDocuments);
 
-        if (updatedDocuments.length === 0) {
-            setCurrentIndex(0);
-            setShowFormOnMobile(false);
-        } else if (currentIndex >= updatedDocuments.length) {
-            setCurrentIndex(updatedDocuments.length - 1);
-        }
-    }, [documents, currentIndex, currentDocument]);
 
     const handleNext = () => {
         if (currentIndex < documents.length - 1) {
@@ -513,27 +688,120 @@ export default function ImportFichier() {
         }
     };
 
-    const handleValiderAll = () => {
-        // Double vérification, même si le bouton est déjà désactivé par isLotValidatable
-        if (!isLotValidatable) {
-            alert(`Attention : Veuillez extraire les données de TOUS les documents (${documents.filter(doc => !doc.isExtracted).length} restant) avant de valider le lot.`);
-            return;
-        }
+    // Validation du Lot via API (DRF)
+    const handleValiderAll = async () => {
+        if (!isLotValidatable) return alert("Extraction OCR requise pour tous les documents.");
 
-        console.log('Lot validé !', documents.map(d => ({ fileName: d.data.fileName, data: d.data })));
-        alert(`${documents.length} document(s) importés avec succès!`);
-        handleClearAll();
+        try {
+            const results = await Promise.all(documents.map(doc => {
+                if (!doc.data.extractedJson) throw new Error("OCR manquant pour un document");
+
+                // Préparer FormData pour l'upload du fichier avec les données extraites
+                const formData = new FormData();
+                formData.append('file', doc.file);
+                formData.append('extracted_json', JSON.stringify(doc.data.extractedJson));
+                if (doc.data.ref_file) {
+                    formData.append('ref_file', doc.data.ref_file);
+                }
+
+                // Envoi au backend via /api/files/
+                return saveFile(formData).unwrap();
+            }));
+
+            // Analyser les résultats
+            const duplicates = results.filter(r => r.duplicate === true);
+            const successes = results.filter(r => r.duplicate !== true);
+
+            if (duplicates.length > 0) {
+                const msg = `Ce document a déjà été importé dans le système.Veuillez vérifier la liste des fichiers existants ou importer un autre document!!!`;
+
+                // Afficher comme une ERREUR (Rouge) comme demandé
+                showErrorNotification(msg);
+
+                // Si on a aussi des succès, on peut le notifier discrètement ou laisser l'erreur prévaloir
+                if (successes.length > 0) {
+                    console.log(`${successes.length} autres documents importés avec succès.`);
+                }
+            } else {
+                alert(`${results.length} document(s) importés avec succès !`);
+            }
+
+            handleClearAll();
+        } catch (error) {
+            console.error("Erreur validation:", error);
+            showErrorNotification(error.message || "Erreur inconnue lors de la validation.");
+        }
     };
 
     return (
-        <div className="fixed inset-0 p-2 sm:p-3 bg-gray-50 flex flex-col overflow-hidden">
+        <div className="fixed inset-0 p-2 sm:p-3 bg-gray-50 flex flex-col overflow-hidden pt-24 sm:pt-20">
+            {/* Injection des styles CSS */}
+            <style>{styles}</style>
+
+            {/* Notification d'ERREUR Globale (Visible partout, même sur mobile) */}
+            {errorNotification && (
+                <div className="fixed top-40 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-md
+                    bg-red-500 text-white p-4 rounded-lg shadow-2xl border border-red-600
+                    animate-fadeIn flex items-start gap-3">
+
+                    <svg className="w-6 h-6 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+
+                    <div className="flex-1">
+                        <p className="font-bold text-base mb-1">Erreur</p>
+                        <p className="text-sm leading-snug whitespace-pre-line">
+                            {errorNotification}
+                        </p>
+                    </div>
+
+                    <button
+                        onClick={() => setErrorNotification(null)}
+                        className="text-white hover:bg-white/20 rounded-full p-1 transition"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            )}
+
+            {/* Notification Toast Moderne */}
+            {notification && (
+                <div
+                    className={`fixed top-40 right-4 z-50 max-w-sm w-full shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-out animate-[slideIn_0.3s_ease-out]
+                        ${notification.type === 'success' ? 'bg-white border-l-4 border-green-500' :
+                            notification.type === 'warning' ? 'bg-white border-l-4 border-yellow-500' :
+                                'bg-white border-l-4 border-red-500'}`}
+                >
+                    <div className="p-4 flex items-start">
+                        <div className="flex-shrink-0">
+                            {notification.type === 'success' && <svg className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                            {notification.type === 'warning' && <svg className="h-6 w-6 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>}
+                            {notification.type === 'error' && <svg className="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                        </div>
+                        <div className="ml-3 w-0 flex-1 pt-0.5">
+                            <p className="text-sm font-medium text-gray-900">
+                                {notification.type === 'success' ? 'Succès' :
+                                    notification.type === 'warning' ? 'Attention' : 'Erreur'}
+                            </p>
+                            <p className="mt-1 text-sm text-gray-500 whitespace-pre-line">{notification.message}</p>
+                        </div>
+                        <div className="ml-4 flex-shrink-0 flex">
+                            <button
+                                className="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                onClick={() => setNotification(null)}
+                            >
+                                <span className="sr-only">Fermer</span>
+                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Titre */}
-            <div className="flex-shrink-0 mb-2 sm:mb-3">
-                <h2 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-800 border-b border-gray-200 pb-2 sm:pb-3">
-                    📋 Importation Facture Client
-                </h2>
-            </div>
+
 
             {/* Toggle Mobile View */}
             {documents.length > 0 && (
@@ -553,9 +821,8 @@ export default function ImportFichier() {
                 </div>
             )}
 
-
             {/* Conteneur principal */}
-            <div className="flex-grow min-h-0 overflow-hidden">
+            <div className="flex-grow min-h-0 overflow-hidden lg:overflow-y-auto">
                 <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 max-w-7xl mx-auto h-full">
 
                     {/* BLOC GAUCHE : VISUALISATION */}
@@ -615,7 +882,10 @@ export default function ImportFichier() {
                             onExtractText={handleExtractText}
                             onCancelExtraction={handleCancelExtraction}
                             documentsCount={documents.length}
-                            isLotValidatable={isLotValidatable} // PROPAGATION
+                            isLotValidatable={isLotValidatable}
+                            isLoading={isExtracting}
+                            errorNotification={errorNotification}
+                            onCloseError={() => setErrorNotification(null)}
                         />
                     </div>
                 </div>

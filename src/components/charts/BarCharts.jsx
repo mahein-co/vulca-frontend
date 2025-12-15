@@ -29,21 +29,21 @@ export default function BarCharts() {
         <h3 className="text-base sm:text-lg font-semibold text-gray-800">Top 10 des comptes les plus mouvementés</h3>
         <span className="text-xs sm:text-sm font-medium text-gray-500 mt-2 sm:mt-0">Référence : PCG 2005</span>
       </div>
-      
+
       <div className="w-full h-96 lg:h-[520px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={top10AccountsData} margin={{ top: 10, right: 30, left: 60, bottom: 100 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis 
-              dataKey="label" 
+            <XAxis
+              dataKey="label"
               angle={-45}
               textAnchor="end"
               height={100}
               tick={{ fontSize: 12 }}
               stroke="#4b5563"
             />
-            <YAxis 
-              stroke="#4b5563" 
+            <YAxis
+              stroke="#4b5563"
               width={60}
               tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`}
             />

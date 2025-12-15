@@ -301,7 +301,7 @@ export default function BilanForm({ onSaisieCompleted }) {
     );
 
     return (
-        <div className="min-h-screen lg:p-1 flex flex-col">
+        <div className="w-full h-full lg:p-1 flex flex-col">
             <div className="max-w-7xl mx-auto w-full">
 
                 <div className="flex justify-between items-center mb-4 border-b pb-2">
@@ -322,7 +322,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
 
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">N° Compte (1xx-5xx) *</label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">N° Compte (1xx-5xx)</label>
                             <input
                                 type="text"
                                 name="numeroCompte"
@@ -338,7 +338,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                         </div>
 
                         <div className="md:col-span-2 lg:col-span-2">
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Libellé *</label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Libellé</label>
                             <input
                                 type="text"
                                 name="libelle"
@@ -353,7 +353,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Montant (Ar) *</label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Montant (Ar)</label>
                             <input
                                 type="text"
                                 name="montant"
@@ -371,8 +371,8 @@ export default function BilanForm({ onSaisieCompleted }) {
                                 value={nouvelleLigne.type}
                                 onChange={handleChange}
                                 className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte
-                                        ? 'bg-gray-100 cursor-not-allowed border-gray-200'
-                                        : 'bg-white border-gray-300'
+                                    ? 'bg-gray-100 cursor-not-allowed border-gray-200'
+                                    : 'bg-white border-gray-300'
                                     }`}
                                 disabled={nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte}
                             >
@@ -389,8 +389,8 @@ export default function BilanForm({ onSaisieCompleted }) {
                                 onChange={handleChange}
                                 disabled={nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte}
                                 className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte
-                                        ? 'bg-gray-100 cursor-not-allowed border-gray-200'
-                                        : 'bg-white border-gray-300'
+                                    ? 'bg-gray-100 cursor-not-allowed border-gray-200'
+                                    : 'bg-white border-gray-300'
                                     }`}
                             >
                                 {(nouvelleLigne.type === 'Actif' ? categoriesActif : categoriesPassif).map(cat => (
@@ -400,7 +400,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Date *</label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
                             <input
                                 type="date"
                                 name="date"

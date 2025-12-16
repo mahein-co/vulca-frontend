@@ -1,20 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BalanceModal from '../balance/BalanceModal';
 
 import BarCharts from '../../components/charts/BarCharts';
 import TvaBarChart from '../../components/charts/TvaBarChart';
 import PieChartRepartition from '../../components/charts/PieChartRepartition';
 import LineChartCAEvolution from '../../components/charts/LineChartCAEvolution';
+import { BASE_URL_API } from '../../constants/globalConstants';
 
-// --- 1. Données Statiques ---
 
-const summaryCards = [
-  { title: "Chiffre d'affaires", value: 'Ar 37 800 000', icon: '📊', action: 'none' },
-  { title: 'EBE', value: 'Ar 45350', unit: "Excédent Brut d'Exploitation", icon: '💰', action: 'none' },
-  { title: 'Bénéfice net', value: 'Ar 7 678 300', unit: 'Marge nette', icon: '📈', action: 'none' },
-  { title: 'BALANCE', value: 'Ar 209 202 800', unit: '', icon: '⚖️', action: 'openBalance' },
-  { title: 'BFR', value: 'Ar 35 641 500', unit: 'Besoin en Fonds de Roulement', icon: '💵', action: 'none' },
-];
 
 const journals = [
   { name: 'Caisses', amount: '19 446 024 Ar', percentage: '9.2%', value: 9.2, color: 'bg-amber-800' },
@@ -143,7 +136,7 @@ const JournalRepartition = () => {
       {/* Modal Journal Detail */}
       {selectedJournal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-5xl h-[85vh] w-full flex flex-col border-t-2 border-gray-300">
+          <div className="bg-white rounded-lg shadow-xl max-w-5xl max-h-[85vh] w-full flex flex-col border-t-2 border-gray-300">
             <div className="flex-none p-4 border-b border-gray-200 flex justify-between items-center bg-white rounded-t-lg">
               <div className="flex items-center">
                 <div className={`w-3 h-3 rounded-full ${selectedJournal.color} mr-3`}></div>
@@ -252,9 +245,172 @@ const JournalRepartition = () => {
 // --- 3. Composant Principal Dashboard ---
 
 const Dashboard = () => {
+  
+  
+
+
+  const [caTotal, setCaTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/chiffre-affaire/`)
+      .then(res => res.json())
+      .then(data => {
+        const total = data.reduce(
+          (sum, item) => sum + Number(item.chiffre_affaire),
+          0
+        );
+        setCaTotal(total);
+      })
+      .catch(err => console.error("Erreur CA :", err))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const [ebe, setEbe] = useState(0);
+
+  const [resultatNet, setResultatNet] = useState(0);
+
+  useEffect(() => {
+  fetch(`${BASE_URL_API}/ebe/`)
+    .then(res => res.json())
+    .then(data => setEbe(data.ebe))
+    .catch(err => console.error("Erreur EBE :", err));
+}, []);
+
+
+  useEffect(() => {
+  fetch(`${BASE_URL_API}/resultat-net/`)
+    .then(res => res.json())
+    .then(data => setResultatNet(data.resultat_net))
+    .catch(err => console.error("Erreur Résultat Net :", err));
+}, []);
+
+  // try fetch CAF if endpoint exists, otherwise keep default
+  const [caf, setCaf] = useState(0);
+
+useEffect(() => {
+  fetch(`${BASE_URL_API}/caf/`)
+    .then(res => res.json())
+    .then(data => setCaf(data.caf))
+    .catch(err => console.error("Erreur CAF :", err));
+}, []);
+
+  const [bfr, setBfr] = useState(0);
+
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/bfr/`)
+      .then(res => res.json())
+      .then(data => setBfr(data.bfr))
+      .catch(err => console.error("Erreur BFR :", err));
+}, []);
+
+const [leverage, setLeverage] = useState(0);
+
+useEffect(() => {
+  fetch(`${BASE_URL_API}/leverage-brut/`)
+    .then(res => res.json())
+    .then(data => setLeverage(data.leverage_brut))
+    .catch(err => console.error("Erreur Leverage brut :", err));
+}, []);
+
+
+
+useEffect(() => {
+  fetch(`${BASE_URL_API}/annuite-caf/`)
+    .then(res => res.json())
+    .then(data => setRatio(parseFloat(data.ratio)))
+    .catch(err => console.error("Erreur ratio annuité / CAF", err));
+}, []);
+
+const [margeNette, setMargeNette] = useState(null);
+const [loadingMarge, setLoadingMarge] = useState(true);
+useEffect(() => {
+  fetch(`${BASE_URL_API}/resultat-net-ca/`)
+    .then(res => res.json())
+    .then(data => {
+      // on récupère directement le % calculé par l'API
+      setMargeNette(parseFloat(data.ratio_pourcent));
+    })
+    .catch(err => console.error("Erreur Résultat net / CA", err))
+    .finally(() => setLoadingMarge(false));
+}, []);
+
+const [ratio, setRatio] = useState(null);
+fetch(`${BASE_URL_API}/charge-ebe/`)
+  .then(res => res.json())
+  .then(data => setRatio(parseFloat(data.ratio)))
+  .catch(err => console.error("Erreur Charge/EBE", err));
+
+useEffect(() => {
+  fetch(`${BASE_URL_API}/charge-ca/`)
+    .then(res => res.json())
+    .then(data => setRatio(parseFloat(data.ratio)))
+    .catch(err => console.error("Erreur Charge/CA", err));
+}, []);
+
+useEffect(() => {
+  fetch(`${BASE_URL_API}/marge-endettement/`)
+    .then(res => res.json())
+    .then(data => setRatio(parseFloat(data.ratio)))
+    .catch(err => console.error("Erreur Marge d'endettement", err));
+}, []);
+
+  // ✅ SUMMARY CARDS DYNAMIQUE
+  const formattedLeverage = (() => {
+    const n = Number(leverage);
+    return Number.isFinite(n) ? n.toFixed(2) : '—';
+  })();
+  const summaryCards = [
+    {
+      title: "Chiffre d'affaires",
+      value: loading
+        ? "Chargement..."
+        : `Ar ${caTotal.toLocaleString("fr-FR")}`,
+      icon: '📊',
+      action: 'none'
+    },
+    {
+      title: "CAF",
+      value: `Ar ${Number(caf).toLocaleString("fr-FR")}`,
+      unit: "Capacité d'Autofinancement",
+      icon: "🏦"
+    },
+    {
+      title: "EBE",
+      value: `Ar ${Number(ebe).toLocaleString("fr-FR")}`,
+      unit: "Excédent Brut d'Exploitation",
+      icon: "💰",
+      action: 'none'
+    },
+    {
+      title: "Bénéfice net",
+      value: `Ar ${Number(resultatNet).toLocaleString("fr-FR")}`,
+      unit: "Bénéfice net",
+      icon: "📈"
+    },
+    {
+      title: 'BALANCE',
+      value: '—',
+      icon: '⚖️',
+      action: 'openBalance'
+    },
+    {
+      title: "Leverage brut",
+      value: formattedLeverage,
+      unit: "Endettement / EBE",
+      icon: "📊",
+      action: 'none'
+    },
+    {
+      title: "BFR",
+      value: `Ar ${Number(bfr).toLocaleString("fr-FR")}`,
+      unit: "Besoin en Fonds de Roulement",
+      icon: "💵"
+    },
+  ];
+
+
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
-  const [isAlertesModalOpen, setIsAlertesModalOpen] = useState(false);
-  const [isRentabiliteModalOpen, setIsRentabiliteModalOpen] = useState(false);
 
   const handleCardClick = (action) => {
     if (action === 'openBalance') {
@@ -288,162 +444,197 @@ const Dashboard = () => {
       </div>
 
       {/* 2. Cartes de Résumé */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 mb-6">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 mb-6 items-start">
         {summaryCards.map((card, index) => (
           <div
             key={index}
-            className={`flex items-start p-3 sm:p-4 rounded-lg shadow-md bg-white border-t-2 border-gray-300 ${card.action === 'openBalance' ? 'cursor-pointer hover:shadow-lg hover:border-emerald-500' : 'hover:shadow-lg'} transition-all duration-200`}
+            className={`flex items-center justify-start text-left p-2 sm:p-3 rounded-lg shadow-sm bg-white border-t border-gray-200 h-24 sm:h-28 ${card.action === 'openBalance' ? 'cursor-pointer hover:shadow-md hover:border-emerald-400' : 'hover:shadow-md'} transition-all duration-150`}
             onClick={card.action === 'openBalance' ? () => handleCardClick(card.action) : null}
           >
-            <div className="p-2 rounded-lg mr-3 bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600">
+            <div className="p-1 rounded-md mr-3 bg-emerald-50 text-emerald-300 flex-shrink-0">
               <span className="text-xl">{card.icon}</span>
             </div>
 
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase">{card.title}</p>
-              <p className="text-base sm:text-lg font-bold text-gray-900 my-1">{card.value}</p>
-              <p className="text-xs text-gray-400">{card.unit}</p>
+            <div className="flex-1">
+              <p className="text-[10px] font-semibold text-gray-500 uppercase">{card.title}</p>
+              <p className="text-sm sm:text-base font-bold text-gray-900 my-0.5">{card.value}</p>
+              {card.unit && <p className="text-[11px] text-gray-400">{card.unit}</p>}
             </div>
           </div>
         ))}
       </div>
 
-      {/* 3. Graphique d'Évolution du Chiffre d'Affaires */}
-      <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">Évolution du Chiffre d'Affaires</h3>
-        <LineChartCAEvolution />
-      </div>
-
-      {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
-        <div className="h-full">
-          <BarCharts />
+      
+      {/* 6. Autres indicateurs (Alertes & Risques + Rentabilité) */}
+      <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md border-t-2 border-gray-300 mb-4">
+        <div className="flex items-center mb-3">
+          <span className="text-2xl mr-3 text-gray-400">📊</span>
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800">Autres indicateurs</h3>
         </div>
-        <div className="h-full">
-          <TvaBarChart />
-        </div>
-      </div>
 
-      {/* 5. Produits et Charges */}
-      <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-800">Répartition Produits et Charges</h3>
-        </div>
-        <PieChartRepartition />
-      </div>
-
-      {/* 6. Autres Indicateurs */}
-      <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-800">Autres Indicateurs</h3>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-4 rounded-lg cursor-pointer hover:shadow-md border border-gray-200 hover:border-emerald-400 transition-all" onClick={() => setIsAlertesModalOpen(true)}>
-            <div className="flex items-center mb-2">
-              <span className="text-xl mr-2">🚨</span>
-              <h4 className="text-base font-semibold text-gray-800">Alertes & risques</h4>
-            </div>
-            <p className="text-sm text-gray-600">Cliquez pour voir les alertes et risques</p>
-            <span className="text-xs text-emerald-600 font-medium mt-2 inline-block">Voir détails →</span>
-          </div>
-          <div className="bg-gradient-to-br from-gray-50 to-slate-50 p-4 rounded-lg cursor-pointer hover:shadow-md border border-gray-200 hover:border-emerald-400 transition-all" onClick={() => setIsRentabiliteModalOpen(true)}>
-            <div className="flex items-center mb-2">
-              <span className="text-xl mr-2">💹</span>
-              <h4 className="text-base font-semibold text-gray-800">Rentabilité</h4>
-            </div>
-            <p className="text-sm text-gray-600">Cliquez pour voir la rentabilité</p>
-            <span className="text-xs text-emerald-600 font-medium mt-2 inline-block">Voir détails →</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 7. Répartition par Journal */}
-      <JournalRepartition />
-
-      {/* La modale de la Balance */}
-      <BalanceModal
-        isOpen={isBalanceModalOpen}
-        onClose={() => setIsBalanceModalOpen(false)}
-      />
-
-      {/* Modale Alertes & Risques */}
-      {isAlertesModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-3xl w-full relative border-t-2 border-gray-300">
-            <button onClick={() => setIsAlertesModalOpen(false)} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 transition-all">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            <div className="flex items-center mb-5">
-              <span className="text-2xl mr-3">🚨</span>
-              <h3 className="text-xl font-bold text-gray-800">Alertes & Risques</h3>
-            </div>
-
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Alertes & Risques */}
+          <div>
             <div className="overflow-hidden rounded-lg border border-gray-200">
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50">
                   <tr className="border-b border-gray-200 text-gray-500 uppercase text-xs tracking-wider">
-                    <th className="px-4 py-3 font-semibold">Risque</th>
+                    <th className="px-4 py-3 font-semibold">Indicateur</th>
                     <th className="px-4 py-3 font-semibold text-right">Ratio</th>
                     <th className="px-4 py-3 font-semibold text-right">Seuil</th>
                     <th className="px-4 py-3 font-semibold text-center">État</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
-                  <tr className="group hover:bg-red-50/50 transition-colors">
-                    <td className="px-4 py-3 text-gray-800 font-medium">Annuité d'emprunt / CAF</td>
-                    <td className="px-4 py-3 text-gray-700 text-right font-mono">0.40</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs text-right">&lt; 0.50</td>
-                    <td className="px-4 py-3 text-center"><span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">Alerte</span></td>
+                  <tr className="group hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-gray-800 font-medium">
+                      Annuité d'emprunt / CAF
+                    </td>
+
+                    <td className="px-4 py-3 text-gray-700 text-right font-mono">
+                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                    </td>
+
+                    <td className="px-4 py-3 text-gray-400 text-xs text-right">
+                      &lt; 0.50
+                    </td>
+
+                    <td className="px-4 py-3 text-center">
+                      {ratio > 0.5 ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                          ⚠ Alerte
+                        </span>
+                      ) : (
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                          OK
+                        </span>
+                      )}
+                    </td>
                   </tr>
-                  <tr className="group hover:bg-red-50/50 transition-colors">
-                    <td className="px-4 py-3 text-gray-800 font-medium">Dette LMT / CAF</td>
-                    <td className="px-4 py-3 text-gray-700 text-right font-mono">3.20</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs text-right">&lt; 3.50</td>
-                    <td className="px-4 py-3 text-center"><span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">Alerte</span></td>
+                  <tr className="group hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium">Dette LMT / CAF</td>
+
+                    <td className="px-4 py-3 text-right font-mono">
+                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                    </td>
+
+                    <td className="px-4 py-3 text-right text-xs text-gray-400">
+                      &lt; 3.50
+                    </td>
+
+                    <td className="px-4 py-3 text-center">
+                      {ratio >= 3.5 ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
+                          Alerte
+                        </span>
+                      ) : (
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
+                          OK
+                        </span>
+                      )}
+                    </td>
                   </tr>
-                  <tr className="group hover:bg-red-50/50 transition-colors">
-                    <td className="px-4 py-3 text-gray-800 font-medium">Résultat net / Chiffre d'affaires</td>
-                    <td className="px-4 py-3 text-gray-700 text-right font-mono">-1.2%</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs text-right">(seuil interne)</td>
-                    <td className="px-4 py-3 text-center"><span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">Alerte</span></td>
+                  <tr className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-medium">
+                      Résultat net / Chiffre d'affaires
+                    </td>
+
+                    <td className="px-4 py-3 text-right font-mono">
+                      {margeNette !== null ? `${margeNette.toFixed(2)} %` : '--'}
+                    </td>
+
+                    <td className="px-4 py-3 text-right text-xs text-gray-400">
+                      ≥ 10 %
+                    </td>
+
+                    <td className="px-4 py-3 text-center">
+                      {margeNette === null ? (
+                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-bold">N/A</span>
+                      ) : margeNette < 5 ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">Faible</span>
+                      ) : margeNette < 10 ? (
+                        <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-bold">Correct</span>
+                      ) : (
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">Excellent</span>
+                      )}
+                    </td>
                   </tr>
-                  <tr className="group hover:bg-red-50/50 transition-colors">
-                    <td className="px-4 py-3 text-gray-800 font-medium">Charge financière / EBE</td>
-                    <td className="px-4 py-3 text-gray-700 text-right font-mono">35%</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs text-right">&lt; 30%</td>
-                    <td className="px-4 py-3 text-center"><span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">Alerte</span></td>
+                  <tr className="group hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium">
+                      Charge financière / EBE
+                    </td>
+
+                    <td className="px-4 py-3 text-right font-mono">
+                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                    </td>
+
+                    <td className="px-4 py-3 text-right text-xs text-gray-400">
+                      &lt; 0.30
+                    </td>
+
+                    <td className="px-4 py-3 text-center">
+                      {ratio >= 0.30 ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
+                          Alerte
+                        </span>
+                      ) : (
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
+                          OK
+                        </span>
+                      )}
+                    </td>
                   </tr>
-                  <tr className="group hover:bg-red-50/50 transition-colors">
-                    <td className="px-4 py-3 text-gray-800 font-medium">Charge financière / CA</td>
-                    <td className="px-4 py-3 text-gray-700 text-right font-mono">6%</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs text-right">&lt; 5%</td>
-                    <td className="px-4 py-3 text-center"><span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">Alerte</span></td>
+                  <tr className="group hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium">Charge financière / CA</td>
+
+                    <td className="px-4 py-3 text-right font-mono">
+                      {ratio !== null ? (ratio*100).toFixed(2) + " %" : "--"}
+                    </td>
+
+                    <td className="px-4 py-3 text-right text-xs text-gray-400">&lt; 5%</td>
+
+                    <td className="px-4 py-3 text-center">
+                      {ratio !== null && ratio >= 0.05 ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
+                          Alerte
+                        </span>
+                      ) : (
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
+                          OK
+                        </span>
+                      )}
+                    </td>
                   </tr>
-                  <tr className="group hover:bg-red-50/50 transition-colors">
-                    <td className="px-4 py-3 text-gray-800 font-medium">Marge d'endettement (CMLT / FP)</td>
-                    <td className="px-4 py-3 text-gray-700 text-right font-mono">1.10</td>
-                    <td className="px-4 py-3 text-gray-400 text-xs text-right">&lt; 1.30</td>
-                    <td className="px-4 py-3 text-center"><span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">Alerte</span></td>
+                  <tr className="group hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium">Marge d'endettement (CMLT / FP)</td>
+
+                    <td className="px-4 py-3 text-right font-mono">
+                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                    </td>
+
+                    <td className="px-4 py-3 text-right text-xs text-gray-400">
+                      &lt; 1.3
+                    </td>
+
+                    <td className="px-4 py-3 text-center">
+                      {ratio !== null && ratio >= 1.3 ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
+                          Alerte
+                        </span>
+                      ) : (
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
+                          OK
+                        </span>
+                      )}
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Modale Rentabilité */}
-      {isRentabiliteModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg shadow-xl max-w-3xl w-full relative border-t-2 border-gray-300">
-            <button onClick={() => setIsRentabiliteModalOpen(false)} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 transition-all">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
-            <div className="flex items-center mb-5">
-              <span className="text-2xl mr-3">💹</span>
-              <h3 className="text-xl font-bold text-gray-800">Rentabilité</h3>
-            </div>
-
+          {/* Rentabilité */}
+          <div>
             <div className="overflow-hidden rounded-lg border border-gray-200">
               <table className="w-full text-left text-sm">
                 <thead className="bg-gray-50">
@@ -464,11 +655,43 @@ const Dashboard = () => {
                     <td className="px-4 py-3 text-gray-900 font-bold text-right">8.7%</td>
                     <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.8%</td>
                   </tr>
+
                   <tr className="group hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-800 font-medium">Capacité d'autofinancement (CAF)</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">Ar 1 200 000</td>
-                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +5.2%</td>
+                    <td className="px-4 py-3 text-gray-800 font-medium">Current Ratio</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">1.8</td>
+                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.1</td>
                   </tr>
+
+                  <tr className="group hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-gray-800 font-medium">Quick Ratio</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">1.2</td>
+                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.05</td>
+                  </tr>
+
+                  <tr className="group hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-gray-800 font-medium">Gearing</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">45%</td>
+                    <td className="px-4 py-3 text-right text-red-600 font-medium">↘ -2%</td>
+                  </tr>
+
+                  <tr className="group hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-gray-800 font-medium">Rotation des stocks</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">6x</td>
+                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.5x</td>
+                  </tr>
+
+                  {/* <tr className="group hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-gray-800 font-medium">Délais clients</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">45 j</td>
+                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↘ -3 j</td>
+                  </tr>
+
+                  <tr className="group hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-gray-800 font-medium">Délais fournisseurs</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">60 j</td>
+                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↘ -2 j</td>
+                  </tr> */}
+
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Marge opérationnelle</td>
                     <td className="px-4 py-3 text-gray-900 font-bold text-right">15.3%</td>
@@ -479,7 +702,39 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      )}
+      </div>
+      {/* 3. Graphique d'Évolution du Chiffre d'Affaires */}
+      <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">Évolution du Chiffre d'Affaires</h3>
+        <LineChartCAEvolution />
+      </div>
+
+      {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
+        <div>
+          <BarCharts />
+        </div>
+        <div>
+          <TvaBarChart />
+        </div>
+      </div>
+
+      {/* 5. Produits et Charges */}
+      <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800">Répartition Produits et Charges</h3>
+        </div>
+        <PieChartRepartition />
+      </div>
+
+      {/* 8. Répartition par Journal */}
+      <JournalRepartition />
+
+      {/* La modale de la Balance */}
+      <BalanceModal
+        isOpen={isBalanceModalOpen}
+        onClose={() => setIsBalanceModalOpen(false)}
+      />
     </div>
   );
 };

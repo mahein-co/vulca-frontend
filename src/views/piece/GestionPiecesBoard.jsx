@@ -17,7 +17,8 @@ const ConfirmationModal = ({ isOpen, document, onConfirm, onClose }) => {
                 </p>
 
                 <p className="text-sm text-red-700 font-medium mb-6 p-2 bg-red-50 rounded">
-                    ⚠️ Cette action entraînera la suppression de toutes les écritures comptables associées à ce fichier.
+                    ⚠️ Cette action supprimera uniquement le fichier source.
+                    Les écritures comptables associées seront conservées, mais ne seront plus liées à ce document.
                 </p>
 
                 <div className="flex justify-end space-x-3">

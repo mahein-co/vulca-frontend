@@ -249,7 +249,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
 
 // --- 2. Composant : OcrValidationForm ---
 const OcrValidationForm = ({
-    formData, onFormChange, onValider, isDocumentLoaded, isExtracted, onExtractText, onCancelExtraction, documentsCount, isLotValidatable, isLoading, errorNotification, onCloseError
+    formData, onFormChange, onValider, isDocumentLoaded, isExtracted, onExtractText, onCancelExtraction, documentsCount, isLotValidatable, isLoading, errorNotification, onCloseError, currentDocument
 }) => {
     // Calcul de la TVA et du Taux
     const totalTTC = parseFloat(String(formData.montant || '0').replace(/[^0-9.]/g, '')) || 0;
@@ -358,8 +358,13 @@ const OcrValidationForm = ({
                                     // Ignorer le type de document car déjà affiché en haut
                                     if (key === 'type_document' || key === 'typeDocument') return null;
 
-                                    // Ignorer les champs vides ou nulls pour l'affichage compact
-                                    if (value === null || value === '' || value === undefined) return null;
+                                    // Ignorer les champs qui étaient null/undefined dès l'extraction initiale
+                                    // MAIS garder les champs que l'utilisateur a vidés manuellement
+                                    const initialValue = currentDocument?.rawResponse?.extracted_json?.[key];
+                                    if (initialValue === null || initialValue === undefined) {
+                                        // Si le champ n'existait pas dans l'extraction initiale, ne pas l'afficher
+                                        if (value === null || value === '' || value === undefined) return null;
+                                    }
 
                                     // Cas tableau : affichage tableau (ex: produits)
                                     if (Array.isArray(value)) {
@@ -412,7 +417,13 @@ const OcrValidationForm = ({
                                                             </label>
                                                             <input
                                                                 type="text"
-                                                                defaultValue={String(subValue)}
+                                                                value={String(formData.extractedJson?.[key]?.[subKey] || subValue)}
+                                                                onChange={(e) => {
+                                                                    const newExtractedJson = { ...formData.extractedJson };
+                                                                    if (!newExtractedJson[key]) newExtractedJson[key] = {};
+                                                                    newExtractedJson[key][subKey] = e.target.value;
+                                                                    onFormChange('extractedJson', newExtractedJson);
+                                                                }}
                                                                 className="block w-full rounded border-gray-300 shadow-sm text-xs py-1 text-left bg-white"
                                                             />
                                                         </div>
@@ -433,7 +444,11 @@ const OcrValidationForm = ({
                                             </label>
                                             <input
                                                 type={isDate ? "date" : "text"}
-                                                defaultValue={displayValue}
+                                                value={formData.extractedJson?.[key] !== undefined ? (isDate && typeof formData.extractedJson[key] === 'string' ? formData.extractedJson[key].slice(0, 10) : formData.extractedJson[key]) : displayValue}
+                                                onChange={(e) => {
+                                                    const newExtractedJson = { ...formData.extractedJson, [key]: e.target.value };
+                                                    onFormChange('extractedJson', newExtractedJson);
+                                                }}
                                                 className={`block w-full rounded border-gray-300 shadow-sm text-xs py-1 text-left`}
                                             />
                                         </div>
@@ -537,6 +552,42 @@ export default function ImportFichier() {
         }
     }, [documents, currentIndex, currentDocument]);
 
+    // ✅ Fonction utilitaire pour extraire et formater les dates de manière sûre
+    const extractDate = useCallback((dateValue) => {
+        if (!dateValue) return '';
+
+        // Si c'est déjà une chaîne au format YYYY-MM-DD ou avec timestamp
+        if (typeof dateValue === 'string') {
+            // Extraire seulement la partie date (ignorer l'heure si présente)
+            const match = dateValue.match(/(\d{4}-\d{2}-\d{2})/);
+            if (match) return match[1];
+
+            // Essayer de parser comme date si format différent
+            try {
+                const parsed = new Date(dateValue);
+                if (!isNaN(parsed.getTime())) {
+                    return parsed.toISOString().slice(0, 10);
+                }
+            } catch (e) {
+                console.warn('Impossible de parser la date:', dateValue);
+            }
+        }
+
+        // Si c'est un timestamp ou un objet Date
+        if (typeof dateValue === 'number' || dateValue instanceof Date) {
+            try {
+                const date = new Date(dateValue);
+                if (!isNaN(date.getTime())) {
+                    return date.toISOString().slice(0, 10);
+                }
+            } catch (e) {
+                console.error('Erreur conversion date:', e);
+            }
+        }
+
+        return '';
+    }, []);
+
     // Extraction OCR via API (DRF) - AVEC GESTION D'ERREUR
     const handleExtractText = useCallback(async () => {
         if (!currentFile) return;
@@ -590,8 +641,8 @@ export default function ImportFichier() {
                 produits: extractedJson.description_produits || [],
                 garantie: extractedJson.garantie || '',
                 sav: extractedJson.sav || '',
-                dateEmission: (extractedJson.date_facture || extractedJson.date_emission || extractedJson.date || '').slice(0, 10),
-                dateEcheance: (extractedJson.date_echeance || extractedJson.due_date || '').slice(0, 10),
+                dateEmission: extractDate(extractedJson.date_facture || extractedJson.date_emission || extractedJson.date),
+                dateEcheance: extractDate(extractedJson.date_echeance || extractedJson.due_date),
                 fileId: response.id || response.file_id || null,
                 ventilation: '',
                 categorie: ''
@@ -886,6 +937,7 @@ export default function ImportFichier() {
                             isLoading={isExtracting}
                             errorNotification={errorNotification}
                             onCloseError={() => setErrorNotification(null)}
+                            currentDocument={currentDocument}
                         />
                     </div>
                 </div>

@@ -3,7 +3,7 @@ import IconOcr from "../assets/icons/pdf.png";
 import IconFinance from "../assets/icons/finance.png";
 import IconAdd from "../assets/icons/add.png";
 
-export const BASE_URL_API = process.env.REACT_APP_API_URL;
+export const BASE_URL_API = process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api";
 
 export const PATHS = {
   home: "/",

@@ -7,45 +7,36 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-const detailedData = [
-  { name: 'Ventes de produits', value: 450000000, category: 'Produits' },
-  { name: 'Ventes de services', value: 250000000, category: 'Produits' },
-  { name: 'Achats de matières', value: 180000000, category: 'Charges' },
-  { name: 'Charges de personnel', value: 220000000, category: 'Charges' },
-  { name: 'Charges externes', value: 95000000, category: 'Charges' },
-  { name: 'Amortissements', value: 50000000, category: 'Charges' },
-];
+const COLORS = ['#3b82f6', '#ef4444']; // Blue for Produits, Red for Charges
 
-// Agrégation par catégorie
-const repartitionData = [
-  {
-    name: 'Produits',
-    value: detailedData
-      .filter(item => item.category === 'Produits')
-      .reduce((sum, item) => sum + item.value, 0),
-  },
-  {
-    name: 'Charges',
-    value: detailedData
-      .filter(item => item.category === 'Charges')
-      .reduce((sum, item) => sum + item.value, 0),
-  },
-];
+export default function PieChartRepartition({ data }) {
+  // If no data or empty, show a fallback or empty state
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-80 md:h-96 flex items-center justify-center text-gray-400">
+        Aucune donnée disponible
+      </div>
+    );
+  }
 
-const COLORS = ['#3b82f6', '#ef4444'];
+  // Map backend data (label, montant) to Recharts format (name, value)
+  const chartData = data.map(item => ({
+    name: item.label,
+    value: parseFloat(item.montant),
+    percentage: parseFloat(item.pourcentage)
+  }));
 
-export default function PieChartRepartition() {
-  const total = repartitionData.reduce((sum, item) => sum + item.value, 0);
+  const total = chartData.reduce((sum, item) => sum + item.value, 0);
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const { name, value } = payload[0];
-      const percentage = ((value / total) * 100).toFixed(1);
+      const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
       return (
         <div className="bg-white p-3 border border-gray-300 rounded shadow-lg">
           <p className="font-semibold text-gray-900">{name}</p>
-          <p className="text-blue-600">{value.toLocaleString('fr-FR')} Ar</p>
-          <p className="text-gray-600 text-sm">{percentage}%</p>
+          <p className="text-blue-600">{Number(value).toLocaleString('fr-FR')} Ar</p>
+          <p className="text-gray-600 text-sm">{percent}%</p>
         </div>
       );
     }
@@ -57,7 +48,7 @@ export default function PieChartRepartition() {
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
-            data={repartitionData}
+            data={chartData}
             cx="50%"
             cy="50%"
             labelLine={false}
@@ -66,7 +57,7 @@ export default function PieChartRepartition() {
             fill="#8884d8"
             dataKey="value"
           >
-            {repartitionData.map((entry, index) => (
+            {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>

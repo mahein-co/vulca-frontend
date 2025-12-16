@@ -1,85 +1,6 @@
-// import {
-//   BarChart,
-//   Bar,
-//   XAxis,
-//   YAxis,
-//   CartesianGrid,
-//   Tooltip,
-//   Legend,
-//   ResponsiveContainer,
-// } from 'recharts';
-
-// const top10AccountsData = [
-//   { account: '411000', label: 'Clients', movement: 450000000, pcg: 'PCG 2005' },
-//   { account: '401000', label: 'Fournisseurs', movement: 320000000, pcg: 'PCG 2005' },
-//   { account: '512000', label: 'Banques', movement: 280000000, pcg: 'PCG 2005' },
-//   { account: '411100', label: 'Clients - Ventes', movement: 245000000, pcg: 'PCG 2005' },
-//   { account: '401100', label: 'Fournisseurs - Achats', movement: 195000000, pcg: 'PCG 2005' },
-//   { account: '701000', label: 'Ventes de marchandises', movement: 180000000, pcg: 'PCG 2005' },
-//   { account: '601000', label: 'Achats de marchandises', movement: 165000000, pcg: 'PCG 2005' },
-//   { account: '411200', label: 'Clients - Services', movement: 145000000, pcg: 'PCG 2005' },
-//   { account: '521000', label: 'Caisse', movement: 128000000, pcg: 'PCG 2005' },
-//   { account: '401200', label: 'Fournisseurs - Services', movement: 112000000, pcg: 'PCG 2005' },
-// ];
-
-// export default function BarCharts() {
-//   return (
-//     <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md h-full">
-//       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-//         <h3 className="text-base sm:text-lg font-semibold text-gray-800">Top 10 des comptes les plus mouvementés</h3>
-//         <span className="text-xs sm:text-sm font-medium text-gray-500 mt-2 sm:mt-0">Référence : PCG 2005</span>
-//       </div>
-      
-//       <div className="w-full h-96 lg:h-[520px]">
-//         <ResponsiveContainer width="100%" height="100%">
-//           <BarChart data={top10AccountsData} margin={{ top: 10, right: 30, left: 60, bottom: 100 }}>
-//             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-//             <XAxis 
-//               dataKey="label" 
-//               angle={-45}
-//               textAnchor="end"
-//               height={100}
-//               tick={{ fontSize: 12 }}
-//               stroke="#4b5563"
-//             />
-//             <YAxis 
-//               stroke="#4b5563" 
-//               width={60}
-//               tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`}
-//             />
-//             <Tooltip
-//               contentStyle={{
-//                 backgroundColor: '#fff',
-//                 border: '1px solid #d1d5db',
-//                 borderRadius: '8px',
-//                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-//               }}
-//               labelStyle={{ fontWeight: 'bold', color: '#1f2937' }}
-//               formatter={(value, name) => {
-//                 if (name === 'movement') {
-//                   return [value.toLocaleString('fr-FR') + ' Ar', 'Montant'];
-//                 }
-//                 return value;
-//               }}
-//               labelFormatter={(label) => {
-//                 const data = top10AccountsData.find(d => d.account === label);
-//                 return data ? `${data.account} - ${data.label}` : label;
-//               }}
-//             />
-//             <Legend wrapperStyle={{ paddingTop: '20px' }} />
-//             <Bar
-//               dataKey="movement"
-//               fill="#3b82f6"
-//               name="Montant Mouvementé"
-//               radius={[8, 8, 0, 0]}
-//             />
-//           </BarChart>
-//         </ResponsiveContainer>
-//       </div>
-//     </div>
-//   );
-// }
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { BASE_URL_API } from '../../constants/globalConstants';
 import { 
   BarChart, 
   Bar, 
@@ -91,41 +12,55 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
-// Assurez-vous d'importer vos données ici
-// Exemple de données (à remplacer par votre 'top10AccountsData')
-const top10AccountsData = [
-    { label: 'Achats de marchandises', account: '601', movement: 450000000 },
-    { label: 'Ventes de marchandises', account: '701', movement: 380000000 },
-    { label: 'Services extérieurs', account: '61', movement: 250000000 },
-    { label: 'Charges de personnel', account: '64', movement: 180000000 },
-    { label: 'Impôts et taxes', account: '63', movement: 150000000 },
-    { label: 'Achats de matières', account: '602', movement: 120000000 },
-    { label: 'Produits financiers', account: '76', movement: 90000000 },
-    { label: 'Services bancaires', account: '627', movement: 65000000 },
-    { label: 'Caisse', account: '53', movement: 40000000 },
-    { label: 'Banque', account: '512', movement: 30000000 },
-];
-
 export default function BarCharts() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   // Couleur de la barre : un bleu plus vif ou un dégradé (ici un bleu standard pour simplifier)
   const barColor = '#10b981'; // Un vert émeraude frais au lieu du bleu standard
 
+  useEffect(() => {
+    // Fetch top 10 accounts data
+    axios.get(`${BASE_URL_API}/top-comptes-mouvementes/`)
+      .then(res => {
+        // Map backend API response to chart data format
+        // Backend: { numero_compte, libelle, montant_total }
+        // Chart: { account, label, movement }
+        const formattedData = res.data.map(item => ({
+          account: item.numero_compte,
+          label: item.libelle,
+          movement: parseFloat(item.montant_total)
+        }));
+        setData(formattedData);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Erreur lors de la récupération du Top 10 comptes", err);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-white p-5 sm:p-8 rounded-xl h-full border border-gray-100 flex items-center justify-center">
+        <p className="text-gray-500">Chargement des données...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-white p-5 sm:p-8 rounded-xl shadow-2xl h-full border border-gray-100 transition duration-300 hover:shadow-3xl">
+    <div className="bg-white p-5 sm:p-8 rounded-xl h-full border border-gray-100 transition duration-300 hover:shadow-3xl">
       
       {/* 🚀 En-tête Amélioré */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-4">
         <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">
           📈 Top 10 des comptes les plus mouvementés
         </h3>
-        <span className="text-sm font-semibold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full mt-3 sm:mt-0">
-          Référence : PCG 2005
-        </span>
       </div>
 
       <div className="w-full h-96 lg:h-[520px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={top10AccountsData} margin={{ top: 10, right: 30, left: 60, bottom: 100 }}>
+          <BarChart data={data} margin={{ top: 10, right: 30, left: 60, bottom: 100 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
             <XAxis 
               dataKey="label" 
@@ -161,8 +96,8 @@ export default function BarCharts() {
                 return value;
               }}
               labelFormatter={(label) => {
-                const data = top10AccountsData.find(d => d.label === label); // Recherche par 'label'
-                return data ? `Compte ${data.account} : ${data.label}` : label;
+                const item = data.find(d => d.label === label); // Recherche par 'label'
+                return item ? `Compte ${item.account} : ${item.label}` : label;
               }}
             />
 

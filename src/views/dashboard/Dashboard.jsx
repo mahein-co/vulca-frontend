@@ -5,6 +5,7 @@ import BarCharts from '../../components/charts/BarCharts';
 import TvaBarChart from '../../components/charts/TvaBarChart';
 import PieChartRepartition from '../../components/charts/PieChartRepartition';
 import LineChartCAEvolution from '../../components/charts/LineChartCAEvolution';
+import EvolutionTresorerie from '../../components/charts/EvolutionTresorerie';
 import { BASE_URL_API } from '../../constants/globalConstants';
 
 
@@ -245,8 +246,8 @@ const JournalRepartition = () => {
 // --- 3. Composant Principal Dashboard ---
 
 const Dashboard = () => {
-  
-  
+
+
 
 
   const [caTotal, setCaTotal] = useState(0);
@@ -271,29 +272,29 @@ const Dashboard = () => {
   const [resultatNet, setResultatNet] = useState(0);
 
   useEffect(() => {
-  fetch(`${BASE_URL_API}/ebe/`)
-    .then(res => res.json())
-    .then(data => setEbe(data.ebe))
-    .catch(err => console.error("Erreur EBE :", err));
-}, []);
+    fetch(`${BASE_URL_API}/ebe/`)
+      .then(res => res.json())
+      .then(data => setEbe(data.ebe))
+      .catch(err => console.error("Erreur EBE :", err));
+  }, []);
 
 
   useEffect(() => {
-  fetch(`${BASE_URL_API}/resultat-net/`)
-    .then(res => res.json())
-    .then(data => setResultatNet(data.resultat_net))
-    .catch(err => console.error("Erreur Résultat Net :", err));
-}, []);
+    fetch(`${BASE_URL_API}/resultat-net/`)
+      .then(res => res.json())
+      .then(data => setResultatNet(data.resultat_net))
+      .catch(err => console.error("Erreur Résultat Net :", err));
+  }, []);
 
   // try fetch CAF if endpoint exists, otherwise keep default
   const [caf, setCaf] = useState(0);
 
-useEffect(() => {
-  fetch(`${BASE_URL_API}/caf/`)
-    .then(res => res.json())
-    .then(data => setCaf(data.caf))
-    .catch(err => console.error("Erreur CAF :", err));
-}, []);
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/caf/`)
+      .then(res => res.json())
+      .then(data => setCaf(data.caf))
+      .catch(err => console.error("Erreur CAF :", err));
+  }, []);
 
   const [bfr, setBfr] = useState(0);
 
@@ -302,58 +303,183 @@ useEffect(() => {
       .then(res => res.json())
       .then(data => setBfr(data.bfr))
       .catch(err => console.error("Erreur BFR :", err));
-}, []);
+  }, []);
 
-const [leverage, setLeverage] = useState(0);
+  const [leverage, setLeverage] = useState(0);
 
-useEffect(() => {
-  fetch(`${BASE_URL_API}/leverage-brut/`)
-    .then(res => res.json())
-    .then(data => setLeverage(data.leverage_brut))
-    .catch(err => console.error("Erreur Leverage brut :", err));
-}, []);
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/leverage-brut/`)
+      .then(res => res.json())
+      .then(data => setLeverage(data.leverage_brut))
+      .catch(err => console.error("Erreur Leverage brut :", err));
+  }, []);
 
 
 
-useEffect(() => {
-  fetch(`${BASE_URL_API}/annuite-caf/`)
-    .then(res => res.json())
-    .then(data => setRatio(parseFloat(data.ratio)))
-    .catch(err => console.error("Erreur ratio annuité / CAF", err));
-}, []);
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/annuite-caf/`)
+      .then(res => res.json())
+      .then(data => setRatio(parseFloat(data.ratio)))
+      .catch(err => console.error("Erreur ratio annuité / CAF", err));
+  }, []);
 
-const [margeNette, setMargeNette] = useState(null);
-const [loadingMarge, setLoadingMarge] = useState(true);
-useEffect(() => {
-  fetch(`${BASE_URL_API}/resultat-net-ca/`)
-    .then(res => res.json())
-    .then(data => {
-      // on récupère directement le % calculé par l'API
-      setMargeNette(parseFloat(data.ratio_pourcent));
-    })
-    .catch(err => console.error("Erreur Résultat net / CA", err))
-    .finally(() => setLoadingMarge(false));
-}, []);
+  const [margeNette, setMargeNette] = useState(null);
+  const [loadingMarge, setLoadingMarge] = useState(true);
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/resultat-net-ca/`)
+      .then(res => res.json())
+      .then(data => {
+        // on récupère directement le % calculé par l'API
+        setMargeNette(parseFloat(data.ratio_pourcent));
+      })
+      .catch(err => console.error("Erreur Résultat net / CA", err))
+      .finally(() => setLoadingMarge(false));
+  }, []);
 
-const [ratio, setRatio] = useState(null);
-fetch(`${BASE_URL_API}/charge-ebe/`)
-  .then(res => res.json())
-  .then(data => setRatio(parseFloat(data.ratio)))
-  .catch(err => console.error("Erreur Charge/EBE", err));
+  // ROE (Return on Equity)
+  const [roe, setRoe] = useState(null);
+  const [roeVar, setRoeVar] = useState(null);
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/roe/`)
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          setRoe(data.roe !== null && data.roe !== undefined ? parseFloat(data.roe) : null);
+          setRoeVar(data.variation !== null && data.variation !== undefined ? parseFloat(data.variation) : null);
+        }
+      })
+      .catch(err => console.error('Erreur ROE', err));
+  }, []);
 
-useEffect(() => {
-  fetch(`${BASE_URL_API}/charge-ca/`)
-    .then(res => res.json())
-    .then(data => setRatio(parseFloat(data.ratio)))
-    .catch(err => console.error("Erreur Charge/CA", err));
-}, []);
+  // ROA (Return on Assets)
+  const [roa, setRoa] = useState(null);
+  const [roaVar, setRoaVar] = useState(null);
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/roa/`)
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          setRoa(data.roa !== null && data.roa !== undefined ? parseFloat(data.roa) : null);
+          setRoaVar(data.variation !== null && data.variation !== undefined ? parseFloat(data.variation) : null);
+        }
+      })
+      .catch(err => console.error('Erreur ROA', err));
+  }, []);
 
-useEffect(() => {
-  fetch(`${BASE_URL_API}/marge-endettement/`)
-    .then(res => res.json())
-    .then(data => setRatio(parseFloat(data.ratio)))
-    .catch(err => console.error("Erreur Marge d'endettement", err));
-}, []);
+  // Current Ratio
+  const [currentRatio, setCurrentRatio] = useState(null);
+  const [currentRatioVar, setCurrentRatioVar] = useState(null);
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/current-ratio/`)
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          setCurrentRatio(data.ratio !== null && data.ratio !== undefined ? parseFloat(data.ratio) : null);
+          setCurrentRatioVar(data.variation !== null && data.variation !== undefined ? parseFloat(data.variation) : null);
+        }
+      })
+      .catch(err => console.error('Erreur Current Ratio', err));
+  }, []);
+
+  // Quick Ratio
+  const [quickRatio, setQuickRatio] = useState(null);
+  const [quickRatioVar, setQuickRatioVar] = useState(null);
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/quick-ratio/`)
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          setQuickRatio(data.ratio !== null && data.ratio !== undefined ? parseFloat(data.ratio) : null);
+          setQuickRatioVar(data.variation !== null && data.variation !== undefined ? parseFloat(data.variation) : null);
+        }
+      })
+      .catch(err => console.error('Erreur Quick Ratio', err));
+  }, []);
+
+  // Gearing (Endettement)
+  const [gearing, setGearing] = useState(null);
+  const [gearingVar, setGearingVar] = useState(null);
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/gearing/`)
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          // accept multiple possible keys from the API: `gearing`, `ratio` or `value`
+          const raw = (data.gearing ?? data.ratio ?? data.value ?? null);
+          const rawVar = (data.variation ?? data.change ?? data.diff ?? null);
+          setGearing(raw !== null && raw !== undefined ? parseFloat(raw) : null);
+          setGearingVar(rawVar !== null && rawVar !== undefined ? parseFloat(rawVar) : null);
+        }
+      })
+      .catch(err => console.error('Erreur Gearing', err));
+  }, []);
+
+  // Rotation des stocks (Inventory turnover)
+  const [rotationStocks, setRotationStocks] = useState(null);
+  const [rotationStocksVar, setRotationStocksVar] = useState(null);
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/rotation-stocks/`)
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          const raw = (data.rotation ?? data.value ?? data.ratio ?? null);
+          const rawVar = (data.variation ?? data.change ?? data.diff ?? null);
+          setRotationStocks(raw !== null && raw !== undefined ? parseFloat(raw) : null);
+          setRotationStocksVar(rawVar !== null && rawVar !== undefined ? parseFloat(rawVar) : null);
+        }
+      })
+      .catch(err => console.error('Erreur Rotation des stocks', err));
+  }, []);
+
+  // Marge opérationnelle (Operating margin)
+  const [margeOp, setMargeOp] = useState(null);
+  const [margeOpVar, setMargeOpVar] = useState(null);
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/marge-operationnelle/`)
+      .then(res => res.json())
+      .then(data => {
+        if (data) {
+          const raw = (data.marge_operationnelle ?? data.marge ?? data.ratio ?? data.value ?? null);
+          const rawVar = (data.variation ?? data.change ?? data.diff ?? null);
+          setMargeOp(raw !== null && raw !== undefined ? parseFloat(raw) : null);
+          setMargeOpVar(rawVar !== null && rawVar !== undefined ? parseFloat(rawVar) : null);
+        }
+      })
+      .catch(err => console.error('Erreur Marge opérationnelle', err));
+  }, []);
+
+  const [ratio, setRatio] = useState(null);
+  const [chargeEbeRatio, setChargeEbeRatio] = useState(null);
+
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/charge-ebe/`)
+      .then(res => res.json())
+      .then(data => setChargeEbeRatio(parseFloat(data.ratio)))
+      .catch(err => console.error("Erreur Charge/EBE", err));
+  }, []);
+
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/charge-ca/`)
+      .then(res => res.json())
+      .then(data => setRatio(parseFloat(data.ratio)))
+      .catch(err => console.error("Erreur Charge/CA", err));
+  }, []);
+
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/marge-endettement/`)
+      .then(res => res.json())
+      .then(data => setRatio(parseFloat(data.ratio)))
+      .catch(err => console.error("Erreur Marge d'endettement", err));
+  }, []);
+
+  const [repartitionData, setRepartitionData] = useState([]);
+
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/repartition-resultat/`)
+      .then(res => res.json())
+      .then(data => setRepartitionData(data))
+      .catch(err => console.error("Erreur Répartition", err));
+  }, []);
 
   // ✅ SUMMARY CARDS DYNAMIQUE
   const formattedLeverage = (() => {
@@ -464,7 +590,7 @@ useEffect(() => {
         ))}
       </div>
 
-      
+
       {/* 6. Autres indicateurs (Alertes & Risques + Rentabilité) */}
       <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md border-t-2 border-gray-300 mb-4">
         <div className="flex items-center mb-3">
@@ -588,7 +714,7 @@ useEffect(() => {
                     <td className="px-4 py-3 font-medium">Charge financière / CA</td>
 
                     <td className="px-4 py-3 text-right font-mono">
-                      {ratio !== null ? (ratio*100).toFixed(2) + " %" : "--"}
+                      {ratio !== null ? (ratio * 100).toFixed(2) + " %" : "--"}
                     </td>
 
                     <td className="px-4 py-3 text-right text-xs text-gray-400">&lt; 5%</td>
@@ -647,37 +773,110 @@ useEffect(() => {
                 <tbody className="divide-y divide-gray-100 bg-white">
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Return on Equity (ROE)</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">12.5%</td>
-                    <td className="px-4 py-3 text-right text-red-600 font-medium">↘ -1.5%</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
+                      {roe !== null && roe !== undefined ? `${Number(roe).toFixed(2)}%` : '--'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      {roeVar === null || roeVar === undefined ? (
+                        <span className="text-gray-500">—</span>
+                      ) : Number(roeVar) < 0 ? (
+                        <span className="text-red-600">↘ {Math.abs(Number(roeVar)).toFixed(2)}%</span>
+                      ) : (
+                        <span className="text-emerald-600">↗ +{Number(roeVar).toFixed(2)}%</span>
+                      )}
+                    </td>
                   </tr>
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Return on Assets (ROA)</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">8.7%</td>
-                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.8%</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
+                      {roa !== null && roa !== undefined ? `${Number(roa).toFixed(2)}%` : '--'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      {roaVar === null || roaVar === undefined ? (
+                        <span className="text-gray-500">—</span>
+                      ) : Number(roaVar) < 0 ? (
+                        <span className="text-red-600">↘ {Math.abs(Number(roaVar)).toFixed(2)}%</span>
+                      ) : (
+                        <span className="text-emerald-600">↗ +{Number(roaVar).toFixed(2)}%</span>
+                      )}
+                    </td>
                   </tr>
 
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Current Ratio</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">1.8</td>
-                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.1</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
+                      {currentRatio !== null && currentRatio !== undefined ? Number(currentRatio).toFixed(2) : '--'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      {currentRatioVar === null || currentRatioVar === undefined ? (
+                        <span className="text-gray-500">—</span>
+                      ) : Number(currentRatioVar) < 0 ? (
+                        <span className="text-red-600">↘ {Math.abs(Number(currentRatioVar)).toFixed(2)}</span>
+                      ) : (
+                        <span className="text-emerald-600">↗ +{Number(currentRatioVar).toFixed(2)}</span>
+                      )}
+                    </td>
                   </tr>
 
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Quick Ratio</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">1.2</td>
-                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.05</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
+                      {quickRatio !== null && quickRatio !== undefined ? Number(quickRatio).toFixed(2) : '--'}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      {quickRatioVar === null || quickRatioVar === undefined ? (
+                        <span className="text-gray-500">—</span>
+                      ) : Number(quickRatioVar) < 0 ? (
+                        <span className="text-red-600">↘ {Math.abs(Number(quickRatioVar)).toFixed(2)}</span>
+                      ) : (
+                        <span className="text-emerald-600">↗ +{Number(quickRatioVar).toFixed(2)}</span>
+                      )}
+                    </td>
                   </tr>
 
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Gearing</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">45%</td>
-                    <td className="px-4 py-3 text-right text-red-600 font-medium">↘ -2%</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
+                      {gearing === null || gearing === undefined ? (
+                        '--'
+                      ) : (() => {
+                        const n = Number(gearing);
+                        if (!Number.isFinite(n)) return '--';
+                        const percent = n <= 10 ? (n * 100) : n; // if API returns decimal (0.45) multiply
+                        return `${percent.toFixed(2)}%`;
+                      })()}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      {gearingVar === null || gearingVar === undefined ? (
+                        <span className="text-gray-500">—</span>
+                      ) : Number(gearingVar) < 0 ? (
+                        <span className="text-red-600">↘ {Math.abs(Number(gearingVar)).toFixed(2)}%</span>
+                      ) : (
+                        <span className="text-emerald-600">↗ +{Number(gearingVar).toFixed(2)}%</span>
+                      )}
+                    </td>
                   </tr>
 
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Rotation des stocks</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">6x</td>
-                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.5x</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
+                      {rotationStocks === null || rotationStocks === undefined ? (
+                        '--'
+                      ) : (() => {
+                        const n = Number(rotationStocks);
+                        if (!Number.isFinite(n)) return '--';
+                        return `${n.toFixed(2)}x`;
+                      })()}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      {rotationStocksVar === null || rotationStocksVar === undefined ? (
+                        <span className="text-gray-500">—</span>
+                      ) : Number(rotationStocksVar) < 0 ? (
+                        <span className="text-red-600">↘ {Math.abs(Number(rotationStocksVar)).toFixed(2)}x</span>
+                      ) : (
+                        <span className="text-emerald-600">↗ +{Number(rotationStocksVar).toFixed(2)}x</span>
+                      )}
+                    </td>
                   </tr>
 
                   {/* <tr className="group hover:bg-gray-50 transition-colors">
@@ -694,8 +893,25 @@ useEffect(() => {
 
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Marge opérationnelle</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">15.3%</td>
-                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +2.1%</td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
+                      {margeOp === null || margeOp === undefined ? (
+                        '--'
+                      ) : (() => {
+                        const n = Number(margeOp);
+                        if (!Number.isFinite(n)) return '--';
+                        const percent = Math.abs(n) <= 1 ? (n * 100) : n;
+                        return `${percent.toFixed(2)}%`;
+                      })()}
+                    </td>
+                    <td className="px-4 py-3 text-right font-medium">
+                      {margeOpVar === null || margeOpVar === undefined ? (
+                        <span className="text-gray-500">—</span>
+                      ) : Number(margeOpVar) < 0 ? (
+                        <span className="text-red-600">↘ {Math.abs(Number(margeOpVar)).toFixed(2)}%</span>
+                      ) : (
+                        <span className="text-emerald-600">↗ +{Number(margeOpVar).toFixed(2)}%</span>
+                      )}
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -710,21 +926,22 @@ useEffect(() => {
       </div>
 
       {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
+      <div className="grid grid-cols-1 gap-4 items-stretch mb-4">
         <div>
           <BarCharts />
         </div>
-        <div>
-          <TvaBarChart />
-        </div>
       </div>
 
+      {/* Evolution Trésorerie */}
+      {/* <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
+        <EvolutionTresorerie />
+      </div> */}
       {/* 5. Produits et Charges */}
       <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
           <h3 className="text-base sm:text-lg font-semibold text-gray-800">Répartition Produits et Charges</h3>
         </div>
-        <PieChartRepartition />
+        <PieChartRepartition data={repartitionData} />
       </div>
 
       {/* 8. Répartition par Journal */}

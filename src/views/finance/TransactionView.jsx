@@ -8,8 +8,8 @@ import {
     CheckCircle,
     XCircle,
     Scale,
-    DollarSign, 
-    Users, 
+    DollarSign,
+    Users,
     Briefcase,
     AlertCircle,
     Loader,
@@ -43,19 +43,26 @@ const formatCurrency = (amount) => {
 
 const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) => {
     const numericChange = parseFloat(change);
-    let cardBg = 'bg-indigo-50 border-indigo-300', iconBg = 'bg-indigo-500/10', iconColor = 'text-indigo-600', changeColor = 'text-gray-500';
+
+    // Default dashboard-like pastel gradient
+    let iconBg = 'bg-gradient-to-br from-emerald-50 to-teal-50';
+    let iconColor = 'text-emerald-600';
+    let changeColor = 'text-gray-500';
 
     if (title === 'Résultat Net') {
-        cardBg = 'bg-emerald-50 border-emerald-300';
-        iconBg = 'bg-emerald-500/10';
-        iconColor = 'text-emerald-600';
+        iconBg = 'bg-gradient-to-br from-emerald-100 to-teal-100';
         changeColor = numericChange >= 0 ? 'text-emerald-600' : 'text-red-600';
     } else if (title.includes('Ratio')) {
         const isFavorable = numericChange < 0;
-        cardBg = 'bg-red-50 border-red-300';
-        iconBg = 'bg-red-500/10';
-        iconColor = 'text-red-600';
+        iconBg = 'bg-gradient-to-br from-rose-50 to-red-50';
+        iconColor = 'text-red-500';
         changeColor = isFavorable ? 'text-emerald-600' : 'text-red-600';
+    } else if (title.includes('Passif')) {
+        iconBg = 'bg-gradient-to-br from-orange-50 to-amber-50';
+        iconColor = 'text-orange-600';
+    } else if (title.includes('Actif') || title.includes('Capitaux')) {
+        iconBg = 'bg-gradient-to-br from-blue-50 to-indigo-50';
+        iconColor = 'text-blue-600';
     }
 
     const changeIcon = numericChange > 0 ? '↑' : numericChange < 0 ? '↓' : '•';
@@ -64,24 +71,25 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) 
         : '';
 
     return (
-        <div className={`border ${cardBg} rounded-xl p-3 flex flex-col justify-between shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02] min-w-[150px] w-full h-[100px]`}>
-            <div className="flex items-center justify-between mb-1">
-                <div className={`p-1.5 rounded-full ${iconBg} ${iconColor} flex-shrink-0 shadow-sm`}>
-                    <Icon size={16} />
+        <div className="bg-white rounded-lg shadow-md border-t-2 border-gray-300 p-2 flex flex-col justify-between hover:shadow-lg transition-all duration-300 hover:scale-[1.02] min-w-[140px] w-full h-[110px]">
+            <div className="flex items-start justify-between mb-1">
+                <div className={`p-1.5 rounded-lg ${iconBg} ${iconColor} shadow-sm`}>
+                    <Icon size={18} />
                 </div>
-                <p className="text-[9px] text-gray-600 font-bold uppercase tracking-wider truncate text-right flex-1 ml-2">{title}</p>
-            </div>
-            <p className={`text-sm sm:text-base font-extrabold ${iconColor} mb-1 truncate text-right w-full`}>{value}</p>
-            <div className="flex justify-between items-center w-full mt-auto">
-                <p className="text-[9px] text-gray-500 italic break-words">{description}</p>
                 {change !== undefined && change !== null && (
-                    <div className={`text-[9px] font-bold w-full text-right ${changeColor}`}>
+                    <div className={`text-[10px] font-bold ${changeColor} flex items-center bg-gray-50 px-1.5 py-0.5 rounded-full`}>
                         {title === 'Résultat Net'
-                            ? <span className="inline-block px-1.5 py-0.5 rounded-full bg-white shadow-sm border border-gray-100">{variationMessage}</span>
-                            : !isNaN(numericChange) && <span className="inline-block px-1.5 py-0.5 rounded-full bg-white shadow-sm border border-gray-100">{changeIcon} {Math.abs(numericChange).toFixed(1)}{isRatio ? ' pts' : '%'}</span>
+                            ? variationMessage
+                            : (!isNaN(numericChange) && <>{changeIcon} {Math.abs(numericChange).toFixed(1)}{isRatio ? ' pts' : '%'}</>)
                         }
                     </div>
                 )}
+            </div>
+
+            <div className="mt-1">
+                <p className="text-[10px] sm:text-[11px] font-semibold text-gray-500 uppercase tracking-wide truncate">{title}</p>
+                <p className="text-sm sm:text-base font-bold text-gray-900 truncate">{value}</p>
+                <p className="text-[9px] text-gray-400 italic truncate">{description}</p>
             </div>
         </div>
     );
@@ -189,7 +197,7 @@ const TransactionView = () => {
     const filterData = (details) => {
         const searchLower = recherche.toLowerCase().trim();
         let filtered = details;
-        
+
         // Filtrer par année sélectionnée
         if (selectedYear) {
             filtered = filtered.filter(item => {
@@ -197,16 +205,16 @@ const TransactionView = () => {
                 return itemYear === selectedYear;
             });
         }
-        
+
         // Filtrer par recherche
         if (searchLower) {
-            filtered = filtered.filter(item => 
-                item.numeroCompte.toLowerCase().includes(searchLower) || 
-                item.libelle.toLowerCase().includes(searchLower) || 
+            filtered = filtered.filter(item =>
+                item.numeroCompte.toLowerCase().includes(searchLower) ||
+                item.libelle.toLowerCase().includes(searchLower) ||
                 (item.categorie || item.nature || '').toLowerCase().includes(searchLower)
             );
         }
-        
+
         return filtered;
     };
 
@@ -254,40 +262,41 @@ const TransactionView = () => {
         <div className="mim-h-screen flex flex-col overflow-hidden">
             <main className="flex-1 flex flex-col overflow-hidden min-h-0">
                 {/* Période d'exercice */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 bg-white p-4 rounded-lg shadow-sm">
-                    <div className="mb-3 sm:mb-0">
-                        <p className="font-medium text-gray-700">Période d'exercice</p>
+                {/* Période d'exercice */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 bg-white p-3 sm:p-4 rounded-lg shadow-md border-t-2 border-gray-300">
+                    <div className="mb-2 sm:mb-0">
+                        <p className="font-semibold text-gray-800">Période d'exercice</p>
                         <p className="text-xs text-gray-500">Sélectionnez la période à analyser</p>
                     </div>
-                    
-                    <div className="flex flex-wrap gap-2 sm:space-x-4 items-center text-sm">
+
+                    <div className="flex flex-wrap gap-2 sm:space-x-3 items-center text-sm">
                         <div className="flex items-center space-x-2">
-                            <label className="text-gray-500 text-xs sm:text-sm">Du</label>
-                            <input 
-                                type="date" 
+                            <label className="text-gray-600 text-xs sm:text-sm">Du</label>
+                            <input
+                                type="date"
                                 value={`${selectedYear}-01-01`}
                                 onChange={(e) => {
                                     const year = new Date(e.target.value).getFullYear();
                                     setSelectedYear(year.toString());
                                 }}
-                                className="p-1  border rounded-lg text-xs sm:text-sm" 
+                                className="p-1.5 border border-gray-300 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
                             />
                         </div>
                         <div className="flex items-center space-x-2">
-                            <label className="text-gray-500 text-xs sm:text-sm">Au</label>
-                            <input 
-                                type="date" 
+                            <label className="text-gray-600 text-xs sm:text-sm">Au</label>
+                            <input
+                                type="date"
                                 value={`${selectedYear}-12-31`}
                                 onChange={(e) => {
                                     const year = new Date(e.target.value).getFullYear();
                                     setSelectedYear(year.toString());
                                 }}
-                                className="p-1  border rounded-lg text-xs sm:text-sm" 
+                                className="p-1.5 border border-gray-300 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
                             />
                         </div>
-                        <button 
+                        <button
                             onClick={() => setSelectedYear(currentYear.toString())}
-                            className="bg-gray-100 text-gray-700 px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm hover:bg-gray-200"
+                            className="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm hover:bg-gray-900 font-medium shadow-sm transition-all"
                         >
                             01 janv. {selectedYear} - 31 déc. {selectedYear}
                         </button>
@@ -313,32 +322,36 @@ const TransactionView = () => {
                 </div>
 
                 {/* Bilan & Compte Résultat */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4 px-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-2 px-2">
                     <div onClick={() => { setSelectedSection('bilan'); setCurrentPage(1); }}
-                        className={`p-4 bg-white border rounded-xl shadow-lg cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'bilan' ? 'ring-4 ring-indigo-500 border-indigo-600 scale-[1.007]' : 'border-gray-200 hover:border-indigo-400'}`}>
-                        <div className="flex items-center space-x-3 mb-2">
-                            <Scale size={20} className="text-indigo-500" />
-                            <h3 className="text-base font-bold text-gray-800">Bilan</h3>
-                            {calculations.bilanEquilibre ? <CheckCircle size={16} className="text-emerald-500" /> : <XCircle size={16} className="text-red-500" />}
+                        className={`p-3.5 bg-white rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'bilan' ? 'border-t-4 border-indigo-500 scale-[1.005]' : 'border-t-2 border-gray-300 hover:border-indigo-300'}`}>
+                        <div className="flex items-center space-x-2 mb-2">
+                            <div className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600">
+                                <Scale size={18} />
+                            </div>
+                            <h3 className="text-sm font-bold text-gray-800">Bilan</h3>
+                            {calculations.bilanEquilibre ? <CheckCircle size={14} className="text-emerald-500 ml-auto" /> : <XCircle size={14} className="text-red-500 ml-auto" />}
                         </div>
-                        <p className="text-xs text-gray-600 mb-3 px-2">Situation financière à une date donnée (Actifs = Passifs + Capitaux Propres).</p>
-                        <div className='text-xs space-y-1 text-gray-700 px-2'>
-                            <p>Total Actif : <span className="font-semibold text-indigo-600">{formatCurrency(calculations.totalActif)}</span></p>
-                            <p>Total Passif (Dettes + CP) : <span className="font-semibold text-indigo-600">{formatCurrency(calculations.totalPassif)}</span></p>
+                        <p className="text-[10px] text-gray-500 mb-2 ml-1 leading-tight">Situation financière à une date donnée (Actifs = Passifs + Capitaux Propres).</p>
+                        <div className='text-[10px] sm:text-xs space-y-1 text-gray-700 px-1'>
+                            <p className="flex justify-between"><span>Total Actif :</span> <span className="font-bold text-indigo-700">{formatCurrency(calculations.totalActif)}</span></p>
+                            <p className="flex justify-between"><span>Total Passif (Dettes + CP) :</span> <span className="font-bold text-indigo-700">{formatCurrency(calculations.totalPassif)}</span></p>
                         </div>
                     </div>
                     <div onClick={() => { setSelectedSection('compteResultat'); setCurrentPage(1); }}
-                        className={`p-4 bg-white border rounded-xl shadow-lg cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'compteResultat' ? 'ring-4 ring-emerald-500 border-emerald-600 scale-[1.007]' : 'border-gray-200 hover:border-emerald-400'}`}>
-                        <div className="flex items-center space-x-3 mb-2">
-                            <DollarSign size={20} className="text-emerald-500" />
-                            <h3 className="text-base font-bold text-gray-800">Compte de Résultat</h3>
-                            <CheckCircle size={16} className="text-emerald-500" />
+                        className={`p-3 bg-white rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'compteResultat' ? 'border-t-4 border-emerald-500 scale-[1.005]' : 'border-t-2 border-gray-300 hover:border-emerald-300'}`}>
+                        <div className="flex items-center space-x-2 mb-2">
+                            <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600">
+                                <DollarSign size={18} />
+                            </div>
+                            <h3 className="text-sm font-bold text-gray-800">Compte de Résultat</h3>
+                            <CheckCircle size={14} className="text-emerald-500 ml-auto" />
                         </div>
-                        <p className="text-xs text-gray-600 mb-3 px-2">Synthèse des produits et charges pour calculer le résultat net.</p>
-                        <div className='text-xs space-y-1 text-gray-700 px-2'>
-                            <p>Produits : <span className="font-semibold text-emerald-600">{formatCurrency(calculations.produits)}</span></p>
-                            <p>Charges : <span className="font-semibold text-emerald-600">{formatCurrency(calculations.charges)}</span></p>
-                            <p>Résultat Net : <span className="font-semibold text-emerald-600">{formatCurrency(calculations.resultatNet)}</span></p>
+                        <p className="text-[10px] text-gray-500 mb-2 ml-1 leading-tight">Synthèse des produits et charges pour calculer le résultat net.</p>
+                        <div className='text-[10px] sm:text-xs space-y-1 text-gray-700 px-1'>
+                            <p className="flex justify-between"><span>Produits :</span> <span className="font-bold text-emerald-700">{formatCurrency(calculations.produits)}</span></p>
+                            <p className="flex justify-between"><span>Charges :</span> <span className="font-bold text-emerald-700">{formatCurrency(calculations.charges)}</span></p>
+                            <p className="flex justify-between border-t border-gray-100 pt-1"><span>Résultat Net :</span> <span className={`font-bold ${calculations.resultatNet >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{formatCurrency(calculations.resultatNet)}</span></p>
                         </div>
                     </div>
                 </div>
@@ -346,13 +359,13 @@ const TransactionView = () => {
                 {/* Table des détails */}
                 <div className="px-2 flex-1 min-h-0 ">
                     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden h-full">
-                        <div className="overflow-x-auto flex-1 ">
+                        <div className="overflow-hidden flex-1 ">
                             <table className="w-full table-fixed border-collapse">
                                 <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
                                     <tr>
                                         <th className="border-b-2 border-indigo-200 px-3 py-2 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider w-[15%]">Compte</th>
                                         <th className="border-b-2 border-indigo-200 px-3 py-2 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider w-[35%]">Libellé</th>
-                                        {selectedSection === 'bilan' ? 
+                                        {selectedSection === 'bilan' ?
                                             <th className="border-b-2 border-indigo-200 px-3 py-2 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider w-[20%]">Catégorie</th>
                                             : <th className="border-b-2 border-emerald-200 px-3 py-2 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider w-[20%]">Nature</th>
                                         }
@@ -363,7 +376,7 @@ const TransactionView = () => {
                                 <tbody className="bg-white divide-y divide-gray-100">
                                     {loading ? [...Array(ITEMS_PER_PAGE)].map((_, i) =>
                                         <tr key={i} className="animate-pulse">
-                                            {[...Array(5)].map((_, j) => 
+                                            {[...Array(5)].map((_, j) =>
                                                 <td key={j} className="px-2 py-2">
                                                     <div className="h-3 bg-gray-200 rounded"></div>
                                                 </td>
@@ -376,17 +389,16 @@ const TransactionView = () => {
                                             </td>
                                             <td className="px-1 py-1 text-xs text-gray-700 truncate font-medium">{item.libelle}</td>
                                             <td className="px-1 py-1 bodyext-xs truncate">
-                                                <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                                                    selectedSection === 'bilan' 
-                                                        ? item.categorie?.toLowerCase().includes('actif') 
-                                                            ? 'bg-blue-100 text-blue-700' 
-                                                            : item.categorie?.toLowerCase().includes('passif') 
-                                                                ? 'bg-red-100 text-red-700' 
-                                                                : 'bg-purple-100 text-purple-700'
-                                                        : item.nature?.toLowerCase().includes('produit')
-                                                            ? 'bg-emerald-100 text-emerald-700'
-                                                            : 'bg-orange-100 text-orange-700'
-                                                }`}>
+                                                <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${selectedSection === 'bilan'
+                                                    ? item.categorie?.toLowerCase().includes('actif')
+                                                        ? 'bg-blue-100 text-blue-700'
+                                                        : item.categorie?.toLowerCase().includes('passif')
+                                                            ? 'bg-red-100 text-red-700'
+                                                            : 'bg-purple-100 text-purple-700'
+                                                    : item.nature?.toLowerCase().includes('produit')
+                                                        ? 'bg-emerald-100 text-emerald-700'
+                                                        : 'bg-orange-100 text-orange-700'
+                                                    }`}>
                                                     {item.categorie || item.nature}
                                                 </span>
                                             </td>

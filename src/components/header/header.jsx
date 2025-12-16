@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 
 const navItems = [
     { name: 'Pièces comptables', key: 'gestion-pieces', icon: '📝' },
-    { name: 'Importation OCR', key: 'import-ocr', icon: '📎' },
-    { name: 'Saisie manuelle', key: 'saisie-manuelle', icon: '✍️' },
-    { name: 'États financiers', key: 'gestion-transactions-cr', icon: '📦' },
+    { name: 'Import OCR', key: 'import-ocr', icon: '📎' },
+    { name: 'Saisie Facture', key: 'saisie-manuelle', icon: '✍️' },
+    { name: 'Bilan & États', key: 'gestion-transactions-cr', icon: '📦' },
     { name: 'Gestion salaire', key: 'gestion-salaire', icon: '💲' },
     { name: 'Tableau de bord', key: 'dashboard', icon: '📊' },
 ];
@@ -12,12 +12,12 @@ const navItems = [
 // Ajout de la prop onOpenSaisieMenu
 const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    
+
     // Détermine la clé active pour l'affichage (gère le cas des transactions qui sont groupées)
     const isTransactionViewActive = currentPage.startsWith('gestion-transactions-');
-    
+
     // Si la page est 'gestion-transactions-...' elle active 'États financiers'
-    const displayActiveKey = isTransactionViewActive ? 'gestion-transactions-cr' : currentPage; 
+    const displayActiveKey = isTransactionViewActive ? 'gestion-transactions-cr' : currentPage;
 
     const handleNavClick = (key) => {
         setMobileMenuOpen(false); // Fermer le menu mobile après navigation
@@ -26,7 +26,7 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
             // 🛑 L'action pour 'Saisie manuelle' est d'ouvrir la modale.
             onOpenSaisieMenu();
             // On navigue aussi pour que l'onglet 'Saisie manuelle' s'active visuellement
-            onNavigate('saisie-manuelle'); 
+            onNavigate('saisie-manuelle');
         } else {
             // Pour toutes les autres pages, on navigue normalement
             onNavigate(key);
@@ -37,10 +37,10 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
         <header className="bg-white shadow-md border-b border-gray-200 fixed top-0 left-0 right-0 w-full z-30">
             <div className="max-w-full mx-auto px-3 sm:px-4 lg:px-8">
                 <div className="flex items-center h-14 sm:h-16">
-                    
+
                     {/* Logo - Style italique bleu */}
                     <div className="flex items-center flex-shrink-0 mr-6 lg:mr-8">
-                        <h1 
+                        <h1
                             className="text-lg sm:text-xl lg:text-2xl font-bold italic text-indigo-600 cursor-pointer"
                             onClick={() => handleNavClick('dashboard')}
                             style={{ fontFamily: 'Georgia, serif' }}
@@ -59,7 +59,7 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
                                     onClick={() => handleNavClick(item.key)}
                                     className={`flex items-center text-xs xl:text-sm font-medium pb-1 transition duration-150 whitespace-nowrap
                                         ${isActive
-                                            ? 'text-indigo-600 border-b-2 border-indigo-600 font-bold' 
+                                            ? 'text-indigo-600 border-b-2 border-indigo-600 font-bold'
                                             : 'text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300'
                                         }
                                     `}
@@ -100,7 +100,7 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
                                     onClick={() => handleNavClick(item.key)}
                                     className={`w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition duration-150
                                         ${isActive
-                                            ? 'bg-indigo-50 text-indigo-600 font-bold' 
+                                            ? 'bg-indigo-50 text-indigo-600 font-bold'
                                             : 'text-gray-700 hover:bg-gray-100'
                                         }
                                     `}

@@ -1,12 +1,12 @@
 import React from "react";
-import { 
-    ScaleIcon,         
-    CalculatorIcon,   
-    DocumentTextIcon, 
-    ShoppingCartIcon, 
+import {
+    ScaleIcon,
+    CalculatorIcon,
+    DocumentTextIcon,
+    ShoppingCartIcon,
     BanknotesIcon,
-    ReceiptPercentIcon, 
-} from '@heroicons/react/24/outline'; 
+    ReceiptPercentIcon,
+} from '@heroicons/react/24/outline';
 
 const FORM_TYPES = {
     bilan: 'bilan',
@@ -42,35 +42,39 @@ const formSections = [
 export default function IndexAddByFormsPage({ onOpenForm }) {
 
     const handleFormClick = (formType) => {
-        onOpenForm(formType); 
+        onOpenForm(formType);
     };
 
     const colorClasses = {
-        blue: { text: 'text-blue-600', hoverBorder: 'hover:border-blue-500', ring: 'focus:ring-blue-500', lightBg: 'bg-blue-50' },
-        green: { text: 'text-green-600', hoverBorder: 'hover:border-green-500', ring: 'focus:ring-green-500', lightBg: 'bg-green-50' },
-        indigo: { text: 'text-indigo-600', hoverBorder: 'hover:border-indigo-500', ring: 'focus:ring-indigo-500', lightBg: 'bg-indigo-50' },
-        orange: { text: 'text-orange-600', hoverBorder: 'hover:border-orange-500', ring: 'focus:ring-orange-500', lightBg: 'bg-orange-50' },
-        red: { text: 'text-red-600', hoverBorder: 'hover:border-red-500', ring: 'focus:ring-red-500', lightBg: 'bg-red-50' },
-        purple: { text: 'text-purple-600', hoverBorder: 'hover:border-purple-500', ring: 'focus:ring-purple-500', lightBg: 'bg-purple-50' },
+        blue: { text: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', hoverBorder: 'group-hover:border-blue-300', hoverBg: 'group-hover:bg-blue-50/50' },
+        green: { text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', hoverBorder: 'group-hover:border-emerald-300', hoverBg: 'group-hover:bg-emerald-50/50' },
+        indigo: { text: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', hoverBorder: 'group-hover:border-indigo-300', hoverBg: 'group-hover:bg-indigo-50/50' },
+        orange: { text: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', hoverBorder: 'group-hover:border-orange-300', hoverBg: 'group-hover:bg-orange-50/50' },
+        red: { text: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', hoverBorder: 'group-hover:border-rose-300', hoverBg: 'group-hover:bg-rose-50/50' },
+        purple: { text: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', hoverBorder: 'group-hover:border-purple-300', hoverBg: 'group-hover:bg-purple-50/50' },
     };
 
     return (
-        <div className="space-y-6 p-4 sm:p-6 md:p-8 bg-white min-h-full"> 
-            
+        <div className="p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto space-y-10">
+
+            <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Saisie Manuelle</h2>
+                <p className="mt-2 text-sm text-gray-500">Sélectionnez le type de document ou d'état financier à saisir.</p>
+            </div>
 
             {formSections.map((section, sectionIndex) => {
                 const lgGridCols = section.forms.length <= 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-4';
 
                 return (
-                    <div 
-                        key={sectionIndex} 
-                        className="space-y-4"
-                    >
-                        <h2 className="text-xl font-bold text-gray-800 border-l-4 border-indigo-500 pl-3">
-                            {section.title}
-                        </h2>
-                        
-                        <div className={`grid grid-cols-1 sm:grid-cols-2 ${lgGridCols} gap-3 sm:gap-4`}>
+                    <div key={sectionIndex} className="space-y-4">
+                        <div className="flex items-center space-x-2 pb-2 border-b border-gray-100">
+                            <div className="h-4 w-1 bg-indigo-500 rounded-full"></div>
+                            <h3 className="text-lg font-bold text-gray-800 uppercase tracking-wide text-xs">
+                                {section.title}
+                            </h3>
+                        </div>
+
+                        <div className={`grid grid-cols-1 sm:grid-cols-2 ${lgGridCols} gap-4`}>
                             {section.forms.map((form) => {
                                 const colors = colorClasses[form.color];
                                 const Icon = form.icon;
@@ -79,29 +83,26 @@ export default function IndexAddByFormsPage({ onOpenForm }) {
                                     <button
                                         key={form.type}
                                         onClick={() => handleFormClick(form.type)}
-                                        className={`group relative flex flex-col items-start p-4 rounded-xl border-2 border-gray-200 bg-white shadow-sm 
-                                                   transition-all duration-300 transform hover:shadow-md focus:outline-none focus:ring-4 focus:ring-offset-2 ${colors.hoverBorder} ${colors.ring}`}
+                                        className={`group relative flex flex-col p-3 rounded-xl border bg-white shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left h-full ${colors.border} ${colors.hoverBorder} ${colors.hoverBg}`}
                                     >
-                                        <div className={`p-2 rounded-lg ${colors.lightBg} mb-2 transition-all duration-300 group-hover:shadow-sm`}>
-                                            <Icon className={`w-6 h-6 ${colors.text} transition-transform duration-300 group-hover:scale-105`} />
+                                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 transition-colors duration-300 ${colors.bg} ${colors.text}`}>
+                                            <Icon className="w-5 h-5" strokeWidth={1.5} />
                                         </div>
-                                        
-                                        <h3 className="text-lg font-semibold text-gray-900 mb-1"> 
+
+                                        <h4 className="text-sm font-bold text-gray-900 mb-1 group-hover:text-indigo-900 transition-colors">
                                             {form.name}
-                                        </h3>
-                                        <p className="text-xs text-gray-600 text-left flex-grow"> 
+                                        </h4>
+
+                                        <p className="text-[11px] text-gray-500 leading-tight mb-3 flex-grow">
                                             {form.description}
                                         </p>
-                                        
-                                        <span 
-                                            className={`absolute bottom-3 right-3 p-0.5 rounded-full 
-                                                        text-gray-800 bg-gray-200 
-                                                        group-hover:text-white group-hover:${colors.text.replace('text-', 'bg-')} transition-all duration-300`}
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+
+                                        <div className={`flex items-center text-[10px] font-semibold ${colors.text} opacity-0 group-hover:opacity-100 transform translate-y-1 group-hover:translate-y-0 transition-all duration-300`}>
+                                            Commencer
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 ml-1 transform group-hover:translate-x-1 transition-transform">
                                                 <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.47a.75.75 0 011.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.04-1.08l4.158-3.92H3.75A.75.75 0 013 10z" clipRule="evenodd" />
                                             </svg>
-                                        </span>
+                                        </div>
                                     </button>
                                 );
                             })}
@@ -109,7 +110,7 @@ export default function IndexAddByFormsPage({ onOpenForm }) {
                     </div>
                 );
             })}
-            
+
             <div className="h-6"></div>
         </div>
     );

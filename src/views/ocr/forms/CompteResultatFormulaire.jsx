@@ -199,7 +199,7 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
     );
 
     return (
-        <div className="min-h-screen lg:p-1 flex flex-col">
+        <div className="w-full h-full lg:p-1 flex flex-col">
             <div className="max-w-7xl mx-auto w-full">
                 <div className="flex justify-between items-center mb-4 border-b pb-2">
                     <div className="flex-shrink-0"><BackToFormsPage onClick={onSaisieCompleted} /></div>
@@ -211,17 +211,17 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                     <h2 className="text-base font-semibold text-gray-700 mb-3">{ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une nouvelle ligne'}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">N° Compte (6xx-7xx) *</label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">N° Compte (6xx-7xx)</label>
                             <input type="text" name="numeroCompte" value={nouvelleLigne.numeroCompte} onChange={handleChange} className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${erreurNumeroCompte ? 'border-red-500 bg-red-50' : 'border-gray-300'}`} placeholder="Ex: 607" />
                             {erreurNumeroCompte && <p className="text-red-600 text-xs mt-1">Doit commencer par 6 ou 7</p>}
                         </div>
                         <div className="md:col-span-2 lg:col-span-2">
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Libellé *</label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Libellé</label>
                             <input type="text" name="libelle" value={nouvelleLigne.libelle} onChange={handleChange} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" placeholder="Ex: Achat de fournitures" />
                             {isCompteMappe && <p className="text-xs text-green-600 mt-1">✓ Auto-rempli (modifiable)</p>}
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Montant (Ar) *</label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Montant (Ar)</label>
                             <input type="text" name="montant" value={nouvelleLigne.montant} onChange={handleChange} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right" placeholder="0.00" />
                         </div>
                         <div className="md:col-span-2 lg:col-span-2">
@@ -232,7 +232,7 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                             </select>
                         </div>
                         <div>
-                            <label className="block text-xs font-medium text-gray-600 mb-1">Date *</label>
+                            <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
                             <input type="date" name="date" value={nouvelleLigne.date} onChange={handleChange} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
                         </div>
                     </div>

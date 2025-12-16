@@ -122,32 +122,22 @@ export default function BarCharts() {
           Référence : PCG 2005
         </span>
       </div>
-      
+
       <div className="w-full h-96 lg:h-[520px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart 
-            data={top10AccountsData} 
-            margin={{ top: 20, right: 30, left: 20, bottom: 90 }} // Moins de marge à gauche/bas, plus à droite/haut
-            barCategoryGap="20%" // Ajout d'un écart pour des barres plus épaisses
-          >
-            {/* Grille plus subtile */}
-            <CartesianGrid strokeDasharray="4 4" stroke="#e5e7eb" vertical={false} />
-            
-            {/* 🔽 Axe X Amélioré (Rotation et Police) */}
+          <BarChart data={top10AccountsData} margin={{ top: 10, right: 30, left: 60, bottom: 100 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
             <XAxis 
               dataKey="label" 
-              angle={-35} // Moins d'angle pour une meilleure lisibilité
+              angle={-45}
               textAnchor="end"
-              height={90}
-              tick={{ fontSize: 11, fill: '#4b5563' }} // Police plus petite
-              stroke="#d1d5db" // Ligne d'axe plus claire
-              interval={0} // Afficher toutes les étiquettes
+              height={100}
+              tick={{ fontSize: 12 }}
+              stroke="#4b5563"
             />
-            
-            {/* ◀️ Axe Y Amélioré (Unités) */}
             <YAxis 
-              stroke="#d1d5db" 
-              width={70} // Un peu plus large pour les grandes valeurs
+              stroke="#4b5563" 
+              width={60}
               tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`}
               tick={{ fill: '#4b5563', fontSize: 12 }}
             />

@@ -11,24 +11,24 @@ const ConfirmationModal = ({ isOpen, document, onConfirm, onClose }) => {
                 <h3 className="text-xl font-bold text-red-600 border-b pb-3 mb-4">
                     Confirmation de suppression
                 </h3>
-                
+
                 <p className="text-gray-700 mb-4">
                     Êtes-vous sûr de vouloir supprimer la pièce **"{document.nom}"** ?
                 </p>
-                
+
                 <p className="text-sm text-red-700 font-medium mb-6 p-2 bg-red-50 rounded">
                     ⚠️ Cette action entraînera la suppression de toutes les écritures comptables associées à ce fichier.
                 </p>
 
                 <div className="flex justify-end space-x-3">
-                    <button 
-                        onClick={onClose} 
+                    <button
+                        onClick={onClose}
                         className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition duration-150"
                     >
                         Annuler
                     </button>
-                    <button 
-                        onClick={() => onConfirm(document.id)} 
+                    <button
+                        onClick={() => onConfirm(document.id)}
                         className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition duration-150 font-semibold"
                     >
                         Confirmer la suppression
@@ -62,7 +62,7 @@ const PIECES_INITIALES = [
 ];
 
 const CATEGORIES = [
-    { key: 'Factures', label: 'Factures', color: 'border-blue-500', badge: 'bg-blue-500', bgCard: 'bg-white' }, 
+    { key: 'Factures', label: 'Factures', color: 'border-blue-500', badge: 'bg-blue-500', bgCard: 'bg-white' },
     { key: 'Fiches de paie', label: 'Fiches de paie', color: 'border-green-500', badge: 'bg-green-500', bgCard: 'bg-green-50' },
     { key: 'Relevés bancaires', label: 'Relevés bancaires', color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50' },
     { key: 'Autres', label: 'Autres', color: 'border-yellow-500', badge: 'bg-orange-500', bgCard: 'bg-orange-50' },
@@ -71,29 +71,29 @@ const CATEGORIES = [
 // --- 2. COMPOSANT : Carte de Document ---
 const DocumentCard = ({ piece, onClick, onDelete, categoryConfig }) => {
     const borderColor = categoryConfig.color;
-    const cardBgColor = categoryConfig.bgCard; 
+    const cardBgColor = categoryConfig.bgCard;
 
     const handleDeleteClick = (e) => {
-        e.stopPropagation(); 
-        onDelete(piece); 
+        e.stopPropagation();
+        onDelete(piece);
     };
 
     return (
-        <div 
-            className={`${cardBgColor} p-2.5 mb-2 rounded-lg shadow-sm border-l-4 hover:shadow-md cursor-pointer transition duration-150 ${borderColor} relative`} 
+        <div
+            className={`${cardBgColor} p-2.5 mb-2 rounded-lg shadow-sm border-l-4 hover:shadow-md cursor-pointer transition duration-150 ${borderColor} relative`}
             onClick={() => onClick(piece)}
         >
             <div className="flex items-start space-x-2">
                 <span className="text-sm pt-0.5 text-blue-600">
                     <FileText size={16} />
                 </span>
-                
+
                 <div className="flex-grow">
                     <p className="text-sm font-semibold text-gray-900 truncate pr-6">{piece.nom}</p>
                     <p className="text-xs text-gray-500 -mt-0.5">{piece.detail}</p>
                 </div>
 
-                <button 
+                <button
                     onClick={handleDeleteClick}
                     className="absolute top-2 right-2 text-gray-400 hover:text-red-500 p-1 rounded-full hover:bg-red-100 transition duration-150 focus:outline-none"
                     aria-label={`Supprimer ${piece.nom}`}
@@ -101,7 +101,7 @@ const DocumentCard = ({ piece, onClick, onDelete, categoryConfig }) => {
                     <Trash2 size={16} />
                 </button>
             </div>
-            
+
             <div className="flex justify-between items-center mt-1 pt-1 border-t border-gray-100">
                 <p className="text-xs font-medium text-gray-500 truncate">Ref: {piece.ref}</p>
                 <p className="text-xs text-gray-400 whitespace-nowrap ml-2">{piece.date}</p>
@@ -116,8 +116,8 @@ export default function GestionPiecesBoard() {
     const [recherche, setRecherche] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [documentToDelete, setDocumentToDelete] = useState(null);
-    const [dateDebut, setDateDebut] = useState('2024-12-10'); 
-    const [dateFin, setDateFin] = useState('2025-10-25'); 
+    const [dateDebut, setDateDebut] = useState('2024-12-10');
+    const [dateFin, setDateFin] = useState('2025-10-25');
 
     const handleDocumentClick = (piece) => {
         console.log(`Ouverture du document pour traitement : ${piece.nom}`);
@@ -127,7 +127,7 @@ export default function GestionPiecesBoard() {
         setDocumentToDelete(document);
         setIsModalOpen(true);
     };
-    
+
     const confirmDelete = (documentId) => {
         setDocuments(prevDocuments => prevDocuments.filter(doc => doc.id !== documentId));
         console.log(`Document avec ID ${documentId} et écritures associées supprimés.`);
@@ -140,11 +140,11 @@ export default function GestionPiecesBoard() {
     };
 
     const groupedDocuments = useMemo(() => {
-        const documentsFiltres = documents.filter(piece => 
-            piece.nom.toLowerCase().includes(recherche.toLowerCase()) || 
+        const documentsFiltres = documents.filter(piece =>
+            piece.nom.toLowerCase().includes(recherche.toLowerCase()) ||
             piece.ref.toLowerCase().includes(recherche.toLowerCase())
         );
-        
+
         return documentsFiltres.reduce((acc, piece) => {
             const key = piece.type;
             if (!acc[key]) {
@@ -156,69 +156,69 @@ export default function GestionPiecesBoard() {
     }, [documents, recherche]);
 
     return (
-        <div className="pt-20 pb-6 h-screen bg-gray-50 overflow-hidden flex flex-col"> 
-            
+        <div className="pt-20 pb-6 h-screen bg-gray-50 overflow-hidden flex flex-col">
+
             <div className="px-6 space-y-4 flex-shrink-0">
-                
+
                 {/* 1. PÉRIODE D'EXERCICE - Style Dashboard */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-lg shadow-sm">
-                    <div className="mb-3 sm:mb-0">
-                        <p className="font-medium text-gray-700">Période d'exercice</p>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 bg-white p-3 sm:p-4 rounded-lg shadow-md border-t-2 border-gray-300">
+                    <div className="mb-2 sm:mb-0">
+                        <p className="font-semibold text-gray-800">Période d'exercice</p>
                         <p className="text-xs text-gray-500">Sélectionnez la période à analyser</p>
                     </div>
-                    
-                    <div className="flex flex-wrap gap-2 sm:space-x-4 items-center text-sm">
+
+                    <div className="flex flex-wrap gap-2 sm:space-x-3 items-center text-sm">
                         <div className="flex items-center space-x-2">
-                            <label className="text-gray-500 text-xs sm:text-sm">Du</label>
-                            <input 
-                                type="date" 
-                                value={dateDebut} 
-                                className="p-1 sm:p-2 border rounded-lg text-xs sm:text-sm" 
+                            <label className="text-gray-600 text-xs sm:text-sm">Du</label>
+                            <input
+                                type="date"
+                                value={dateDebut}
+                                className="p-1.5 border border-gray-300 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
                                 onChange={(e) => setDateDebut(e.target.value)}
                             />
                         </div>
                         <div className="flex items-center space-x-2">
-                            <label className="text-gray-500 text-xs sm:text-sm">Au</label>
-                            <input 
-                                type="date" 
-                                value={dateFin} 
-                                className="p-1 sm:p-2 border rounded-lg text-xs sm:text-sm" 
+                            <label className="text-gray-600 text-xs sm:text-sm">Au</label>
+                            <input
+                                type="date"
+                                value={dateFin}
+                                className="p-1.5 border border-gray-300 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
                                 onChange={(e) => setDateFin(e.target.value)}
                             />
                         </div>
-                        <button className="bg-gray-100 text-gray-700 px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm hover:bg-gray-200">
+                        <button className="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm hover:bg-gray-900 font-medium shadow-sm transition-all">
                             11 déc. 2024 - 10 déc. 2025
                         </button>
                     </div>
                 </div>
 
                 {/* 2. BARRE DE RECHERCHE */}
-                <div className="bg-white p-2 rounded-xl shadow-lg border border-gray-100"> 
+                <div className="bg-white p-2 rounded-xl shadow-lg border border-gray-100">
                     <div className="flex items-center space-x-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 ml-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
-                        <input 
-                            type="text" 
-                            placeholder="Numéro, nom du fichier" 
+                        <input
+                            type="text"
+                            placeholder="Numéro, nom du fichier"
                             value={recherche}
                             onChange={(e) => setRecherche(e.target.value)}
-                            className="w-full p-2 border-0 focus:ring-0 text-sm placeholder-gray-400" 
+                            className="w-full p-2 border-0 focus:ring-0 text-sm placeholder-gray-400"
                         />
                     </div>
                 </div>
             </div>
 
             {/* 3. ZONE DE COLONNES (Workflow) */}
-            <div className="flex-1 overflow-hidden px-6 pt-4"> 
-                <div className="flex flex-col space-x-0 space-y-4 lg:flex-row lg:space-x-6 lg:space-y-0 items-stretch h-full overflow-y-auto lg:overflow-x-auto pb-4"> 
+            <div className="flex-1 overflow-hidden px-6 pt-4">
+                <div className="flex flex-col space-x-0 space-y-4 lg:flex-row lg:space-x-6 lg:space-y-0 items-stretch h-full overflow-y-auto lg:overflow-x-auto pb-4">
                     {CATEGORIES.map((category) => {
                         const pieces = groupedDocuments[category.key] || [];
                         const piecesCount = pieces.length;
-                        
+
                         return (
-                            <div 
-                                key={category.key} 
+                            <div
+                                key={category.key}
                                 className="flex-shrink-0 w-full lg:flex-1 lg:min-w-[280px] bg-gray-50 rounded-xl shadow-lg p-4 flex flex-col h-auto lg:h-full border border-gray-200"
                             >
                                 <div className={`flex items-center justify-between pb-3 mb-3 border-b border-gray-200 flex-shrink-0`}>
@@ -228,14 +228,14 @@ export default function GestionPiecesBoard() {
                                     </span>
                                 </div>
 
-                                <div className="flex-grow overflow-y-auto pr-1"> 
+                                <div className="flex-grow overflow-y-auto pr-1">
                                     {piecesCount > 0 ? (
                                         pieces.map(piece => (
-                                            <DocumentCard 
-                                                key={piece.id} 
-                                                piece={piece} 
+                                            <DocumentCard
+                                                key={piece.id}
+                                                piece={piece}
                                                 onClick={handleDocumentClick}
-                                                onDelete={handleDocumentDelete} 
+                                                onDelete={handleDocumentDelete}
                                                 categoryConfig={category}
                                             />
                                         ))

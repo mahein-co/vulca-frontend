@@ -537,6 +537,42 @@ export default function ImportFichier() {
         }
     }, [documents, currentIndex, currentDocument]);
 
+    // ✅ Fonction utilitaire pour extraire et formater les dates de manière sûre
+    const extractDate = useCallback((dateValue) => {
+        if (!dateValue) return '';
+
+        // Si c'est déjà une chaîne au format YYYY-MM-DD ou avec timestamp
+        if (typeof dateValue === 'string') {
+            // Extraire seulement la partie date (ignorer l'heure si présente)
+            const match = dateValue.match(/(\d{4}-\d{2}-\d{2})/);
+            if (match) return match[1];
+
+            // Essayer de parser comme date si format différent
+            try {
+                const parsed = new Date(dateValue);
+                if (!isNaN(parsed.getTime())) {
+                    return parsed.toISOString().slice(0, 10);
+                }
+            } catch (e) {
+                console.warn('Impossible de parser la date:', dateValue);
+            }
+        }
+
+        // Si c'est un timestamp ou un objet Date
+        if (typeof dateValue === 'number' || dateValue instanceof Date) {
+            try {
+                const date = new Date(dateValue);
+                if (!isNaN(date.getTime())) {
+                    return date.toISOString().slice(0, 10);
+                }
+            } catch (e) {
+                console.error('Erreur conversion date:', e);
+            }
+        }
+
+        return '';
+    }, []);
+
     // Extraction OCR via API (DRF) - AVEC GESTION D'ERREUR
     const handleExtractText = useCallback(async () => {
         if (!currentFile) return;
@@ -590,8 +626,8 @@ export default function ImportFichier() {
                 produits: extractedJson.description_produits || [],
                 garantie: extractedJson.garantie || '',
                 sav: extractedJson.sav || '',
-                dateEmission: (extractedJson.date_facture || extractedJson.date_emission || extractedJson.date || '').slice(0, 10),
-                dateEcheance: (extractedJson.date_echeance || extractedJson.due_date || '').slice(0, 10),
+                dateEmission: extractDate(extractedJson.date_facture || extractedJson.date_emission || extractedJson.date),
+                dateEcheance: extractDate(extractedJson.date_echeance || extractedJson.due_date),
                 fileId: response.id || response.file_id || null,
                 ventilation: '',
                 categorie: ''

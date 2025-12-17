@@ -1,3 +1,4 @@
+import React, { useState, useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -8,30 +9,72 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { useGetChiffreAffaireMensuelQuery, useGetChiffreAffaireAnnuelQuery } from '../../states/compta/comptaApiSlice';
 
-const caEvolutionData = [
-  { month: 'Jan', ca2024: 28000000, ca2023: 22000000, ca2022: 18000000 },
-  { month: 'Fév', ca2024: 32000000, ca2023: 25000000, ca2022: 20000000 },
-  { month: 'Mar', ca2024: 38000000, ca2023: 30000000, ca2022: 24000000 },
-  { month: 'Avr', ca2024: 42000000, ca2023: 35000000, ca2022: 28000000 },
-  { month: 'Mai', ca2024: 45000000, ca2023: 38000000, ca2022: 31000000 },
-  { month: 'Juin', ca2024: 50000000, ca2023: 42000000, ca2022: 35000000 },
-  { month: 'Juil', ca2024: 48000000, ca2023: 40000000, ca2022: 33000000 },
-  { month: 'Août', ca2024: 46000000, ca2023: 38000000, ca2022: 32000000 },
-  { month: 'Sep', ca2024: 52000000, ca2023: 44000000, ca2022: 36000000 },
-  { month: 'Oct', ca2024: 55000000, ca2023: 47000000, ca2022: 39000000 },
-  { month: 'Nov', ca2024: 58000000, ca2023: 50000000, ca2022: 41000000 },
-  { month: 'Déc', ca2024: 62000000, ca2023: 53000000, ca2022: 44000000 },
-];
+const MONTHS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
 
 export default function LineChartCAEvolution() {
+  const [viewMode, setViewMode] = useState('monthly'); // 'monthly' | 'annual'
+  const currentYear = new Date().getFullYear();
+
+  // Fetch data for the last 3 years for monthly comparison
+  const { data: dataCurrent } = useGetChiffreAffaireMensuelQuery(currentYear.toString());
+  const { data: dataYearMinus1 } = useGetChiffreAffaireMensuelQuery((currentYear - 1).toString());
+
+  // Fetch annual data
+  const { data: dataAnnual } = useGetChiffreAffaireAnnuelQuery();
+
+  const processedData = useMemo(() => {
+    if (viewMode === 'annual') {
+        if (!dataAnnual) return [];
+        return dataAnnual.map(item => ({
+            name: item.periode, // Year like "2024"
+            ca: parseFloat(item.chiffre_affaire)
+        }));
+    }
+
+    // Monthly view: merge 2 years (Current and N-1)
+    const merged = MONTHS.map((monthName, index) => {
+        const monthNum = (index + 1).toString().padStart(2, '0');
+        
+        const findVal = (data, year) => {
+            if (!data) return 0;
+            const found = data.find(d => d.periode === `${year}-${monthNum}`);
+            return found ? parseFloat(found.chiffre_affaire) : 0;
+        };
+
+        return {
+            name: monthName,
+            [`ca${currentYear}`]: findVal(dataCurrent, currentYear),
+            [`ca${currentYear - 1}`]: findVal(dataYearMinus1, currentYear - 1),
+        };
+    });
+
+    return merged;
+  }, [viewMode, dataAnnual, dataCurrent, dataYearMinus1, currentYear]);
+
   return (
-    <div className="w-full h-80 md:h-96">
+    <div className="w-full h-80 md:h-96 relative">
+      <div className="absolute top-0 right-0 z-10 flex gap-2">
+          <button 
+            onClick={() => setViewMode('monthly')}
+            className={`px-3 py-1 text-xs rounded-full ${viewMode === 'monthly' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+          >
+            Mensuel
+          </button>
+          <button 
+            onClick={() => setViewMode('annual')}
+            className={`px-3 py-1 text-xs rounded-full ${viewMode === 'annual' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+          >
+            Annuel
+          </button>
+      </div>
+
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={caEvolutionData} margin={{ top: 10, right: 30, left: 60, bottom: 5 }}>
+        <LineChart data={processedData} margin={{ top: 30, right: 30, left: 60, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
           <XAxis 
-            dataKey="month" 
+            dataKey="name" 
             stroke="#4b5563"
           />
           <YAxis 
@@ -50,35 +93,40 @@ export default function LineChartCAEvolution() {
             formatter={(value) => value.toLocaleString('fr-FR') + ' Ar'}
           />
           <Legend wrapperStyle={{ paddingTop: '20px' }} />
-          <Line
-            type="monotone"
-            dataKey="ca2024"
-            stroke="#3b82f6"
-            strokeWidth={3}
-            dot={{ fill: '#3b82f6', r: 4 }}
-            activeDot={{ r: 7, stroke: '#1d4ed8', strokeWidth: 2 }}
-            name="2024"
-          />
-          <Line
-            type="monotone"
-            dataKey="ca2023"
-            stroke="#10b981"
-            strokeWidth={2}
-            strokeDasharray="8 8"
-            dot={{ fill: '#10b981', r: 4 }}
-            activeDot={{ r: 6, stroke: '#059669', strokeWidth: 1 }}
-            name="2023"
-          />
-          <Line
-            type="monotone"
-            dataKey="ca2022"
-            stroke="#f59e0b"
-            strokeWidth={2}
-            strokeDasharray="5 5"
-            dot={{ fill: '#f59e0b', r: 4 }}
-            activeDot={{ r: 6, stroke: '#d97706', strokeWidth: 1 }}
-            name="2022"
-          />
+          
+          {viewMode === 'monthly' ? (
+            <>
+                <Line
+                    type="monotone"
+                    dataKey={`ca${currentYear}`}
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    dot={{ fill: '#3b82f6', r: 4 }}
+                    activeDot={{ r: 7, stroke: '#1d4ed8', strokeWidth: 2 }}
+                    name={`Année actuelle (${currentYear})`}
+                />
+                <Line
+                    type="monotone"
+                    dataKey={`ca${currentYear - 1}`}
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    strokeDasharray="8 8"
+                    dot={{ fill: '#10b981', r: 4 }}
+                    activeDot={{ r: 6, stroke: '#059669', strokeWidth: 1 }}
+                    name={`Année N-1 (${currentYear - 1})`}
+                />
+            </>
+          ) : (
+            <Line
+                type="monotone"
+                dataKey="ca"
+                stroke="#3b82f6"
+                strokeWidth={3}
+                dot={{ fill: '#3b82f6', r: 4 }}
+                activeDot={{ r: 7, stroke: '#1d4ed8', strokeWidth: 2 }}
+                name="Chiffre d'Affaires"
+            />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </div>

@@ -14,14 +14,16 @@ import {
     AlertCircle,
     Loader,
     Columns2,
-    Calendar
+    Calendar,
+    Search
 } from 'lucide-react';
+import { BASE_URL_API } from '../../constants/globalConstants';
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 5;
 
 const API_CONFIG = {
-    bilanUrl: 'https://votre-api.com/api/bilan',
-    compteResultatUrl: 'https://votre-api.com/api/compte-resultat',
+    bilanUrl: `${BASE_URL_API}/bilans/`,
+    compteResultatUrl: `${BASE_URL_API}/CompteResultats/`,
     headers: { 'Content-Type': 'application/json' }
 };
 
@@ -57,10 +59,10 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) 
         iconBg = 'bg-gradient-to-br from-rose-50 to-red-50';
         iconColor = 'text-red-500';
         changeColor = isFavorable ? 'text-emerald-600' : 'text-red-600';
-    } else if (title.includes('Passif')) {
+    } else if (title.includes('Passif') || title.includes('Capitaux')) {
         iconBg = 'bg-gradient-to-br from-orange-50 to-amber-50';
         iconColor = 'text-orange-600';
-    } else if (title.includes('Actif') || title.includes('Capitaux')) {
+    } else if (title.includes('Actif')) {
         iconBg = 'bg-gradient-to-br from-blue-50 to-indigo-50';
         iconColor = 'text-blue-600';
     }
@@ -89,7 +91,7 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) 
             <div className="mt-1">
                 <p className="text-[10px] sm:text-[11px] font-semibold text-gray-500 uppercase tracking-wide truncate">{title}</p>
                 <p className="text-sm sm:text-base font-bold text-gray-900 truncate">{value}</p>
-                <p className="text-[9px] text-gray-400 italic truncate">{description}</p>
+                <p className="text-[9px] text-gray-400 truncate">{description}</p>
             </div>
         </div>
     );
@@ -133,49 +135,119 @@ const TransactionView = () => {
     const [selectedSection, setSelectedSection] = useState('bilan');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedYear, setSelectedYear] = useState(currentYear.toString());
+    const [dateDebut, setDateDebut] = useState(`${currentYear}-01-01`);
+    const [dateFin, setDateFin] = useState(`${currentYear}-12-31`);
     const [recherche, setRecherche] = useState('');
     const [bilanData, setBilanData] = useState([]);
     const [compteResultatData, setCompteResultatData] = useState([]);
+    const [kpiData, setKpiData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [historicalData] = useState({ resultatNetPrevious: 150000000, endettementPrevious: 35 });
 
-    // Générer une liste d'années (5 dernières années + année actuelle)
-    const availableYears = Array.from({ length: 6 }, (_, i) => currentYear - i);
+    // NOUVELLE LOGIQUE DE PÉRIODE
+    const [availableYears, setAvailableYears] = useState([currentYear]);
+    const [periodMode, setPeriodMode] = useState('ANNUAL'); // 'ANNUAL', 'QUARTERLY', 'MONTHLY'
+    // 'selectedSubPeriod' remplace 'selectedYear' qui est maintenant juste une partie de l'état global
+    // Mais on garde 'selectedYear' state pour stocker l'année choisie
+    // On garde 'selectedYear' comme state distinct
+    const [selectedSubPeriod, setSelectedSubPeriod] = useState(null); // 'T1', 'M1', etc.
+
+    // Le useEffect qui charge les années
+    useEffect(() => {
+        const fetchAvailableYears = async () => {
+            try {
+                const res = await fetch(`${BASE_URL_API}/journals/years/`);
+                if (res.ok) {
+                    const years = await res.json();
+                    setAvailableYears(years);
+                    // Si 'selectedYear' initial n'est pas dans la liste, prendre le plus récent
+                    if (years.length > 0 && !years.map(String).includes(selectedYear)) {
+                        setSelectedYear(years[0].toString());
+                    }
+                }
+            } catch (e) {
+                console.error("Erreur chargement années:", e);
+            }
+        };
+        fetchAvailableYears();
+    }, []);
+
+    // EFFET: Calculer automatiquement les dates de début/fin quand les sélecteurs changent
+    useEffect(() => {
+        const year = parseInt(selectedYear);
+        let start = `${year}-01-01`;
+        let end = `${year}-12-31`;
+
+        if (periodMode === 'QUARTERLY' && selectedSubPeriod) {
+            // T1, T2, T3, T4
+            const q = parseInt(selectedSubPeriod.replace('T', ''));
+            const startMonth = (q - 1) * 3 + 1;
+            const endMonth = startMonth + 2;
+
+            // Format YYYY-MM-DD
+            const sM = startMonth.toString().padStart(2, '0');
+            const eM = endMonth.toString().padStart(2, '0');
+            // Trouver le dernier jour du mois de fin
+            const lastDay = new Date(year, endMonth, 0).getDate();
+
+            start = `${year}-${sM}-01`;
+            end = `${year}-${eM}-${lastDay}`;
+        }
+        else if (periodMode === 'MONTHLY' && selectedSubPeriod) {
+            // M1 ... M12
+            const m = parseInt(selectedSubPeriod.replace('M', ''));
+            const sM = m.toString().padStart(2, '0');
+            const lastDay = new Date(year, m, 0).getDate();
+
+            start = `${year}-${sM}-01`;
+            end = `${year}-${sM}-${lastDay}`;
+        }
+
+        setDateDebut(start);
+        setDateFin(end);
+    }, [selectedYear, periodMode, selectedSubPeriod]);
 
     const normalizeBilanData = (data) => data.map(item => ({
-        numeroCompte: item.numeroCompte || '',
+        numero_compte: item.numero_compte || '',
         libelle: item.libelle || '',
         categorie: item.categorie || '',
-        montant: parseFloat(item.montant || 0),
+        montant_ar: parseFloat(item.montant_ar || 0),
         date: item.date || new Date().toISOString()
     }));
 
     const normalizeCompteResultatData = (data) => data.map(item => ({
-        numeroCompte: item.numeroCompte || '',
+        numero_compte: item.numero_compte || '',
         libelle: item.libelle || '',
         nature: item.nature || '',
-        montant: parseFloat(item.montant || 0),
+        montant_ar: parseFloat(item.montant_ar || 0),
         date: item.date || new Date().toISOString()
     }));
 
-    const fetchData = async (url, normalizer, setter, year) => {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        const mockData = url.includes('bilan')
-            ? [
-                { numeroCompte: '101', libelle: 'Capital Social', categorie: 'Capitaux Propres', montant: 500000000, date: `${year}-12-31` },
-                { numeroCompte: '211', libelle: 'Terrains et Constructions', categorie: 'Actif Non Courant', montant: 300000000, date: `${year}-12-31` },
-                { numeroCompte: '401', libelle: 'Fournisseurs', categorie: 'Passif Courant', montant: 80000000, date: `${year}-12-31` },
-                { numeroCompte: '512', libelle: 'Banques', categorie: 'Actif Courant', montant: 120000000, date: `${year}-12-31` },
-                { numeroCompte: '164', libelle: 'Emprunts bancaires', categorie: 'Passif Non Courant', montant: 200000000, date: `${year}-12-31` }
-            ]
-            : [
-                { numeroCompte: '701', libelle: 'Ventes de marchandises', nature: 'Produit', montant: 800000000, date: `${year}-12-31` },
-                { numeroCompte: '601', libelle: 'Achats de marchandises', nature: 'Charge', montant: 450000000, date: `${year}-12-31` },
-                { numeroCompte: '641', libelle: 'Rémunérations du personnel', nature: 'Charge', montant: 150000000, date: `${year}-12-31` },
-                { numeroCompte: '706', libelle: 'Prestations de services', nature: 'Produit', montant: 200000000, date: `${year}-12-31` }
-            ];
-        setter(normalizer(mockData));
+    const fetchWithParams = async (url, params, normalizer, setter) => {
+        const queryParams = new URLSearchParams(params).toString();
+        const res = await fetch(`${url}?${queryParams}`, { headers: API_CONFIG.headers });
+        if (!res.ok) throw new Error("Erreur lors du chargement des données");
+
+        const json = await res.json();
+        const data = Array.isArray(json) ? json : (json.results || []);
+        setter(normalizer(data));
+    };
+
+    const fetchKPIs = async () => {
+        try {
+            const queryParams = new URLSearchParams({
+                date_start: dateDebut,
+                date_end: dateFin
+            }).toString();
+            // Utiliser le endpoint resultat-net pour avoir les vraies variations
+            const res = await fetch(`${BASE_URL_API}/resultat-net/?${queryParams}`, { headers: API_CONFIG.headers });
+            if (res.ok) {
+                const data = await res.json();
+                setKpiData(data);
+            }
+        } catch (e) {
+            console.error("Erreur KPI:", e);
+        }
     };
 
     useEffect(() => {
@@ -185,21 +257,40 @@ const TransactionView = () => {
             setCurrentPage(1);
             try {
                 await Promise.all([
-                    fetchData(API_CONFIG.bilanUrl, normalizeBilanData, setBilanData, selectedYear),
-                    fetchData(API_CONFIG.compteResultatUrl, normalizeCompteResultatData, setCompteResultatData, selectedYear)
+                    // Bilan = cumul jusqu'à dateFin (pas de dateDebut pour l'API)
+                    fetchWithParams(API_CONFIG.bilanUrl, { date_end: dateFin }, normalizeBilanData, setBilanData),
+                    // CR = période (dateDebut -> dateFin)
+                    fetchWithParams(API_CONFIG.compteResultatUrl, { date_start: dateDebut, date_end: dateFin }, normalizeCompteResultatData, setCompteResultatData),
+                    fetchKPIs()
                 ]);
-            } catch (err) { setError(err.message); }
+            } catch (err) {
+                console.error(err);
+                setError(err.message);
+            }
             finally { setLoading(false); }
         };
         loadData();
-    }, [selectedYear]);
+    }, [dateDebut, dateFin]);
 
-    const filterData = (details) => {
+    const filterData = (details, isBilan = false) => {
         const searchLower = recherche.toLowerCase().trim();
         let filtered = details;
 
-        // Filtrer par année sélectionnée
-        if (selectedYear) {
+        // Filtrer par période d'exercice
+        // Pour le Bilan, on NE filtre PAS par date de début, car c'est un cumul
+        // Le backend a déjà filtré date <= dateFin
+        if (dateDebut && dateFin) {
+            filtered = filtered.filter(item => {
+                const itemDate = new Date(item.date);
+                const start = new Date(dateDebut);
+                const end = new Date(dateFin);
+
+                if (isBilan) {
+                    return itemDate <= end; // Bilan: cumulatif
+                }
+                return itemDate >= start && itemDate <= end; // CR: période
+            });
+        } else if (selectedYear) {
             filtered = filtered.filter(item => {
                 const itemYear = new Date(item.date).getFullYear().toString();
                 return itemYear === selectedYear;
@@ -209,7 +300,7 @@ const TransactionView = () => {
         // Filtrer par recherche
         if (searchLower) {
             filtered = filtered.filter(item =>
-                item.numeroCompte.toLowerCase().includes(searchLower) ||
+                item.numero_compte.toLowerCase().includes(searchLower) ||
                 item.libelle.toLowerCase().includes(searchLower) ||
                 (item.categorie || item.nature || '').toLowerCase().includes(searchLower)
             );
@@ -219,29 +310,39 @@ const TransactionView = () => {
     };
 
     const calculations = useMemo(() => {
-        const bilan = filterData(bilanData);
-        const compteResultat = filterData(compteResultatData);
+        // IMPORTANT: Pour le Bilan, on spécifie isBilan=true pour éviter le filtre par date de début
+        // Cela permet aux KPI (Actif, Passif) de refléter le cumul historique
+        const bilan = filterData(bilanData, true);
+        const compteResultat = filterData(compteResultatData, false);
 
-        const actifCourant = bilan.filter(i => i.categorie.toLowerCase().includes('actif') && i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant, 0);
-        const actifNonCourant = bilan.filter(i => i.categorie.toLowerCase().includes('actif') && !i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant, 0);
-        const passifCourant = bilan.filter(i => i.categorie.toLowerCase().includes('passif') && i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant, 0);
-        const passifNonCourant = bilan.filter(i => i.categorie.toLowerCase().includes('passif') && !i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant, 0);
-        const capitauxPropres = bilan.filter(i => i.categorie.toLowerCase().includes('capitaux')).reduce((a, b) => a + b.montant, 0);
+        const actifCourant = bilan.filter(i => i.categorie.toLowerCase().includes('actif') && i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
+        const actifNonCourant = bilan.filter(i => i.categorie.toLowerCase().includes('actif') && !i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
+        const passifCourant = bilan.filter(i => i.categorie.toLowerCase().includes('passif') && i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
+        const passifNonCourant = bilan.filter(i => i.categorie.toLowerCase().includes('passif') && !i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
+        const capitauxPropresBilan = bilan.filter(i => i.categorie.toLowerCase().includes('capitaux')).reduce((a, b) => a + b.montant_ar, 0);
+
+        const produits = compteResultat.filter(i => i.nature.toLowerCase().includes('produit')).reduce((a, b) => a + b.montant_ar, 0);
+        const charges = compteResultat.filter(i => i.nature.toLowerCase().includes('charge')).reduce((a, b) => a + b.montant_ar, 0);
+
+        // Use backend value if available, else fallback to local calculation
+        const resultatNet = kpiData && kpiData.resultat_net !== undefined ? parseFloat(kpiData.resultat_net) : (produits - charges);
+
+        // Formule Demandée : Capitaux Propres = Categorie CP + Résultat cumulé à la date du Bilan (PAS celui de la période)
+        const resultatNetCumule = kpiData && kpiData.resultat_net_cumule !== undefined ? parseFloat(kpiData.resultat_net_cumule) : resultatNet;
+        const capitauxPropresTotal = capitauxPropresBilan + resultatNetCumule;
 
         const totalActif = actifCourant + actifNonCourant;
-        const totalPassif = passifCourant + passifNonCourant + capitauxPropres;
+        const totalPassif = passifCourant + passifNonCourant + capitauxPropresTotal;
 
-        const produits = compteResultat.filter(i => i.nature.toLowerCase().includes('produit')).reduce((a, b) => a + b.montant, 0);
-        const charges = compteResultat.filter(i => i.nature.toLowerCase().includes('charge')).reduce((a, b) => a + b.montant, 0);
-
-        const resultatNet = produits - charges;
         const totalDettes = passifCourant + passifNonCourant;
-        const endettementRatio = capitauxPropres ? (totalDettes / capitauxPropres * 100) : 0;
-        const resultatNetChange = resultatNet - historicalData.resultatNetPrevious;
-        const endettementChange = endettementRatio - historicalData.endettementPrevious;
+        const endettementRatio = capitauxPropresTotal ? (totalDettes / capitauxPropresTotal * 100) : 0;
 
-        return { actifCourant, actifNonCourant, passifCourant, passifNonCourant, capitauxPropres, totalActif, totalPassif, produits, charges, resultatNet, endettementRatio, totalDettes, bilanEquilibre: Math.abs(totalActif - totalPassif) < 0.01, resultatNetChange, endettementChange };
-    }, [bilanData, compteResultatData, recherche, selectedYear]);
+        // Backend provides variation
+        const resultatNetChange = kpiData && kpiData.variation !== undefined ? parseFloat(kpiData.variation) : 0;
+        const endettementChange = 0; // To be implemented if backend provides previous ratio
+
+        return { actifCourant, actifNonCourant, passifCourant, passifNonCourant, capitauxPropres: capitauxPropresTotal, capitauxPropresBilan, totalActif, totalPassif, produits, charges, resultatNet, endettementRatio, totalDettes, bilanEquilibre: Math.abs(totalActif - totalPassif) < 0.01, resultatNetChange, endettementChange };
+    }, [bilanData, compteResultatData, recherche, selectedYear, kpiData]);
 
     const cards = [
         ['Actif Courant', calculations.actifCourant, null, false, DollarSign, 'Créances,Stocks,Trésorerie'],
@@ -253,7 +354,7 @@ const TransactionView = () => {
         ['Ratio Endettement', calculations.endettementRatio, calculations.endettementChange, true, FileText, 'Dettes/CP']
     ];
 
-    const allDetails = useMemo(() => selectedSection === 'bilan' ? filterData(bilanData) : filterData(compteResultatData), [selectedSection, bilanData, compteResultatData, recherche, selectedYear]);
+    const allDetails = useMemo(() => selectedSection === 'bilan' ? filterData(bilanData, true) : filterData(compteResultatData, false), [selectedSection, bilanData, compteResultatData, recherche, selectedYear]);
     const totalPages = Math.ceil(allDetails.length / ITEMS_PER_PAGE);
     const totalItems = allDetails.length;
     const paginatedDetails = useMemo(() => allDetails.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE), [currentPage, allDetails]);
@@ -263,43 +364,119 @@ const TransactionView = () => {
             <main className="flex-1 flex flex-col overflow-hidden min-h-0">
                 {/* Période d'exercice */}
                 {/* Période d'exercice */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 bg-white p-3 sm:p-4 rounded-lg shadow-md border-t-2 border-gray-300">
-                    <div className="mb-2 sm:mb-0">
-                        <p className="font-semibold text-gray-800">Période d'exercice</p>
-                        <p className="text-xs text-gray-500">Sélectionnez la période à analyser</p>
-                    </div>
+                {/* 1. PÉRIODE D'EXERCICE - Style Dashboard */}
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 transition-all hover:shadow-md">
+                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
 
-                    <div className="flex flex-wrap gap-2 sm:space-x-3 items-center text-sm">
-                        <div className="flex items-center space-x-2">
-                            <label className="text-gray-600 text-xs sm:text-sm">Du</label>
-                            <input
-                                type="date"
-                                value={`${selectedYear}-01-01`}
-                                onChange={(e) => {
-                                    const year = new Date(e.target.value).getFullYear();
-                                    setSelectedYear(year.toString());
-                                }}
-                                className="p-1.5 border border-gray-300 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
-                            />
+                        {/* HEADER MOBILE/TABLET */}
+                        <div className="flex-shrink-0">
+                            <h2 className="text-lg font-bold text-gray-800 tracking-tight flex items-center">
+                                <span className="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg mr-2">
+                                    <Calendar size={18} />
+                                </span>
+                                Période d'exercice
+
+
+                            </h2>
+                            <p className="text-xs text-gray-500 font-medium ml-9">Sélectionnez la période à analyser</p>
                         </div>
-                        <div className="flex items-center space-x-2">
-                            <label className="text-gray-600 text-xs sm:text-sm">Au</label>
-                            <input
-                                type="date"
-                                value={`${selectedYear}-12-31`}
-                                onChange={(e) => {
-                                    const year = new Date(e.target.value).getFullYear();
-                                    setSelectedYear(year.toString());
-                                }}
-                                className="p-1.5 border border-gray-300 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
-                            />
+
+                        {/* CONTROLS CONTAINER */}
+                        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto items-start sm:items-center flex-wrap">
+
+                            {/* 1. ANNEE */}
+                            <div className="relative group w-full sm:w-auto">
+                                <select
+                                    value={selectedYear}
+                                    onChange={(e) => setSelectedYear(e.target.value)}
+                                    className="w-full sm:w-auto appearance-none bg-indigo-50 hover:bg-indigo-100 transition-colors border-0 text-indigo-700 text-sm font-bold rounded-lg py-2.5 pl-4 pr-10 cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm"
+                                >
+                                    {availableYears.map(year => (
+                                        <option key={year} value={year}>{year}</option>
+                                    ))}
+                                </select>
+                                <ChevronRight className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-500 rotate-90" />
+                            </div>
+
+                            {/* 2. MODE SELECTOR */}
+                            <div className="flex bg-gray-100 p-1 rounded-lg overflow-x-auto max-w-full no-scrollbar w-full sm:w-auto">
+                                {[
+                                    { id: 'ANNUAL', label: 'Annuel' },
+                                    { id: 'QUARTERLY', label: 'Trimestriel' },
+                                    { id: 'MONTHLY', label: 'Mensuel' },
+                                ].map(mode => (
+                                    <button
+                                        key={mode.id}
+                                        onClick={() => {
+                                            setPeriodMode(mode.id);
+                                            setSelectedSubPeriod(null);
+                                        }}
+                                        className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-all duration-200 ${periodMode === mode.id
+                                            ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
+                                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        {mode.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* 3. SUB-PERIOD SELECTOR (Animated) */}
+                            {periodMode !== 'ANNUAL' && (
+                                <div className="animate-fadeIn w-full sm:w-auto contents sm:block">
+                                    <select
+                                        value={selectedSubPeriod || ''}
+                                        onChange={(e) => setSelectedSubPeriod(e.target.value)}
+                                        className="w-full sm:w-40 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 font-medium shadow-sm transition-all hover:border-indigo-300"
+                                    >
+                                        <option value="">Choisir...</option>
+                                        {periodMode === 'QUARTERLY' ? (
+                                            <>
+                                                <option value="T1">T1 (Jan-Mar)</option>
+                                                <option value="T2">T2 (Avr-Jun)</option>
+                                                <option value="T3">T3 (Juil-Sep)</option>
+                                                <option value="T4">T4 (Oct-Déc)</option>
+                                            </>
+                                        ) : (
+                                            Array.from({ length: 12 }, (_, i) => {
+                                                const m = i + 1;
+                                                const date = new Date(2000, i, 1);
+                                                const monthName = date.toLocaleString('fr-FR', { month: 'long' });
+                                                return <option key={`M${m}`} value={`M${m}`}>{monthName.charAt(0).toUpperCase() + monthName.slice(1)}</option>;
+                                            })
+                                        )}
+                                    </select>
+                                </div>
+                            )}
+
                         </div>
-                        <button
-                            onClick={() => setSelectedYear(currentYear.toString())}
-                            className="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm hover:bg-gray-900 font-medium shadow-sm transition-all"
-                        >
-                            01 janv. {selectedYear} - 31 déc. {selectedYear}
-                        </button>
+
+                        {/* DATE RANGE DISPLAY (Desktop: Right aligned) */}
+                        <div className="hidden lg:flex items-center text-xs font-mono text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 whitespace-nowrap ml-auto">
+                            <Calendar size={12} className="mr-2 text-gray-400" />
+                            {dateDebut} <span className="mx-2 text-gray-300">|</span> {dateFin}
+                        </div>
+                    </div>
+                    {/* DATE RANGE DISPLAY (Mobile/Tablet only: Bottom full width) */}
+                    <div className="lg:hidden mt-4 flex items-center justify-center text-xs font-mono text-gray-500 bg-gray-50 py-2 rounded-lg border-t border-gray-100 w-full">
+                        <Calendar size={12} className="mr-2" />
+                        {dateDebut} <span className="mx-2">→</span> {dateFin}
+                    </div>
+                </div>
+
+                {/* 2. BARRE DE RECHERCHE */}
+                <div className="bg-white p-2 rounded-xl shadow-lg border border-gray-100 mb-4">
+                    <div className="flex items-center space-x-2">
+                        <div className="pl-2">
+                            <Search className="h-5 w-5 text-gray-400" />
+                        </div>
+                        <input
+                            type="text"
+                            placeholder="Rechercher par compte, libellé..."
+                            value={recherche}
+                            onChange={(e) => setRecherche(e.target.value)}
+                            className="w-full p-2 border-0 focus:ring-0 text-sm placeholder-gray-400"
+                        />
                     </div>
                 </div>
 
@@ -359,42 +536,42 @@ const TransactionView = () => {
                 {/* Table des détails */}
                 <div className="px-2 flex-1 min-h-0 ">
                     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden h-full">
-                        <div className="overflow-hidden flex-1 ">
-                            <table className="w-full table-fixed border-collapse">
-                                <thead className="bg-gradient-to-r from-indigo-50 to-purple-50">
-                                    <tr>
-                                        <th className="border-b-2 border-indigo-200 px-3 py-2 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider w-[15%]">Compte</th>
-                                        <th className="border-b-2 border-indigo-200 px-3 py-2 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider w-[35%]">Libellé</th>
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse text-xs sm:text-sm min-w-[600px]">
+                                <thead className="sticky top-0 z-10">
+                                    <tr className="bg-gray-800 text-white">
+                                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Compte</th>
+                                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
                                         {selectedSection === 'bilan' ?
-                                            <th className="border-b-2 border-indigo-200 px-3 py-2 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider w-[20%]">Catégorie</th>
-                                            : <th className="border-b-2 border-emerald-200 px-3 py-2 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider w-[20%]">Nature</th>
+                                            <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Catégorie</th>
+                                            : <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Nature</th>
                                         }
-                                        <th className="border-b-2 border-indigo-200 px-3 py-2 text-right text-xs font-bold text-indigo-700 uppercase tracking-wider w-[20%]">Montant</th>
-                                        <th className="border-b-2 border-indigo-200 px-3 py-2 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider w-[10%]">Date</th>
+                                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Montant</th>
+                                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden sm:table-cell">Date</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white divide-y divide-gray-100">
+                                <tbody className="bg-white">
                                     {loading ? [...Array(ITEMS_PER_PAGE)].map((_, i) =>
                                         <tr key={i} className="animate-pulse">
                                             {[...Array(5)].map((_, j) =>
-                                                <td key={j} className="px-2 py-2">
-                                                    <div className="h-3 bg-gray-200 rounded"></div>
+                                                <td key={j} className="border-b border-gray-100 px-3 py-2.5">
+                                                    <div className="h-4 bg-gray-200 rounded"></div>
                                                 </td>
                                             )}
                                         </tr>
                                     ) : paginatedDetails.map((item, idx) => (
-                                        <tr key={idx} className="hover:bg-indigo-50/30 transition-colors duration-150">
-                                            <td className="px-1 py-1 text-xs font-semibold text-gray-800 truncate">
-                                                <span className="inline-block px-1 py-0.5 bg-indigo-100 text-indigo-700 rounded-md text-xs">{item.numeroCompte}</span>
+                                        <tr key={idx} className={`hover:bg-emerald-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs">
+                                                <span className="bg-gray-200 text-gray-700 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold">{item.numero_compte}</span>
                                             </td>
-                                            <td className="px-1 py-1 text-xs text-gray-700 truncate font-medium">{item.libelle}</td>
-                                            <td className="px-1 py-1 bodyext-xs truncate">
-                                                <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${selectedSection === 'bilan'
+                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-gray-800 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
+                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 hidden md:table-cell">
+                                                <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 inline-flex text-[10px] font-bold rounded-full ${selectedSection === 'bilan'
                                                     ? item.categorie?.toLowerCase().includes('actif')
                                                         ? 'bg-blue-100 text-blue-700'
-                                                        : item.categorie?.toLowerCase().includes('passif')
-                                                            ? 'bg-red-100 text-red-700'
-                                                            : 'bg-purple-100 text-purple-700'
+                                                        : item.categorie?.toLowerCase().includes('passif') || item.categorie?.toLowerCase().includes('capitaux')
+                                                            ? 'bg-orange-100 text-orange-700'
+                                                            : 'bg-gray-100 text-gray-700'
                                                     : item.nature?.toLowerCase().includes('produit')
                                                         ? 'bg-emerald-100 text-emerald-700'
                                                         : 'bg-orange-100 text-orange-700'
@@ -402,19 +579,20 @@ const TransactionView = () => {
                                                     {item.categorie || item.nature}
                                                 </span>
                                             </td>
-                                            <td className="px-2 py-1 text-xs text-right font-bold text-gray-900 truncate">{formatCurrency(item.montant)}</td>
-                                            <td className="px-2 py-1 text-[10px] text-gray-600 truncate">{formatDate(item.date)}</td>
+                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-right font-bold text-gray-900">{formatCurrency(item.montant_ar)}</td>
+                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] text-gray-600 hidden sm:table-cell">{formatDate(item.date)}</td>
                                         </tr>
                                     ))}
-                                    {(!loading && paginatedDetails.length === 0) && (
-                                        <tr>
-                                            <td colSpan={5} className="text-center py-4">
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <AlertCircle className="text-gray-400 mb-1" size={32} />
-                                                    <p className="text-gray-500 text-xs font-medium">Aucune donnée trouvée pour l'année {selectedYear || 'sélectionnée'}</p>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                    {(!loading && paginatedDetails.length < ITEMS_PER_PAGE) && (
+                                        Array.from({ length: ITEMS_PER_PAGE - paginatedDetails.length }).map((_, idx) => (
+                                            <tr key={`empty-${idx}`} className="bg-white">
+                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none hidden md:table-cell">-</td>
+                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none hidden sm:table-cell">-</td>
+                                            </tr>
+                                        ))
                                     )}
                                 </tbody>
                             </table>

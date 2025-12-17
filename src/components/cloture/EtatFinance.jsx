@@ -8,8 +8,8 @@ import {
   CheckCircle,
   XCircle,
   Scale,
-  DollarSign, 
-  Users,      
+  DollarSign,
+  Users,
   Briefcase,
   AlertCircle,
   Loader
@@ -48,14 +48,14 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio }) => {
     changeIcon = change > 0 ? '↑' : change < 0 ? '↓' : '•';
     changeColor =
       change > 0 ? 'text-red-600' :
-      change < 0 ? 'text-green-600' :
-      'text-gray-400';
+        change < 0 ? 'text-green-600' :
+          'text-gray-400';
   } else if (change !== undefined && change !== null) {
     changeIcon = change > 0 ? '↑' : change < 0 ? '↓' : '•';
     changeColor =
       change > 0 ? 'text-green-600' :
-      change < 0 ? 'text-red-600' :
-      'text-gray-400';
+        change < 0 ? 'text-red-600' :
+          'text-gray-400';
   }
 
   let variationMessage = null;
@@ -136,15 +136,15 @@ const EtatFinance = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(1);
   const [selectedQuarter, setSelectedQuarter] = useState(1);
-  
+
   // États pour les données API
   const [bilanData, setBilanData] = useState([]);
   const [compteResultatData, setCompteResultatData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [historicalData, setHistoricalData] = useState({ 
-    resultatNetPrevious: null, 
-    endettementPrevious: 35 
+  const [historicalData, setHistoricalData] = useState({
+    resultatNetPrevious: null,
+    endettementPrevious: 35
   });
 
   // Fonction pour normaliser les données du Bilan
@@ -159,13 +159,13 @@ const EtatFinance = () => {
         date: item.date || new Date().toISOString()
       }));
     }
-    
+
     // Si data est un objet avec une propriété contenant le tableau
     if (data.details) return normalizeBilanData(data.details);
     if (data.bilan) return normalizeBilanData(data.bilan);
     if (data.data) return normalizeBilanData(data.data);
     if (data.results) return normalizeBilanData(data.results);
-    
+
     return [];
   };
 
@@ -180,13 +180,13 @@ const EtatFinance = () => {
         date: item.date || new Date().toISOString()
       }));
     }
-    
+
     // Si data est un objet avec une propriété contenant le tableau
     if (data.details) return normalizeCompteResultatData(data.details);
     if (data.compteResultat) return normalizeCompteResultatData(data.compteResultat);
     if (data.data) return normalizeCompteResultatData(data.data);
     if (data.results) return normalizeCompteResultatData(data.results);
-    
+
     return [];
   };
 
@@ -197,15 +197,15 @@ const EtatFinance = () => {
         method: 'GET',
         headers: API_CONFIG.headers,
       });
-      
+
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      
+
       const data = await response.json();
       const normalizedData = normalizeBilanData(data);
       setBilanData(normalizedData);
-      
+
       console.log('Données Bilan récupérées:', normalizedData);
     } catch (err) {
       console.error('Erreur lors de la récupération du bilan:', err);
@@ -220,15 +220,15 @@ const EtatFinance = () => {
         method: 'GET',
         headers: API_CONFIG.headers,
       });
-      
+
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
-      
+
       const data = await response.json();
       const normalizedData = normalizeCompteResultatData(data);
       setCompteResultatData(normalizedData);
-      
+
       console.log('Données Compte de Résultat récupérées:', normalizedData);
     } catch (err) {
       console.error('Erreur lors de la récupération du compte de résultat:', err);
@@ -240,7 +240,7 @@ const EtatFinance = () => {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      
+
       try {
         await Promise.all([
           fetchBilanData(),
@@ -260,13 +260,13 @@ const EtatFinance = () => {
   // Fonction de filtrage par période
   const filterByPeriod = (details) => {
     if (!details || !Array.isArray(details)) return [];
-    
+
     return details.filter(item => {
       if (!item.date) return true;
-      
+
       const d = new Date(item.date);
       if (isNaN(d.getTime())) return true;
-      
+
       if (d.getFullYear() !== Number(selectedYear)) return false;
       if (selectedPeriod === 'Annuel') return true;
       if (selectedPeriod === 'Mensuel') return d.getMonth() + 1 === Number(selectedMonth);
@@ -283,19 +283,19 @@ const EtatFinance = () => {
     const actifCourant = bilan
       .filter(i => i.categorie && i.categorie.toLowerCase().includes('actif') && i.categorie.toLowerCase().includes('courant'))
       .reduce((a, b) => a + b.montant, 0);
-    
+
     const actifNonCourant = bilan
       .filter(i => i.categorie && i.categorie.toLowerCase().includes('actif') && !i.categorie.toLowerCase().includes('courant'))
       .reduce((a, b) => a + b.montant, 0);
-    
+
     const passifCourant = bilan
       .filter(i => i.categorie && i.categorie.toLowerCase().includes('passif') && i.categorie.toLowerCase().includes('courant'))
       .reduce((a, b) => a + b.montant, 0);
-    
+
     const passifNonCourant = bilan
       .filter(i => i.categorie && i.categorie.toLowerCase().includes('passif') && !i.categorie.toLowerCase().includes('courant'))
       .reduce((a, b) => a + b.montant, 0);
-    
+
     const capitauxPropres = bilan
       .filter(i => i.categorie && (i.categorie.toLowerCase().includes('capitaux') || i.categorie.toLowerCase().includes('propres')))
       .reduce((a, b) => a + b.montant, 0);
@@ -306,7 +306,7 @@ const EtatFinance = () => {
     const produits = compteResultat
       .filter(i => i.nature && (i.nature.toLowerCase().includes('produit') || i.nature.toLowerCase().includes('revenue')))
       .reduce((a, b) => a + b.montant, 0);
-    
+
     const charges = compteResultat
       .filter(i => i.nature && (i.nature.toLowerCase().includes('charge') || i.nature.toLowerCase().includes('expense')))
       .reduce((a, b) => a + b.montant, 0);
@@ -315,33 +315,33 @@ const EtatFinance = () => {
     const endettementRatio = capitauxPropres ? ((passifCourant + passifNonCourant) / capitauxPropres * 100) : 0;
 
     let resultatNetChange;
-    if (historicalData.resultatNetPrevious === null || 
-        historicalData.resultatNetPrevious === undefined || 
-        isNaN(historicalData.resultatNetPrevious) || 
-        !isFinite(historicalData.resultatNetPrevious)) {
+    if (historicalData.resultatNetPrevious === null ||
+      historicalData.resultatNetPrevious === undefined ||
+      isNaN(historicalData.resultatNetPrevious) ||
+      !isFinite(historicalData.resultatNetPrevious)) {
       resultatNetChange = null;
     } else {
       resultatNetChange = resultatNet - historicalData.resultatNetPrevious;
     }
 
-    const endettementChange = historicalData.endettementPrevious 
+    const endettementChange = historicalData.endettementPrevious
       ? (endettementRatio - historicalData.endettementPrevious).toFixed(1)
       : null;
 
     return {
-      actifCourant, 
-      actifNonCourant, 
-      passifCourant, 
-      passifNonCourant, 
+      actifCourant,
+      actifNonCourant,
+      passifCourant,
+      passifNonCourant,
       capitauxPropres,
-      totalActif, 
-      totalPassif, 
-      produits, 
-      charges, 
-      resultatNet, 
+      totalActif,
+      totalPassif,
+      produits,
+      charges,
+      resultatNet,
       endettementRatio,
       bilanEquilibre: Math.abs(totalActif - totalPassif) < 0.01,
-      resultatNetChange, 
+      resultatNetChange,
       endettementChange
     };
   }, [bilanData, compteResultatData, selectedPeriod, selectedYear, selectedMonth, selectedQuarter, historicalData]);
@@ -358,8 +358,8 @@ const EtatFinance = () => {
 
   const allDetails = useMemo(() => {
     if (!selectedSection) return [];
-    return selectedSection === 'bilan' 
-      ? filterByPeriod(bilanData) 
+    return selectedSection === 'bilan'
+      ? filterByPeriod(bilanData)
       : filterByPeriod(compteResultatData);
   }, [selectedSection, bilanData, compteResultatData, selectedPeriod, selectedYear, selectedMonth, selectedQuarter]);
 
@@ -403,12 +403,12 @@ const EtatFinance = () => {
             </div>
           </div>
         )}
-        
+
         <h1 className="text-2xl font-extrabold text-gray-800 mb-5 flex items-center">
           <Wallet className="mr-2 text-indigo-600" size={24} />
           Tableau de bord Financier
         </h1>
-        
+
         <div className="flex gap-2 items-center mb-6 flex-wrap">
           <select value={selectedPeriod} onChange={e => { setSelectedPeriod(e.target.value); setCurrentPage(1); }} className="border border-gray-300 rounded-lg px-3 py-2 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
             <option value="Annuel">Annuel</option>
@@ -416,7 +416,7 @@ const EtatFinance = () => {
             <option value="Mensuel">Mensuel</option>
           </select>
           <select value={selectedYear} onChange={e => { setSelectedYear(e.target.value); setCurrentPage(1); }} className="border border-gray-300 rounded-lg px-3 py-2 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-            {[2023,2024,2025].map(y => <option key={y} value={y}>{y}</option>)}
+            {[2023, 2024, 2025].map(y => <option key={y} value={y}>{y}</option>)}
           </select>
           {selectedPeriod === 'Mensuel' && (
             <select value={selectedMonth} onChange={e => { setSelectedMonth(e.target.value); setCurrentPage(1); }} className="border border-gray-300 rounded-lg px-3 py-2 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
@@ -427,7 +427,7 @@ const EtatFinance = () => {
           )}
           {selectedPeriod === 'Trimestriel' && (
             <select value={selectedQuarter} onChange={e => { setSelectedQuarter(e.target.value); setCurrentPage(1); }} className="border border-gray-300 rounded-lg px-3 py-2 font-semibold bg-white focus:outline-none focus:ring-2 focus:ring-indigo-400">
-              {[1,2,3,4].map(q => <option key={q} value={q}>{`T${q}`}</option>)}
+              {[1, 2, 3, 4].map(q => <option key={q} value={q}>{`T${q}`}</option>)}
             </select>
           )}
         </div>
@@ -448,7 +448,7 @@ const EtatFinance = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
           <div
-            onClick={() => {setSelectedSection('bilan'); setCurrentPage(1);}}
+            onClick={() => { setSelectedSection('bilan'); setCurrentPage(1); }}
             className="p-6 bg-white border rounded-xl shadow hover:border-indigo-400 cursor-pointer transition-all duration-300"
           >
             <h2 className="text-xl font-bold flex gap-2 text-indigo-600">
@@ -475,7 +475,7 @@ const EtatFinance = () => {
           </div>
 
           <div
-            onClick={() => {setSelectedSection('compteResultat'); setCurrentPage(1);}}
+            onClick={() => { setSelectedSection('compteResultat'); setCurrentPage(1); }}
             className="p-6 bg-white border rounded-xl shadow hover:border-emerald-400 cursor-pointer transition-all duration-300"
           >
             <h2 className="text-xl font-bold flex gap-2 text-emerald-600">
@@ -527,7 +527,7 @@ const EtatFinance = () => {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="text-center py-4 text-gray-500 italic bg-gray-50">Aucune donnée trouvée pour la période sélectionnée.</td>
+                      <td colSpan="4" className="text-center py-4 text-gray-500 bg-gray-50">Aucune donnée trouvée pour la période sélectionnée.</td>
                     </tr>
                   )}
                 </tbody>

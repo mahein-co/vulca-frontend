@@ -132,7 +132,7 @@ const SaisieModal = ({ children, onClose }) => (
 
 function App() {
 
-    const [currentPage, setCurrentPage] = useState('gestion-pieces');
+    const [currentPage, setCurrentPage] = useState('dashboard');
     const [isSaisieModalOpen, setIsSaisieModalOpen] = useState(false);
     const [formTypeToOpen, setFormTypeToOpen] = useState(null);
 

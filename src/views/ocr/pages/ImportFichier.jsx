@@ -137,7 +137,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
                             {excelPreview.join('\n')}
                         </pre>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2 italic">Affichage des 20 premières lignes</p>
+                    <p className="text-xs text-gray-500 mt-2">Affichage des 20 premières lignes</p>
                 </div>
             );
         }
@@ -249,7 +249,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
 
 // --- 2. Composant : OcrValidationForm ---
 const OcrValidationForm = ({
-    formData, onFormChange, onValider, isDocumentLoaded, isExtracted, onExtractText, onCancelExtraction, documentsCount, isLotValidatable, isLoading, errorNotification, onCloseError, currentDocument
+    formData, onFormChange, onValider, isDocumentLoaded, isExtracted, onExtractText, onCancelExtraction, documentsCount, isLotValidatable, isLoading, errorNotification, onCloseError, currentDocument, isSaving
 }) => {
     // Calcul de la TVA et du Taux
     const totalTTC = parseFloat(String(formData.montant || '0').replace(/[^0-9.]/g, '')) || 0;
@@ -465,12 +465,22 @@ const OcrValidationForm = ({
                 <button
                     type="submit"
                     onClick={onValider}
-                    disabled={!isLotValidatable}
-                    className={`w-full sm:w-auto py-1.5 px-4 border border-transparent rounded shadow-sm text-xs font-medium text-white transition duration-150
-                        ${isLotValidatable ? 'bg-gray-800 hover:bg-gray-900 focus:ring-gray-800' : 'bg-gray-300 cursor-not-allowed'}`
+                    disabled={!isLotValidatable || isSaving}
+                    className={`w-full sm:w-auto py-1.5 px-4 border border-transparent rounded shadow-sm text-xs font-medium text-white transition duration-150 flex items-center justify-center
+                        ${isLotValidatable && !isSaving ? 'bg-gray-800 hover:bg-gray-900 focus:ring-gray-800' : 'bg-gray-300 cursor-not-allowed'}`
                     }
                 >
-                    {documentsCount > 1 ? `Valider Lot (${documentsCount})` : 'Valider'}
+                    {isSaving ? (
+                        <>
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Traitement...
+                        </>
+                    ) : (
+                        documentsCount > 1 ? `Valider Lot (${documentsCount})` : 'Valider'
+                    )}
                 </button>
             </div>
         </div>
@@ -488,12 +498,16 @@ export default function ImportFichier() {
 
     // API Hooks
     const [extractData, { isLoading: isExtracting }] = useExtractDataFromFileMutation();
-    const [saveFile, { isLoading: isSaving }] = useSaveOneFileSourceMutation();
+    const [saveFile, { isLoading: isMutationSaving }] = useSaveOneFileSourceMutation();
+
+    // Etat pour le chargement global de la validation (batch)
+    const [isSaving, setIsSaving] = useState(false);
 
     // Fonction pour afficher une notification d'erreur animée
     const showErrorNotification = useCallback((message) => {
         setErrorNotification(message);
-        // Ne disparaît pas automatiquement, l'utilisateur doit cliquer
+        // Disparaît automatiquement après 3 secondes (comme demandé)
+        setTimeout(() => setErrorNotification(null), 3000);
     }, []);
 
     // Données du document actuellement sélectionné
@@ -743,6 +757,7 @@ export default function ImportFichier() {
     const handleValiderAll = async () => {
         if (!isLotValidatable) return alert("Extraction OCR requise pour tous les documents.");
 
+        setIsSaving(true);
         try {
             const results = await Promise.all(documents.map(doc => {
                 if (!doc.data.extractedJson) throw new Error("OCR manquant pour un document");
@@ -769,18 +784,36 @@ export default function ImportFichier() {
                 // Afficher comme une ERREUR (Rouge) comme demandé
                 showErrorNotification(msg);
 
-                // Si on a aussi des succès, on peut le notifier discrètement ou laisser l'erreur prévaloir
+                // Si on a aussi des succès, on peut le notifier discrètement
                 if (successes.length > 0) {
-                    console.log(`${successes.length} autres documents importés avec succès.`);
+                    setNotification({
+                        type: 'success',
+                        message: `${successes.length} autres documents importés avec succès.`
+                    });
                 }
             } else {
-                alert(`${results.length} document(s) importés avec succès !`);
+                setNotification({
+                    type: 'success',
+                    message: `${results.length} document(s) importés avec succès !`
+                });
+
+                // Petit délai avant de vider pour voir le succès
+                setTimeout(() => {
+                    handleClearAll();
+                }, 1500);
+
+                // Notification disparaît auto après 3s
+                setTimeout(() => setNotification(null), 3000);
             }
 
-            handleClearAll();
+            // Si pas de doublons, on vide tout de suite (ou après délai si on veut)
+            // Mais ici handleClearAll est appelé dans le bloc else ci-dessus
+
         } catch (error) {
             console.error("Erreur validation:", error);
             showErrorNotification(error.message || "Erreur inconnue lors de la validation.");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -805,22 +838,13 @@ export default function ImportFichier() {
                             {errorNotification}
                         </p>
                     </div>
-
-                    <button
-                        onClick={() => setErrorNotification(null)}
-                        className="text-white hover:bg-white/20 rounded-full p-1 transition"
-                    >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
                 </div>
             )}
 
             {/* Notification Toast Moderne */}
             {notification && (
                 <div
-                    className={`fixed top-40 right-4 z-50 max-w-sm w-full shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-out animate-[slideIn_0.3s_ease-out]
+                    className={`fixed top-40 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-out animate-[slideIn_0.3s_ease-out]
                         ${notification.type === 'success' ? 'bg-white border-l-4 border-green-500' :
                             notification.type === 'warning' ? 'bg-white border-l-4 border-yellow-500' :
                                 'bg-white border-l-4 border-red-500'}`}
@@ -837,15 +861,6 @@ export default function ImportFichier() {
                                     notification.type === 'warning' ? 'Attention' : 'Erreur'}
                             </p>
                             <p className="mt-1 text-sm text-gray-500 whitespace-pre-line">{notification.message}</p>
-                        </div>
-                        <div className="ml-4 flex-shrink-0 flex">
-                            <button
-                                className="bg-white rounded-md inline-flex text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                onClick={() => setNotification(null)}
-                            >
-                                <span className="sr-only">Fermer</span>
-                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -938,6 +953,7 @@ export default function ImportFichier() {
                             errorNotification={errorNotification}
                             onCloseError={() => setErrorNotification(null)}
                             currentDocument={currentDocument}
+                            isSaving={isSaving}
                         />
                     </div>
                 </div>

@@ -14,41 +14,45 @@ const BackToFormsPage = ({ onClick }) => (
 );
 
 const PCG_MAPPING = {
+    // CLASSE 1 : CAPITAUX PROPRES & PASSIFS NON COURANTS
     '10': { 'libelle': 'Capital social', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
     '11': { 'libelle': 'Réserves', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
     '12': { 'libelle': 'Report à nouveau / Résultat', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
-    '13': { 'libelle': 'Subventions', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
-    '15': { 'libelle': 'Provisions LT', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
-    '16': { 'libelle': 'Emprunts long terme', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
-    '17': { 'libelle': 'Dettes financières LT', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
-    '18': { 'libelle': 'Ecarts de réévaluation', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
+    '13': { 'libelle': 'Subventions d\'investissement', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
+    '15': { 'libelle': 'Provisions pour charges (LT)', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
+    '16': { 'libelle': 'Emprunts et dettes assimilés', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
+    '17': { 'libelle': 'Dettes rattachées à des participations', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
+    '18': { 'libelle': 'Comptes de liaison des établissements', 'type_bilan': 'Passif', 'categorie': 'Capitaux propres' },
+
+    // CLASSE 2 : ACTIFS NON COURANTS
     '20': { 'libelle': 'Immobilisations incorporelles', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
     '21': { 'libelle': 'Immobilisations corporelles', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
-    '22': { 'libelle': 'Immobilisations financières', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
-    '28': { 'libelle': 'Amortissements', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
-    '29': { 'libelle': 'Provisions pour dépréciation', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
-    '30': { 'libelle': 'Stocks de matières premières', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
-    '31': { 'libelle': 'Stocks de produits en cours', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
-    '32': { 'libelle': 'Stocks de produits finis', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
-    '35': { 'libelle': 'Stocks de marchandises', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
-    '37': { 'libelle': 'Stocks en consignation', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
-    '39': { 'libelle': 'Provisions pour dépréciation stocks', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
-    '40': { 'libelle': 'Fournisseurs', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
-    '41': { 'libelle': 'Clients', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
-    '42': { 'libelle': 'Dettes fiscales', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
-    '43': { 'libelle': 'Dettes sociales', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
-    '44': { 'libelle': 'TVA générale', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '22': { 'libelle': 'Immobilisations mises en concession', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
+    '26': { 'libelle': 'Immobilisations financières', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
+    '28': { 'libelle': 'Amortissements (Réduction Actif)', 'type_bilan': 'Actif', 'categorie': 'Actif non courants' },
+
+    // CLASSE 3 : ACTIFS COURANTS (STOCKS)
+    '30': { 'libelle': 'Stocks de marchandises', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '31': { 'libelle': 'Stocks de matières premières', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '32': { 'libelle': 'Autres approvisionnements', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '35': { 'libelle': 'Stocks de produits', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+
+    // CLASSE 4 : COMPTES DE TIERS (COURANTS)
+    '40': { 'libelle': 'Fournisseurs et comptes rattachés', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '41': { 'libelle': 'Clients et comptes rattachés', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '42': { 'libelle': 'Personnel et comptes rattachés', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '43': { 'libelle': 'Organismes sociaux', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
     '4456': { 'libelle': 'TVA déductible', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
     '4457': { 'libelle': 'TVA collectée', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
-    '45': { 'libelle': 'Associés - Comptes courants', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
-    '46': { 'libelle': 'Dettes diverses', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
-    '47': { 'libelle': 'Dettes diverses', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
-    '48': { 'libelle': 'Dettes diverses', 'type_bilan': 'Passif', 'categorie': 'Passifs non courants' },
-    '50': { 'libelle': 'Capital souscrit non appelé', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
-    '51': { 'libelle': 'Banque', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
-    '52': { 'libelle': 'Banque', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '45': { 'libelle': 'Associés et Groupe', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '46': { 'libelle': 'Débiteurs/Créditeurs divers', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '48': { 'libelle': 'Charges/Produits constatés d\'avance', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+
+    // CLASSE 5 : TRESORERIE
+    '50': { 'libelle': 'Valeurs mobilières de placement', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '51': { 'libelle': 'Banques (Solde débiteur)', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
+    '519': { 'libelle': 'Concours bancaires (Découverts)', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
     '53': { 'libelle': 'Caisse', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
-    '57': { 'libelle': 'Disponibilités', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
 };
 
 const categoriesActif = ['Actif non courants', 'Actif courants'];
@@ -132,8 +136,27 @@ export default function BilanForm({ onSaisieCompleted }) {
                     newType = 'Actif';
                     newCategorie = 'Actif non courants';
                     newLibelle = '';
+                } else if (newValue.startsWith('51')) {
+                    // Logique PCG 2005 : Gestion des comptes de trésorerie (51x)
+
+                    // On vérifie le type choisi ou le signe du montant (si disponible)
+                    // Règle : Solde débiteur (+) = Actif | Solde créditeur (-) = Passif
+                    newType = nouvelleLigne.type;
+
+                    if (newType === 'Passif') {
+                        // Un compte 51 au passif devient officiellement un "Concours bancaire"
+                        newLibelle = "Concours bancaires courants";
+                        newCategorie = 'Passifs courants';
+                    } else {
+                        // Par défaut ou si sélectionné comme Actif
+                        newLibelle = "Banque";
+                        newCategorie = 'Actif courants';
+                    }
+
+                    newErreurNumeroCompte = false;
                 } else {
                     let infoCompte = null;
+                    // Recherche exacte ou par préfixe
                     if (newValue.length >= 4 && PCG_MAPPING[newValue.substring(0, 4)]) {
                         infoCompte = PCG_MAPPING[newValue.substring(0, 4)];
                     } else if (newValue.length >= 3 && PCG_MAPPING[newValue.substring(0, 3)]) {
@@ -185,10 +208,39 @@ export default function BilanForm({ onSaisieCompleted }) {
             setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
 
         } else if (name === 'type') {
+            // Logique intelligente pour la catégorie en fonction du type sélectionné
+            let nextCategorie = 'Actif non courants';
+            let nextLibelle = nouvelleLigne.libelle;
+
+            // Logique spécifique pour les comptes 51
+            const isCompte51 = nouvelleLigne.numeroCompte.startsWith('51');
+
+            if (value === 'Actif') {
+                if (['3', '4', '5'].includes(nouvelleLigne.numeroCompte[0])) {
+                    nextCategorie = 'Actif courants';
+                } else {
+                    nextCategorie = 'Actif non courants';
+                }
+
+                if (isCompte51) {
+                    nextLibelle = "Banque";
+                }
+            } else { // Passif
+                if (isCompte51) {
+                    nextCategorie = 'Passifs courants'; // Concours bancaires
+                    nextLibelle = "Concours bancaires courants";
+                } else if (['4', '5'].includes(nouvelleLigne.numeroCompte[0])) {
+                    nextCategorie = 'Passifs courants';
+                } else {
+                    nextCategorie = 'Capitaux propres'; // Default pour 1, etc.
+                }
+            }
+
             setNouvelleLigne(prev => ({
                 ...prev,
                 [name]: value,
-                categorie: value === 'Actif' ? 'Actif non courants' : 'Capitaux propres'
+                categorie: nextCategorie,
+                libelle: nextLibelle
             }));
         } else {
             setNouvelleLigne(prev => ({ ...prev, [name]: value }));
@@ -370,11 +422,11 @@ export default function BilanForm({ onSaisieCompleted }) {
                                 name="type"
                                 value={nouvelleLigne.type}
                                 onChange={handleChange}
-                                className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte
+                                className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte && !nouvelleLigne.numeroCompte.startsWith('51')
                                     ? 'bg-gray-100 cursor-not-allowed border-gray-200'
                                     : 'bg-white border-gray-300'
                                     }`}
-                                disabled={nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte}
+                                disabled={nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte && !nouvelleLigne.numeroCompte.startsWith('51')}
                             >
                                 <option value="Actif">Actif</option>
                                 <option value="Passif">Passif</option>

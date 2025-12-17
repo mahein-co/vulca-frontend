@@ -41,9 +41,8 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
                     {/* Logo - Style italique bleu */}
                     <div className="flex items-center flex-shrink-0 mr-6 lg:mr-8">
                         <h1
-                            className="text-lg sm:text-xl lg:text-2xl font-bold italic text-indigo-600 cursor-pointer"
+                            className="text-lg sm:text-xl lg:text-2xl font-bold text-indigo-600 cursor-pointer"
                             onClick={() => handleNavClick('dashboard')}
-                            style={{ fontFamily: 'Georgia, serif' }}
                         >
                             Assistant Comptable
                         </h1>

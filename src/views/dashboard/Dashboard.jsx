@@ -10,95 +10,72 @@ import { BASE_URL_API } from '../../constants/globalConstants';
 
 
 
-const journals = [
-  { name: 'Caisses', amount: '19 446 024 Ar', percentage: '9.2%', value: 9.2, color: 'bg-amber-800' },
-  { name: 'Banques', amount: '23 604 000 Ar', percentage: '11.1%', value: 11.1, color: 'bg-blue-900' },
-  { name: 'Achats', amount: '60 570 024 Ar', percentage: '28.6%', value: 28.6, color: 'bg-red-800' },
-  { name: 'Ventes', amount: '105 370 800 Ar', percentage: '49.8%', value: 49.8, color: 'bg-emerald-900' },
-  { name: 'Opérations diverses', amount: '2 750 000 Ar', percentage: '1.3%', value: 1.3, color: 'bg-gray-600' },
-];
+
 
 
 // --- 2. Composants de Support ---
 
-const JournalRepartition = () => {
-  const total = '211 740 848 Ar';
+const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
+  const [totalFormatted, setTotalFormatted] = useState('0 Ar');
+  const [journals, setJournals] = useState([]);
+
+  // États de sélection et pagination
   const [selectedJournal, setSelectedJournal] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 7;
 
-  // Données exemple pour chaque journal (plus d'entrées pour la pagination)
-  const journalEntries = {
-    'Caisses': [
-      { date: '2024-12-01', compte: '530000', libelle: 'Encaissement client ABC', debit: '1 500 000', credit: '-' },
-      { date: '2024-12-05', compte: '401000', libelle: 'Paiement fournisseur XYZ', debit: '-', credit: '850 000' },
-      { date: '2024-12-10', compte: '530000', libelle: 'Encaissement vente comptoir', debit: '2 300 000', credit: '-' },
-      { date: '2024-12-15', compte: '411000', libelle: 'Remboursement client', debit: '-', credit: '350 000' },
-      { date: '2024-12-18', compte: '530000', libelle: 'Recette journalière', debit: '4 200 000', credit: '-' },
-      { date: '2024-12-20', compte: '401100', libelle: 'Règlement facture F-2024-089', debit: '-', credit: '1 150 000' },
-      { date: '2024-12-22', compte: '530000', libelle: 'Encaissement client GHI', debit: '3 800 000', credit: '-' },
-      { date: '2024-12-25', compte: '411000', libelle: 'Avoir client retour', debit: '-', credit: '420 000' },
-    ],
-    'Banques': [
-      { date: '2024-12-02', compte: '512000', libelle: 'Virement client DEF', debit: '5 000 000', credit: '-' },
-      { date: '2024-12-08', compte: '512100', libelle: 'Prélèvement charges sociales', debit: '-', credit: '1 200 000' },
-      { date: '2024-12-15', compte: '421000', libelle: 'Virement salaires personnel', debit: '-', credit: '3 500 000' },
-      { date: '2024-12-20', compte: '512000', libelle: 'Encaissement chèque', debit: '2 800 000', credit: '-' },
-      { date: '2024-12-22', compte: '512000', libelle: 'Virement client JKL', debit: '6 500 000', credit: '-' },
-      { date: '2024-12-24', compte: '627000', libelle: 'Frais bancaires', debit: '-', credit: '45 000' },
-      { date: '2024-12-26', compte: '512100', libelle: 'Prélèvement loyer', debit: '-', credit: '2 500 000' },
-    ],
-    'Achats': [
-      { date: '2024-12-03', compte: '607000', libelle: 'Achat marchandises', debit: '8 500 000', credit: '-' },
-      { date: '2024-12-12', compte: '606100', libelle: 'Fournitures bureau', debit: '450 000', credit: '-' },
-      { date: '2024-12-18', compte: '601000', libelle: 'Matières premières', debit: '12 000 000', credit: '-' },
-      { date: '2024-12-22', compte: '602000', libelle: 'Autres approvisionnements', debit: '1 800 000', credit: '-' },
-      { date: '2024-12-24', compte: '607100', libelle: 'Achat emballages', debit: '650 000', credit: '-' },
-      { date: '2024-12-26', compte: '606300', libelle: 'Petit outillage', debit: '320 000', credit: '-' },
-    ],
-    'Ventes': [
-      { date: '2024-12-04', compte: '701000', libelle: 'Vente produit fini A', debit: '-', credit: '15 000 000' },
-      { date: '2024-12-09', compte: '706000', libelle: 'Prestation service B', debit: '-', credit: '8 500 000' },
-      { date: '2024-12-14', compte: '701000', libelle: 'Vente produit fini C', debit: '-', credit: '22 000 000' },
-      { date: '2024-12-19', compte: '707000', libelle: 'Vente marchandises', debit: '-', credit: '9 200 000' },
-      { date: '2024-12-21', compte: '701100', libelle: 'Vente produit fini D', debit: '-', credit: '18 500 000' },
-      { date: '2024-12-23', compte: '706100', libelle: 'Prestation conseil', debit: '-', credit: '5 800 000' },
-      { date: '2024-12-27', compte: '707000', libelle: 'Vente comptoir', debit: '-', credit: '12 400 000' },
-    ],
-    'Opérations diverses': [
-      { date: '2024-12-06', compte: '445710', libelle: 'Régularisation TVA collectée', debit: '500 000', credit: '-' },
-      { date: '2024-12-11', compte: '129000', libelle: 'Écriture de clôture', debit: '-', credit: '250 000' },
-      { date: '2024-12-25', compte: '658000', libelle: 'Charges exceptionnelles', debit: '180 000', credit: '-' },
-      { date: '2024-12-28', compte: '445660', libelle: 'TVA déductible immobilisations', debit: '750 000', credit: '-' },
-      { date: '2024-12-29', compte: '672000', libelle: 'Charges sur exercice antérieur', debit: '320 000', credit: '-' },
-      { date: '2024-12-30', compte: '758000', libelle: 'Produits divers', debit: '-', credit: '890 000' },
-    ],
-  };
+  // États pour le détail (modal)
+  const [journalEntries, setJournalEntries] = useState([]);
+  const [totalEntriesCount, setTotalEntriesCount] = useState(0);
+  const [isLoadingEntries, setIsLoadingEntries] = useState(false);
 
-  // Reset page quand on change de journal
+  // Filtre recherche
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // 1. Charger la RÉPARTITION (barres de progression)
+  useEffect(() => {
+    let url = `${BASE_URL_API}/journals/repartition/?`;
+    if (globalStartDate) url += `date_start=${globalStartDate}&`;
+    if (globalEndDate) url += `date_end=${globalEndDate}`;
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        setJournals(data.journals || []);
+        setTotalFormatted(new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(data.total_global || 0).replace('MGA', 'Ar'));
+      })
+      .catch(err => console.error("Erreur chargement répartition journaux:", err));
+  }, [globalStartDate, globalEndDate]);
+
+  // 2. Charger le DÉTAIL quand un journal est sélectionné (avec pagination, date et recherche)
+  useEffect(() => {
+    if (!selectedJournal) return;
+
+    setIsLoadingEntries(true);
+    let url = `${BASE_URL_API}/journals/?type=${selectedJournal.code}&page=${currentPage}&page_size=${itemsPerPage}`;
+
+    if (globalStartDate) url += `&date_start=${globalStartDate}`;
+    if (globalEndDate) url += `&date_end=${globalEndDate}`;
+    if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        setJournalEntries(data.results || []);
+        setTotalEntriesCount(data.count || 0); // data.totals.count si disponible, sinon data.count du paginator
+      })
+      .catch(err => console.error("Erreur chargement détail journal:", err))
+      .finally(() => setIsLoadingEntries(false));
+  }, [selectedJournal, currentPage, globalStartDate, globalEndDate, searchTerm]);
+
+
   const handleSelectJournal = (journal) => {
     setSelectedJournal(journal);
     setCurrentPage(1);
+    setSearchTerm('');
   };
 
-  // Logique de pagination
-  const getCurrentEntries = () => {
-    if (!selectedJournal) return [];
-    const entries = journalEntries[selectedJournal.name] || [];
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return entries.slice(startIndex, startIndex + itemsPerPage);
-  };
-
-  const getTotalPages = () => {
-    if (!selectedJournal) return 0;
-    const entries = journalEntries[selectedJournal.name] || [];
-    return Math.ceil(entries.length / itemsPerPage);
-  };
-
-  const getTotalEntries = () => {
-    if (!selectedJournal) return 0;
-    return (journalEntries[selectedJournal.name] || []).length;
-  };
+  const totalPages = Math.ceil(totalEntriesCount / itemsPerPage);
 
   return (
     <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md border-t-2 border-gray-300">
@@ -119,7 +96,10 @@ const JournalRepartition = () => {
                 voir détails
               </button>
             </span>
-            <span className="text-gray-800 font-medium">{journal.amount} <span className="text-gray-500">({journal.percentage})</span></span>
+            <span className="text-gray-800 font-medium">
+              {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(journal.amount).replace('MGA', 'Ar')}
+              <span className="text-gray-500 ml-1">({journal.percentage}%)</span>
+            </span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
             <div
@@ -131,110 +111,156 @@ const JournalRepartition = () => {
       ))}
       <div className="border-t border-gray-200 mt-4 pt-3 flex justify-between">
         <span className="font-semibold text-gray-700">Total</span>
-        <span className="text-lg sm:text-xl font-bold text-gray-900">{total}</span>
+        <span className="text-lg sm:text-xl font-bold text-gray-900">{totalFormatted}</span>
       </div>
 
       {/* Modal Journal Detail */}
+      {/* Modal Journal Detail - STYLE EXACT BALANCE MODAL */}
       {selectedJournal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-5xl max-h-[85vh] w-full flex flex-col border-t-2 border-gray-300">
-            <div className="flex-none p-4 border-b border-gray-200 flex justify-between items-center bg-white rounded-t-lg">
+        <div className="fixed inset-0 bg-black/50 overflow-y-auto h-full w-full z-50 flex justify-center items-center p-2 sm:p-4">
+
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-5xl h-[95vh] sm:h-[90vh] lg:h-[85vh] flex flex-col border-t-2 border-gray-300">
+
+            {/* En-tête de la modale */}
+            <div className="flex-none p-3 sm:p-4 border-b border-gray-200 flex justify-between items-center z-10 bg-white rounded-t-lg">
               <div className="flex items-center">
-                <div className={`w-3 h-3 rounded-full ${selectedJournal.color} mr-3`}></div>
-                <h3 className="text-lg font-bold text-gray-800">Journal : {selectedJournal.name}</h3>
+                <div className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full ${selectedJournal.color} mr-2 sm:mr-3 shadow-sm`}></div>
+                <h3 className="text-lg sm:text-xl font-bold text-gray-800">Journal : {selectedJournal.name}</h3>
               </div>
               <button
                 onClick={() => setSelectedJournal(null)}
                 className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 transition-all"
               >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
+            {/* Stats cards - Style Balance */}
             <div className="flex-none p-4 bg-gray-50 border-b border-gray-200">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-white p-3 rounded-lg border border-gray-200">
                   <p className="text-xs text-gray-500 mb-1">Montant Total</p>
-                  <p className="text-lg font-bold text-gray-900">{selectedJournal.amount}</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(selectedJournal.amount).replace('MGA', 'Ar')}
+                  </p>
                 </div>
                 <div className="bg-white p-3 rounded-lg border border-gray-200">
                   <p className="text-xs text-gray-500 mb-1">Part du total</p>
-                  <p className="text-lg font-bold text-gray-900">{selectedJournal.percentage}</p>
+                  <p className="text-lg font-bold text-gray-900">{selectedJournal.percentage}%</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex-grow overflow-y-auto p-4 min-h-0 bg-white">
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <table className="w-full border-collapse text-sm">
-                  <thead className="sticky top-0 z-10">
-                    <tr className="bg-gray-800 text-white">
-                      <th className="px-3 py-2.5 text-left text-xs font-bold uppercase tracking-wide">Date</th>
-                      <th className="px-3 py-2.5 text-left text-xs font-bold uppercase tracking-wide">N° Compte</th>
-                      <th className="px-3 py-2.5 text-left text-xs font-bold uppercase tracking-wide">Libellé</th>
-                      <th className="px-3 py-2.5 text-right text-xs font-bold uppercase tracking-wide">Débit</th>
-                      <th className="px-3 py-2.5 text-right text-xs font-bold uppercase tracking-wide">Crédit</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {getCurrentEntries().map((entry, idx) => (
-                      <tr key={idx} className={`hover:bg-emerald-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                        <td className="border-b border-gray-100 px-3 py-2.5 text-gray-600 font-medium">{entry.date}</td>
-                        <td className="border-b border-gray-100 px-3 py-2.5">
-                          <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs font-mono font-bold">{entry.compte}</span>
-                        </td>
-                        <td className="border-b border-gray-100 px-3 py-2.5 text-gray-800">{entry.libelle}</td>
-                        <td className="border-b border-gray-100 px-3 py-2.5 text-right">
-                          {entry.debit !== '-' ? (
-                            <span className="text-red-600 font-semibold">{entry.debit} Ar</span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                        <td className="border-b border-gray-100 px-3 py-2.5 text-right">
-                          {entry.credit !== '-' ? (
-                            <span className="text-emerald-600 font-semibold">{entry.credit} Ar</span>
-                          ) : (
-                            <span className="text-gray-400">-</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            {/* Barre de Filtres - Style Balance */}
+            <div className="flex-none px-4 py-3 bg-white border-b border-gray-200 flex flex-col sm:flex-row gap-3 items-end sm:items-center">
+              <div className="w-full">
+                <label className="block text-xs font-medium text-gray-700 mb-1">Rechercher</label>
+                <div className="relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    className="focus:ring-emerald-500 focus:border-emerald-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                    placeholder="Compte, Libellé..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex-none p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-xs text-gray-500">
-                  Affichage <span className="font-semibold">{((currentPage - 1) * itemsPerPage) + 1}</span> - <span className="font-semibold">{Math.min(currentPage * itemsPerPage, getTotalEntries())}</span> sur <span className="font-semibold">{getTotalEntries()}</span> écritures
+            {/* Corps du tableau (Zone Scrollable) - Style Balance */}
+            <div className="flex-grow overflow-y-auto p-2 sm:p-4 min-h-0 bg-white">
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse text-xs sm:text-sm whitespace-nowrap min-w-[500px]">
+                    <thead className="sticky top-0 z-10">
+                      <tr className="bg-gray-800 text-white">
+                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden sm:table-cell">Date</th>
+                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Compte</th>
+                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
+                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Débit</th>
+                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Crédit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {/* Données réelles */}
+                      {journalEntries.map((entry, idx) => (
+                        <tr key={idx} className={`hover:bg-emerald-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                          <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-gray-600 font-medium text-xs sm:text-sm hidden sm:table-cell">{entry.date}</td>
+                          <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5">
+                            <span className="bg-gray-200 text-gray-700 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold">{entry.numero_compte}</span>
+                          </td>
+                          <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-gray-800 text-xs sm:text-sm truncate max-w-[150px] sm:max-w-none">{entry.libelle}</td>
+                          <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-right text-xs sm:text-sm">
+                            {Number(entry.debit_ar) > 0 ? (
+                              <span className="text-red-600 font-semibold">{new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(entry.debit_ar))} Ar</span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-right text-xs sm:text-sm">
+                            {Number(entry.credit_ar) > 0 ? (
+                              <span className="text-emerald-600 font-semibold">{new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(entry.credit_ar))} Ar</span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+
+                      {/* Lignes vides pour maintenir la hauteur fixe (Filler Rows) */}
+                      {Array.from({ length: Math.max(0, itemsPerPage - journalEntries.length) }).map((_, idx) => (
+                        <tr key={`empty-${idx}`} className="bg-white">
+                          <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none hidden sm:table-cell">-</td>
+                          <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                          <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                          <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                          <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer avec Pagination Fixe - Style Balance */}
+            <div className="flex-none p-3 sm:p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-0">
+                <p className="text-[10px] sm:text-xs text-gray-500 text-center sm:text-left">
+                  <span className="font-semibold">{totalEntriesCount > 0 ? ((currentPage - 1) * itemsPerPage) + 1 : 0}</span> - <span className="font-semibold">{Math.min(currentPage * itemsPerPage, totalEntriesCount)}</span> / <span className="font-semibold">{totalEntriesCount}</span>
                 </p>
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 sm:space-x-3">
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-gray-300 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
-                    ← Précédent
+                    <span className="hidden sm:inline">←</span> Préc.
                   </button>
-                  <span className="text-sm text-gray-600 font-medium">
-                    Page {currentPage} / {getTotalPages()}
+                  <span className="text-xs sm:text-sm text-gray-600 font-medium">
+                    {currentPage}/{totalPages || 1}
                   </span>
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, getTotalPages()))}
-                    disabled={currentPage === getTotalPages()}
-                    className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-gray-300 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
                   >
-                    Suivant →
+                    Suiv. <span className="hidden sm:inline">→</span>
                   </button>
                 </div>
               </div>
-
-
             </div>
+
           </div>
         </div>
       )}
@@ -250,27 +276,44 @@ const Dashboard = () => {
 
 
 
-  const [caTotal, setCaTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
 
+  // États globaux de date pour le filtrage
+  const [globalDateStart, setGlobalDateStart] = useState('2019-01-01');
+  const [globalDateEnd, setGlobalDateEnd] = useState('2025-12-31');
+
+  // Chargement automatique de la plage de dates disponible (Min/Max des journaux)
   useEffect(() => {
-    fetch(`${BASE_URL_API}/chiffre-affaire/`)
+    fetch(`${BASE_URL_API}/journals/date-range/`)
       .then(res => res.json())
       .then(data => {
-        const total = data.reduce(
-          (sum, item) => sum + Number(item.chiffre_affaire),
-          0
-        );
-        setCaTotal(total);
+        if (data.min_date) setGlobalDateStart(data.min_date);
+        if (data.max_date) setGlobalDateEnd(data.max_date);
       })
-      .catch(err => console.error("Erreur CA :", err))
-      .finally(() => setLoading(false));
+      .catch(err => console.error("Erreur chargement date range:", err));
   }, []);
 
-  const [ebe, setEbe] = useState(0);
+  // États Indicateurs Financiers (Chargés en une seule fois)
+  const [indicators, setIndicators] = useState({
+    ca: 0,
+    ebe: 0,
+    resultatNet: 0,
+    caf: 0,
+    bfr: 0,
+    leverage: 0,
+    totalBalance: 0,
+    ratios: {
+      annuite_caf: { value: 0, alerte: false },
+      dette_caf: { value: 0, alerte: false },
+      marge_nette: { value: 0 },
+      fi_ebe: { value: 0, alerte: false },
+      fi_ca: { value: 0, alerte: false },
+      gearing: { value: 0, alerte: false }
+    }
+  });
 
-  const [resultatNet, setResultatNet] = useState(0);
+  const [loadingIndicators, setLoadingIndicators] = useState(true);
 
+  // CHARGEMENT OPTIMISÉ (1 seul appel API)
   useEffect(() => {
     fetch(`${BASE_URL_API}/ebe/`)
       .then(res => res.json())
@@ -315,6 +358,14 @@ const Dashboard = () => {
   }, []);
 
 
+
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/annuite-caf/`)
+      .then(res => res.json())
+      .then(data => setRatio(parseFloat(data.ratio)))
+      .catch(err => console.error("Erreur ratio annuité / CAF", err));
+  }, []);
+
   const [margeNette, setMargeNette] = useState(null);
   const [loadingMarge, setLoadingMarge] = useState(true);
   useEffect(() => {
@@ -328,194 +379,62 @@ const Dashboard = () => {
       .finally(() => setLoadingMarge(false));
   }, []);
 
-  // ROE (Return on Equity)
-  const [roe, setRoe] = useState(null);
-  const [roeVar, setRoeVar] = useState(null);
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/roe/`)
-      .then(res => res.json())
-      .then(data => {
-        if (data) {
-          setRoe(data.roe !== null && data.roe !== undefined ? parseFloat(data.roe) : null);
-          setRoeVar(data.variation !== null && data.variation !== undefined ? parseFloat(data.variation) : null);
-        }
-      })
-      .catch(err => console.error('Erreur ROE', err));
-  }, []);
-
-  // ROA (Return on Assets)
-  const [roa, setRoa] = useState(null);
-  const [roaVar, setRoaVar] = useState(null);
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/roa/`)
-      .then(res => res.json())
-      .then(data => {
-        if (data) {
-          setRoa(data.roa !== null && data.roa !== undefined ? parseFloat(data.roa) : null);
-          setRoaVar(data.variation !== null && data.variation !== undefined ? parseFloat(data.variation) : null);
-        }
-      })
-      .catch(err => console.error('Erreur ROA', err));
-  }, []);
-
-  // Current Ratio
-  const [currentRatio, setCurrentRatio] = useState(null);
-  const [currentRatioVar, setCurrentRatioVar] = useState(null);
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/current-ratio/`)
-      .then(res => res.json())
-      .then(data => {
-        if (data) {
-          setCurrentRatio(data.ratio !== null && data.ratio !== undefined ? parseFloat(data.ratio) : null);
-          setCurrentRatioVar(data.variation !== null && data.variation !== undefined ? parseFloat(data.variation) : null);
-        }
-      })
-      .catch(err => console.error('Erreur Current Ratio', err));
-  }, []);
-
-  // Quick Ratio
-  const [quickRatio, setQuickRatio] = useState(null);
-  const [quickRatioVar, setQuickRatioVar] = useState(null);
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/quick-ratio/`)
-      .then(res => res.json())
-      .then(data => {
-        if (data) {
-          setQuickRatio(data.ratio !== null && data.ratio !== undefined ? parseFloat(data.ratio) : null);
-          setQuickRatioVar(data.variation !== null && data.variation !== undefined ? parseFloat(data.variation) : null);
-        }
-      })
-      .catch(err => console.error('Erreur Quick Ratio', err));
-  }, []);
-
-  // Gearing (Endettement)
-  const [gearing, setGearing] = useState(null);
-  const [gearingVar, setGearingVar] = useState(null);
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/gearing/`)
-      .then(res => res.json())
-      .then(data => {
-        if (data) {
-          // accept multiple possible keys from the API: `gearing`, `ratio` or `value`
-          const raw = (data.gearing ?? data.ratio ?? data.value ?? null);
-          const rawVar = (data.variation ?? data.change ?? data.diff ?? null);
-          setGearing(raw !== null && raw !== undefined ? parseFloat(raw) : null);
-          setGearingVar(rawVar !== null && rawVar !== undefined ? parseFloat(rawVar) : null);
-        }
-      })
-      .catch(err => console.error('Erreur Gearing', err));
-  }, []);
-
-  // Rotation des stocks (Inventory turnover)
-  const [rotationStocks, setRotationStocks] = useState(null);
-  const [rotationStocksVar, setRotationStocksVar] = useState(null);
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/rotation-stocks/`)
-      .then(res => res.json())
-      .then(data => {
-        if (data) {
-          const raw = (data.rotation ?? data.value ?? data.ratio ?? null);
-          const rawVar = (data.variation ?? data.change ?? data.diff ?? null);
-          setRotationStocks(raw !== null && raw !== undefined ? parseFloat(raw) : null);
-          setRotationStocksVar(rawVar !== null && rawVar !== undefined ? parseFloat(rawVar) : null);
-        }
-      })
-      .catch(err => console.error('Erreur Rotation des stocks', err));
-  }, []);
-
-  // Marge opérationnelle (Operating margin)
-  const [margeOp, setMargeOp] = useState(null);
-  const [margeOpVar, setMargeOpVar] = useState(null);
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/marge-operationnelle/`)
-      .then(res => res.json())
-      .then(data => {
-        if (data) {
-          const raw = (data.marge_operationnelle ?? data.marge ?? data.ratio ?? data.value ?? null);
-          const rawVar = (data.variation ?? data.change ?? data.diff ?? null);
-          setMargeOp(raw !== null && raw !== undefined ? parseFloat(raw) : null);
-          setMargeOpVar(rawVar !== null && rawVar !== undefined ? parseFloat(rawVar) : null);
-        }
-      })
-      .catch(err => console.error('Erreur Marge opérationnelle', err));
-  }, []);
-
-  const [annuiteCafRatio, setAnnuiteCafRatio] = useState(null);
-  const [chargeEbeRatio, setChargeEbeRatio] = useState(null);
-  const [chargeCaRatio, setChargeCaRatio] = useState(null);
-  const [margeEndettementRatio, setMargeEndettementRatio] = useState(null);
-
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/annuite-caf/`)
-      .then(res => res.json())
-      .then(data => setAnnuiteCafRatio(parseFloat(data.ratio_annuite_caf)))
-      .catch(err => console.error("Erreur ratio annuité / CAF", err));
-  }, []);
-
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/charge-ebe/`)
-        .then(res => res.json())
-        .then(data => setChargeEbeRatio(parseFloat(data.ratio_charge_ebe)))
-        .catch(err => console.error("Erreur Charge/EBE", err));
-  }, []);
+  const [ratio, setRatio] = useState(null);
+  fetch(`${BASE_URL_API}/charge-ebe/`)
+    .then(res => res.json())
+    .then(data => setRatio(parseFloat(data.ratio)))
+    .catch(err => console.error("Erreur Charge/EBE", err));
 
   useEffect(() => {
     fetch(`${BASE_URL_API}/charge-ca/`)
       .then(res => res.json())
-      .then(data => setChargeCaRatio(parseFloat(data.ratio_charge_ca)))
+      .then(data => setRatio(parseFloat(data.ratio)))
       .catch(err => console.error("Erreur Charge/CA", err));
   }, []);
 
   useEffect(() => {
     fetch(`${BASE_URL_API}/marge-endettement/`)
       .then(res => res.json())
-      .then(data => setMargeEndettementRatio(parseFloat(data.ratio_marge_endettement)))
+      .then(data => setRatio(parseFloat(data.ratio)))
       .catch(err => console.error("Erreur Marge d'endettement", err));
-  }, []);
-
-  const [repartitionData, setRepartitionData] = useState([]);
-
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/repartition-resultat/`)
-      .then(res => res.json())
-      .then(data => setRepartitionData(data))
-      .catch(err => console.error("Erreur Répartition", err));
   }, []);
 
   // ✅ SUMMARY CARDS DYNAMIQUE
   const formattedLeverage = (() => {
-    const n = Number(leverage);
+    const n = Number(indicators.leverage);
     return Number.isFinite(n) ? n.toFixed(2) : '—';
   })();
   const summaryCards = [
     {
       title: "Chiffre d'affaires",
-      value:`Ar ${caTotal.toLocaleString("fr-FR")}`,
+      value: loading
+        ? "Chargement..."
+        : `Ar ${caTotal.toLocaleString("fr-FR")}`,
       icon: '📊',
       action: 'none'
     },
     {
       title: "CAF",
-      value: `Ar ${Number(caf).toLocaleString("fr-FR")}`,
+      value: `Ar ${Number(indicators.caf).toLocaleString("fr-FR")}`,
       unit: "Capacité d'Autofinancement",
       icon: "🏦"
     },
     {
       title: "EBE",
-      value: `Ar ${Number(ebe).toLocaleString("fr-FR")}`,
+      value: `Ar ${Number(indicators.ebe).toLocaleString("fr-FR")}`,
       unit: "Excédent Brut d'Exploitation",
       icon: "💰",
       action: 'none'
     },
     {
       title: "Bénéfice net",
-      value: `Ar ${Number(resultatNet).toLocaleString("fr-FR")}`,
+      value: `Ar ${Number(indicators.resultatNet).toLocaleString("fr-FR")}`,
       unit: "Bénéfice net",
       icon: "📈"
     },
     {
       title: 'BALANCE',
-      value: '—',
+      value: `Ar ${Number(indicators.totalBalance).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}`,
       icon: '⚖️',
       action: 'openBalance'
     },
@@ -528,7 +447,7 @@ const Dashboard = () => {
     },
     {
       title: "BFR",
-      value: `Ar ${Number(bfr).toLocaleString("fr-FR")}`,
+      value: `Ar ${Number(indicators.bfr).toLocaleString("fr-FR")}`,
       unit: "Besoin en Fonds de Roulement",
       icon: "💵"
     },
@@ -556,11 +475,21 @@ const Dashboard = () => {
         <div className="flex flex-wrap gap-2 sm:space-x-3 items-center text-sm">
           <div className="flex items-center space-x-2">
             <label className="text-gray-600 text-xs sm:text-sm">Du</label>
-            <input type="date" defaultValue="2024-12-10" className="p-1.5 border border-gray-300 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200" />
+            <input
+              type="date"
+              value={globalDateStart}
+              onChange={(e) => setGlobalDateStart(e.target.value)}
+              className="p-1.5 border border-gray-300 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
+            />
           </div>
           <div className="flex items-center space-x-2">
             <label className="text-gray-600 text-xs sm:text-sm">Au</label>
-            <input type="date" defaultValue="2025-12-10" className="p-1.5 border border-gray-300 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200" />
+            <input
+              type="date"
+              value={globalDateEnd}
+              onChange={(e) => setGlobalDateEnd(e.target.value)}
+              className="p-1.5 border border-gray-300 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200"
+            />
           </div>
           <button className="bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm hover:bg-gray-900 font-medium shadow-sm transition-all">
             11 déc. 2024 - 10 déc. 2025
@@ -611,138 +540,132 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
+                  {/* ANNUITÉ / CAF */}
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">
                       Annuité d'emprunt / CAF
                     </td>
-
                     <td className="px-4 py-3 text-gray-700 text-right font-mono">
-                      {annuiteCafRatio !== null ? annuiteCafRatio.toFixed(2) : "--"}
+                      {ratio !== null ? ratio.toFixed(2) : "--"}
                     </td>
-
                     <td className="px-4 py-3 text-gray-400 text-xs text-right">
                       &lt; 0.50
                     </td>
-
                     <td className="px-4 py-3 text-center">
-                      {annuiteCafRatio > 0.5 ? (
+                      {ratio > 0.5 ? (
                         <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
                           ⚠ Alerte
                         </span>
                       ) : (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">OK</span>
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* DETTE / CAF */}
+                  <tr className="group hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 font-medium">Dette LMT / CAF</td>
+                    <td className="px-4 py-3 text-right font-mono">
+                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                    </td>
+                    <td className="px-4 py-3 text-right text-xs text-gray-400">
+                      &lt; 3.50
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      {ratio >= 3.5 ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
+                          Alerte
+                        </span>
+                      ) : (
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
                           OK
                         </span>
                       )}
                     </td>
                   </tr>
-                  <tr className="group hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 font-medium">Dette LMT / CAF</td>
 
-                    <td className="px-4 py-3 text-right font-mono">
-                      {/* TODO: Add Data LMT logic if needed, currently reusing logic or disabled? Leaving as is or fixing if variable needed */}
-                       --
-                    </td>
-
-                    <td className="px-4 py-3 text-right text-xs text-gray-400">
-                      &lt; 3.50
-                    </td>
-
-                    <td className="px-4 py-3 text-center">
-                       --
-                    </td>
-                  </tr>
+                  {/* RESULTAT NET / CA (Marge Nette) */}
                   <tr className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium">
                       Résultat net / Chiffre d'affaires
                     </td>
-
                     <td className="px-4 py-3 text-right font-mono">
-                      {margeNette !== null ? `${margeNette.toFixed(2)} %` : '--'}
+                      {indicators.ratios && indicators.ratios.marge_nette ? Number(indicators.ratios.marge_nette.value).toFixed(2) + " %" : "--"}
                     </td>
-
                     <td className="px-4 py-3 text-right text-xs text-gray-400">
                       ≥ 10 %
                     </td>
-
                     <td className="px-4 py-3 text-center">
-                      {margeNette === null ? (
-                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-bold">N/A</span>
-                      ) : margeNette < 5 ? (
-                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">Faible</span>
-                      ) : margeNette < 10 ? (
-                        <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-bold">Correct</span>
+                      {indicators.ratios && indicators.ratios.marge_nette ? (
+                        Number(indicators.ratios.marge_nette.value) < 5 ? (
+                          <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">Faible</span>
+                        ) : Number(indicators.ratios.marge_nette.value) < 10 ? (
+                          <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-bold">Correct</span>
+                        ) : (
+                          <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">Excellent</span>
+                        )
                       ) : (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">Excellent</span>
+                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full text-xs font-bold">N/A</span>
                       )}
                     </td>
                   </tr>
+
+                  {/* CHARGE FINANCIERE / EBE */}
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium">
                       Charge financière / EBE
                     </td>
-
                     <td className="px-4 py-3 text-right font-mono">
-                      {chargeEbeRatio !== null ? chargeEbeRatio.toFixed(2) : "--"}
+                      {ratio !== null ? ratio.toFixed(2) : "--"}
                     </td>
-
                     <td className="px-4 py-3 text-right text-xs text-gray-400">
                       &lt; 0.30
                     </td>
-
                     <td className="px-4 py-3 text-center">
-                      {chargeEbeRatio >= 0.30 ? (
+                      {ratio >= 0.30 ? (
                         <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
                           Alerte
                         </span>
                       ) : (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
-                          OK
-                        </span>
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">OK</span>
                       )}
                     </td>
                   </tr>
+
+                  {/* CHARGE FI / CA */}
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium">Charge financière / CA</td>
-
                     <td className="px-4 py-3 text-right font-mono">
-                      {chargeCaRatio !== null ? (chargeCaRatio * 100).toFixed(2) + " %" : "--"}
+                      {ratio !== null ? (ratio * 100).toFixed(2) + " %" : "--"}
                     </td>
-
                     <td className="px-4 py-3 text-right text-xs text-gray-400">&lt; 5%</td>
-
                     <td className="px-4 py-3 text-center">
-                      {chargeCaRatio !== null && chargeCaRatio >= 0.05 ? (
+                      {ratio !== null && ratio >= 0.05 ? (
                         <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
                           Alerte
                         </span>
                       ) : (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
-                          OK
-                        </span>
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">OK</span>
                       )}
                     </td>
                   </tr>
+
+                  {/* GEARING (Dette CMLT / Fonds Propres) */}
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium">Marge d'endettement (CMLT / FP)</td>
-
                     <td className="px-4 py-3 text-right font-mono">
-                      {margeEndettementRatio !== null ? margeEndettementRatio.toFixed(2) : "--"}
+                      {ratio !== null ? ratio.toFixed(2) : "--"}
                     </td>
-
                     <td className="px-4 py-3 text-right text-xs text-gray-400">
                       &lt; 1.3
                     </td>
-
                     <td className="px-4 py-3 text-center">
-                      {margeEndettementRatio !== null && margeEndettementRatio >= 1.3 ? (
+                      {ratio !== null && ratio >= 1.3 ? (
                         <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
                           Alerte
                         </span>
                       ) : (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
-                          OK
-                        </span>
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">OK</span>
                       )}
                     </td>
                   </tr>
@@ -937,12 +860,18 @@ const Dashboard = () => {
       </div>
 
       {/* 8. Répartition par Journal */}
-      <JournalRepartition />
+      {/* 8. Répartition par Journal */}
+      <JournalRepartition
+        globalStartDate={globalDateStart}
+        globalEndDate={globalDateEnd}
+      />
 
       {/* La modale de la Balance */}
       <BalanceModal
         isOpen={isBalanceModalOpen}
         onClose={() => setIsBalanceModalOpen(false)}
+        startDate={globalDateStart}
+        endDate={globalDateEnd}
       />
     </div>
   );

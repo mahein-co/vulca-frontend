@@ -1,40 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { BASE_URL_API } from '../../constants/globalConstants';
 
-// Données fictives pour la balance (basé sur 4.jpeg)
-const balanceData = [
-  { compte: '641', libelle: 'Rémunérations du personnel', debit: '2,350,000.00', credit: '-', solde: '2,350,000.00', nature: 'Débiteur' },
-  { compte: '421', libelle: 'Personnel - Rémunérations dues', debit: '-', credit: '2,150,000.00', solde: '2,150,000.00', nature: 'Créditeur' },
-  { compte: '411', libelle: 'Clients (Créances)', debit: '105,370,800', credit: '18,048,000', solde: '87,322,800', nature: 'Débiteur' },
-  { compte: '401', libelle: 'Fournisseurs (Dettes)', debit: '23,733,000', credit: '59,301,000', solde: '35,568,000', nature: 'Créditeur' },
-  { compte: '512', libelle: 'Banques (Compte courant)', debit: '11,316,000', credit: '12,288,000', solde: '972,000', nature: 'Créditeur' },
-  { compte: '612', libelle: 'Achats stockés de matières premières et fournitures', debit: '16,307,500', credit: '-', solde: '16,307,500', nature: 'Débiteur' },
-  { compte: '645', libelle: 'Charges patronales', debit: '400,000', credit: '-', solde: '400,000', nature: 'Débiteur' },
-  { compte: '530', libelle: 'Caisse', debit: '8,500,000', credit: '3,200,000', solde: '5,300,000', nature: 'Débiteur' },
-  { compte: '701', libelle: 'Ventes de produits finis', debit: '-', credit: '79,670,000', solde: '79,670,000', nature: 'Créditeur' },
-  { compte: '607', libelle: 'Achats de marchandises', debit: '45,200,000', credit: '-', solde: '45,200,000', nature: 'Débiteur' },
-  { compte: '445', libelle: 'TVA à décaisser', debit: '3,800,000', credit: '5,600,000', solde: '1,800,000', nature: 'Créditeur' },
-  { compte: '101', libelle: 'Capital social', debit: '-', credit: '50,000,000', solde: '50,000,000', nature: 'Créditeur' },
-];
+const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
+  const [balanceData, setBalanceData] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-// Fonction utilitaire pour nettoyer et convertir les montants en nombres
-const cleanAmount = (amount) => {
-  if (amount === '-') return 0;
-  return parseFloat(amount.replace(/,/g, '').replace(/\s/g, '')) || 0;
-};
+  // Fonction utilitaire pour nettoyer et convertir les montants en nombres (si API renvoie string, sinon inutile mais garde de sécurité)
+  const cleanAmount = (amount) => {
+    if (typeof amount === 'number') return amount;
+    if (!amount || amount === '-') return 0;
+    return parseFloat(amount.toString().replace(/,/g, '').replace(/\s/g, '')) || 0;
+  };
 
-// Fonction pour formater les montants en Ar xxx xxx xxx,xx
-const formatAmount = (amount) => {
-  return new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount).replace('$', 'Ar').replace(/\sUSD/, '').replace('.', ',');
-};
+  // Fonction pour formater les montants en Ar xxx xxx xxx,xx
+  const formatAmount = (amount) => {
+    return new Intl.NumberFormat('fr-FR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount) + ' Ar';
+  };
 
-const BalanceModal = ({ isOpen, onClose }) => {
+
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 7;
+
+  // États de filtrage
+  const [searchTerm, setSearchTerm] = useState('');
+  const [natureFilter, setNatureFilter] = useState('Tous'); // 'Tous', 'Débiteur', 'Créditeur'
+
+  useEffect(() => {
+    if (isOpen) {
+      setIsLoading(true);
+      let url = `${BASE_URL_API}/balance/generale/?`;
+      if (startDate) url += `date_start=${startDate}&`;
+      if (endDate) url += `date_end=${endDate}`;
+
+      fetch(url)
+        .then(res => res.json())
+        .then(data => setBalanceData(data))
+        .catch(err => console.error("Erreur chargement Balance:", err))
+        .finally(() => setIsLoading(false));
+    }
+  }, [isOpen, startDate, endDate]);
 
   if (!isOpen) return null;
 
@@ -44,21 +51,44 @@ const BalanceModal = ({ isOpen, onClose }) => {
   const soldeFinal = totalDebit - totalCredit;
   const isBalanced = Math.abs(soldeFinal) < 0.01;
 
-  // Pagination
-  const totalPages = Math.ceil(balanceData.length / itemsPerPage);
+  // Filtrage
+  const getFilteredData = () => {
+    let data = balanceData;
+
+    // Filtre Recherche
+    if (searchTerm) {
+      const lower = searchTerm.toLowerCase();
+      data = data.filter(item =>
+        item.compte.toLowerCase().includes(lower) ||
+        item.libelle.toLowerCase().includes(lower)
+      );
+    }
+
+    // Filtre Nature
+    if (natureFilter !== 'Tous') {
+      data = data.filter(item => item.nature === natureFilter);
+    }
+
+    return data;
+  };
+
+  const filteredData = getFilteredData();
+
+  // Pagination sur données filtrées
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentData = balanceData.slice(startIndex, startIndex + itemsPerPage);
+  const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div className="fixed inset-0 bg-black/50 overflow-y-auto h-full w-full z-50 flex justify-center items-center p-4">
+    <div className="fixed inset-0 bg-black/50 overflow-y-auto h-full w-full z-50 flex justify-center items-center p-2 sm:p-4">
 
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-5xl h-[85vh] flex flex-col border-t-2 border-gray-300">
+      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-5xl h-[95vh] sm:h-[90vh] lg:h-[85vh] flex flex-col border-t-2 border-gray-300">
 
         {/* En-tête de la modale */}
-        <div className="flex-none p-4 border-b border-gray-200 flex justify-between items-center z-10 bg-white rounded-t-lg">
+        <div className="flex-none p-3 sm:p-4 border-b border-gray-200 flex justify-between items-center z-10 bg-white rounded-t-lg">
           <div className="flex items-center">
-            <span className="text-2xl mr-3">⚖️</span>
-            <h2 className="text-xl font-bold text-gray-800">Balance Générale</h2>
+            <span className="text-xl sm:text-2xl mr-2 sm:mr-3">⚖️</span>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-800">Balance Générale</h2>
           </div>
           <button
             onClick={onClose}
@@ -71,102 +101,148 @@ const BalanceModal = ({ isOpen, onClose }) => {
         </div>
 
         {/* Stats cards */}
-        <div className="flex-none p-4 bg-gray-50 border-b border-gray-200">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white p-3 rounded-lg border border-gray-200">
-              <p className="text-xs text-gray-500 mb-1">Total Débit</p>
-              <p className="text-lg font-bold text-red-600">{formatAmount(totalDebit)}</p>
+        <div className="flex-none p-2 sm:p-4 bg-gray-50 border-b border-gray-200">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
+            <div className="bg-white p-2 sm:p-3 rounded-lg border border-gray-200">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5 sm:mb-1">Total Débit</p>
+              <p className="text-sm sm:text-lg font-bold text-red-600">{formatAmount(totalDebit)}</p>
             </div>
-            <div className="bg-white p-3 rounded-lg border border-gray-200">
-              <p className="text-xs text-gray-500 mb-1">Total Crédit</p>
-              <p className="text-lg font-bold text-emerald-600">{formatAmount(totalCredit)}</p>
+            <div className="bg-white p-2 sm:p-3 rounded-lg border border-gray-200">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5 sm:mb-1">Total Crédit</p>
+              <p className="text-sm sm:text-lg font-bold text-emerald-600">{formatAmount(totalCredit)}</p>
             </div>
-            <div className="bg-white p-3 rounded-lg border border-gray-200">
-              <p className="text-xs text-gray-500 mb-1">Statut</p>
-              <p className={`text-lg font-bold ${isBalanced ? 'text-emerald-600' : 'text-amber-600'}`}>
+            <div className="bg-white p-2 sm:p-3 rounded-lg border border-gray-200">
+              <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5 sm:mb-1">Statut</p>
+              <p className={`text-sm sm:text-lg font-bold ${isBalanced ? 'text-emerald-600' : 'text-amber-600'}`}>
                 {isBalanced ? '✓ Équilibrée' : formatAmount(soldeFinal)}
               </p>
             </div>
           </div>
         </div>
 
+        {/* Barre de Filtres */}
+        <div className="flex-none px-4 py-3 bg-white border-b border-gray-200 flex flex-col sm:flex-row gap-3 items-end sm:items-center">
+          <div className="w-full sm:flex-1">
+            <label className="block text-xs font-medium text-gray-700 mb-1">Rechercher</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                className="focus:ring-emerald-500 focus:border-emerald-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md"
+                placeholder="N° Compte, Libellé..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="w-full sm:w-auto min-w-[200px]">
+            <label className="block text-xs font-medium text-gray-700 mb-1">Filtrer par nature</label>
+            <select
+              className="mt-0 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 sm:text-sm rounded-md shadow-sm"
+              value={natureFilter}
+              onChange={(e) => {
+                setNatureFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="Tous">Toutes les natures</option>
+              <option value="Débiteur">Débiteur uniquement</option>
+              <option value="Créditeur">Créditeur uniquement</option>
+            </select>
+          </div>
+        </div>
+
         {/* Corps du tableau (Zone Scrollable) */}
-        <div className="flex-grow overflow-y-auto p-4 min-h-0 bg-white">
+        <div className="flex-grow overflow-y-auto p-2 sm:p-4 min-h-0 bg-white">
           <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <table className="w-full border-collapse text-sm">
-              <thead className="sticky top-0 z-10">
-                <tr className="bg-gray-800 text-white">
-                  <th className="px-3 py-2.5 text-left text-xs font-bold uppercase tracking-wide">Compte</th>
-                  <th className="px-3 py-2.5 text-left text-xs font-bold uppercase tracking-wide">Libellé</th>
-                  <th className="px-3 py-2.5 text-right text-xs font-bold uppercase tracking-wide">Débit</th>
-                  <th className="px-3 py-2.5 text-right text-xs font-bold uppercase tracking-wide">Crédit</th>
-                  <th className="px-3 py-2.5 text-right text-xs font-bold uppercase tracking-wide">Solde</th>
-                  <th className="px-3 py-2.5 text-center text-xs font-bold uppercase tracking-wide">Nature</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentData.map((item, index) => (
-                  <tr key={index} className={`hover:bg-emerald-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                    <td className="border-b border-gray-100 px-3 py-2.5">
-                      <span className="bg-gray-200 text-gray-700 px-2 py-0.5 rounded text-xs font-mono font-bold">{item.compte}</span>
-                    </td>
-                    <td className="border-b border-gray-100 px-3 py-2.5 text-gray-800">{item.libelle}</td>
-                    <td className="border-b border-gray-100 px-3 py-2.5 text-right">
-                      {item.debit !== '-' ? (
-                        <span className="text-red-600 font-semibold">{item.debit} Ar</span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="border-b border-gray-100 px-3 py-2.5 text-right">
-                      {item.credit !== '-' ? (
-                        <span className="text-emerald-600 font-semibold">{item.credit} Ar</span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className={`border-b border-gray-100 px-3 py-2.5 text-right font-bold ${item.nature === 'Débiteur' ? 'text-red-600' : 'text-emerald-600'}`}>
-                      {item.solde} Ar
-                    </td>
-                    <td className="border-b border-gray-100 px-3 py-2.5 text-center">
-                      <span className={`px-2 py-1 inline-flex text-xs font-bold rounded-full ${item.nature === 'Débiteur'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-emerald-100 text-emerald-700'
-                        }`}>
-                        {item.nature}
-                      </span>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-xs sm:text-sm whitespace-nowrap min-w-[640px]">
+                <thead className="sticky top-0 z-10">
+                  <tr className="bg-gray-800 text-white">
+                    <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Compte</th>
+                    <th className="px-1 sm:px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
+                    <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Débit</th>
+                    <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Crédit</th>
+                    <th className="px-1 sm:px-2 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Solde</th>
+                    <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wide">Nature</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {currentData.map((item, index) => (
+                    <tr key={index} className={`hover:bg-emerald-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                      <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5">
+                        <span className="bg-gray-200 text-gray-700 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold">{item.compte}</span>
+                      </td>
+                      <td className="border-b border-gray-100 px-1 sm:px-2 py-2 sm:py-2.5 text-gray-800 text-xs sm:text-sm truncate max-w-[200px]">{item.libelle}</td>
+                      <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-right text-xs sm:text-sm">
+                        {new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(item.debit)} Ar
+                      </td>
+                      <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-right font-semibold text-emerald-600 text-xs sm:text-sm">
+                        {new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(item.credit)} Ar
+                      </td>
+                      <td className={`border-b border-gray-100 px-1 sm:px-2 py-2 sm:py-2.5 text-right font-bold text-xs sm:text-sm ${item.nature === 'Débiteur' ? 'text-red-600' : 'text-emerald-600'}`}>
+                        {new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(item.solde)} Ar
+                      </td>
+                      <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-center">
+                        <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 inline-flex text-[10px] sm:text-xs font-bold rounded-full ${item.nature === 'Débiteur'
+                          ? 'bg-red-100 text-red-700'
+                          : 'bg-emerald-100 text-emerald-700'
+                          }`}>
+                          {item.nature}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {/* Lignes vides pour maintenir la hauteur fixe */}
+                  {Array.from({ length: Math.max(0, itemsPerPage - currentData.length) }).map((_, idx) => (
+                    <tr key={`empty-${idx}`} className="bg-white">
+                      <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                      <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                      <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                      <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                      <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                      <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
         {/* Footer avec Pagination Fixe */}
-        <div className="flex-none p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
+        <div className="flex-none p-3 sm:p-4 border-t border-gray-200 bg-gray-50 rounded-b-lg">
           {/* Pagination */}
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs text-gray-500">
-              Affichage <span className="font-semibold">{startIndex + 1}</span> - <span className="font-semibold">{Math.min(startIndex + itemsPerPage, balanceData.length)}</span> sur <span className="font-semibold">{balanceData.length}</span> comptes
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+            <p className="text-[10px] sm:text-xs text-gray-500 text-center sm:text-left">
+              <span className="font-semibold">{filteredData.length > 0 ? startIndex + 1 : 0}</span> - <span className="font-semibold">{Math.min(startIndex + itemsPerPage, filteredData.length)}</span> / <span className="font-semibold">{filteredData.length}</span>
             </p>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-gray-300 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
-                ← Précédent
+                <span className="hidden sm:inline">←</span> Préc.
               </button>
-              <span className="text-sm text-gray-600 font-medium">
-                Page {currentPage} / {totalPages}
+              <span className="text-xs sm:text-sm text-gray-600 font-medium">
+                {currentPage}/{totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg border border-gray-300 text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
-                Suivant →
+                Suiv. <span className="hidden sm:inline">→</span>
               </button>
             </div>
           </div>

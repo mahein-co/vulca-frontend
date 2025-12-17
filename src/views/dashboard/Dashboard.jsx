@@ -315,14 +315,6 @@ const Dashboard = () => {
   }, []);
 
 
-
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/annuite-caf/`)
-      .then(res => res.json())
-      .then(data => setRatio(parseFloat(data.ratio)))
-      .catch(err => console.error("Erreur ratio annuité / CAF", err));
-  }, []);
-
   const [margeNette, setMargeNette] = useState(null);
   const [loadingMarge, setLoadingMarge] = useState(true);
   useEffect(() => {
@@ -448,27 +440,36 @@ const Dashboard = () => {
       .catch(err => console.error('Erreur Marge opérationnelle', err));
   }, []);
 
-  const [ratio, setRatio] = useState(null);
+  const [annuiteCafRatio, setAnnuiteCafRatio] = useState(null);
   const [chargeEbeRatio, setChargeEbeRatio] = useState(null);
+  const [chargeCaRatio, setChargeCaRatio] = useState(null);
+  const [margeEndettementRatio, setMargeEndettementRatio] = useState(null);
+
+  useEffect(() => {
+    fetch(`${BASE_URL_API}/annuite-caf/`)
+      .then(res => res.json())
+      .then(data => setAnnuiteCafRatio(parseFloat(data.ratio_annuite_caf)))
+      .catch(err => console.error("Erreur ratio annuité / CAF", err));
+  }, []);
 
   useEffect(() => {
     fetch(`${BASE_URL_API}/charge-ebe/`)
-      .then(res => res.json())
-      .then(data => setChargeEbeRatio(parseFloat(data.ratio)))
-      .catch(err => console.error("Erreur Charge/EBE", err));
+        .then(res => res.json())
+        .then(data => setChargeEbeRatio(parseFloat(data.ratio_charge_ebe)))
+        .catch(err => console.error("Erreur Charge/EBE", err));
   }, []);
 
   useEffect(() => {
     fetch(`${BASE_URL_API}/charge-ca/`)
       .then(res => res.json())
-      .then(data => setRatio(parseFloat(data.ratio)))
+      .then(data => setChargeCaRatio(parseFloat(data.ratio_charge_ca)))
       .catch(err => console.error("Erreur Charge/CA", err));
   }, []);
 
   useEffect(() => {
     fetch(`${BASE_URL_API}/marge-endettement/`)
       .then(res => res.json())
-      .then(data => setRatio(parseFloat(data.ratio)))
+      .then(data => setMargeEndettementRatio(parseFloat(data.ratio_marge_endettement)))
       .catch(err => console.error("Erreur Marge d'endettement", err));
   }, []);
 
@@ -489,9 +490,7 @@ const Dashboard = () => {
   const summaryCards = [
     {
       title: "Chiffre d'affaires",
-      value: loading
-        ? "Chargement..."
-        : `Ar ${caTotal.toLocaleString("fr-FR")}`,
+      value:`Ar ${caTotal.toLocaleString("fr-FR")}`,
       icon: '📊',
       action: 'none'
     },
@@ -618,7 +617,7 @@ const Dashboard = () => {
                     </td>
 
                     <td className="px-4 py-3 text-gray-700 text-right font-mono">
-                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                      {annuiteCafRatio !== null ? annuiteCafRatio.toFixed(2) : "--"}
                     </td>
 
                     <td className="px-4 py-3 text-gray-400 text-xs text-right">
@@ -626,7 +625,7 @@ const Dashboard = () => {
                     </td>
 
                     <td className="px-4 py-3 text-center">
-                      {ratio > 0.5 ? (
+                      {annuiteCafRatio > 0.5 ? (
                         <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
                           ⚠ Alerte
                         </span>
@@ -641,7 +640,8 @@ const Dashboard = () => {
                     <td className="px-4 py-3 font-medium">Dette LMT / CAF</td>
 
                     <td className="px-4 py-3 text-right font-mono">
-                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                      {/* TODO: Add Data LMT logic if needed, currently reusing logic or disabled? Leaving as is or fixing if variable needed */}
+                       --
                     </td>
 
                     <td className="px-4 py-3 text-right text-xs text-gray-400">
@@ -649,15 +649,7 @@ const Dashboard = () => {
                     </td>
 
                     <td className="px-4 py-3 text-center">
-                      {ratio >= 3.5 ? (
-                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
-                          Alerte
-                        </span>
-                      ) : (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
-                          OK
-                        </span>
-                      )}
+                       --
                     </td>
                   </tr>
                   <tr className="hover:bg-gray-50">
@@ -691,7 +683,7 @@ const Dashboard = () => {
                     </td>
 
                     <td className="px-4 py-3 text-right font-mono">
-                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                      {chargeEbeRatio !== null ? chargeEbeRatio.toFixed(2) : "--"}
                     </td>
 
                     <td className="px-4 py-3 text-right text-xs text-gray-400">
@@ -699,7 +691,7 @@ const Dashboard = () => {
                     </td>
 
                     <td className="px-4 py-3 text-center">
-                      {ratio >= 0.30 ? (
+                      {chargeEbeRatio >= 0.30 ? (
                         <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
                           Alerte
                         </span>
@@ -714,13 +706,13 @@ const Dashboard = () => {
                     <td className="px-4 py-3 font-medium">Charge financière / CA</td>
 
                     <td className="px-4 py-3 text-right font-mono">
-                      {ratio !== null ? (ratio * 100).toFixed(2) + " %" : "--"}
+                      {chargeCaRatio !== null ? (chargeCaRatio * 100).toFixed(2) + " %" : "--"}
                     </td>
 
                     <td className="px-4 py-3 text-right text-xs text-gray-400">&lt; 5%</td>
 
                     <td className="px-4 py-3 text-center">
-                      {ratio !== null && ratio >= 0.05 ? (
+                      {chargeCaRatio !== null && chargeCaRatio >= 0.05 ? (
                         <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
                           Alerte
                         </span>
@@ -735,7 +727,7 @@ const Dashboard = () => {
                     <td className="px-4 py-3 font-medium">Marge d'endettement (CMLT / FP)</td>
 
                     <td className="px-4 py-3 text-right font-mono">
-                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                      {margeEndettementRatio !== null ? margeEndettementRatio.toFixed(2) : "--"}
                     </td>
 
                     <td className="px-4 py-3 text-right text-xs text-gray-400">
@@ -743,7 +735,7 @@ const Dashboard = () => {
                     </td>
 
                     <td className="px-4 py-3 text-center">
-                      {ratio !== null && ratio >= 1.3 ? (
+                      {margeEndettementRatio !== null && margeEndettementRatio >= 1.3 ? (
                         <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
                           Alerte
                         </span>

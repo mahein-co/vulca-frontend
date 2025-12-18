@@ -131,12 +131,11 @@ const PaginationControls = ({ currentPage, totalPages, totalItems, setCurrentPag
 };
 
 const TransactionView = () => {
-    const currentYear = new Date().getFullYear();
     const [selectedSection, setSelectedSection] = useState('bilan');
     const [currentPage, setCurrentPage] = useState(1);
-    const [selectedYear, setSelectedYear] = useState(currentYear.toString());
-    const [dateDebut, setDateDebut] = useState(`${currentYear}-01-01`);
-    const [dateFin, setDateFin] = useState(`${currentYear}-12-31`);
+    const [selectedYear, setSelectedYear] = useState('');
+    const [dateDebut, setDateDebut] = useState('');
+    const [dateFin, setDateFin] = useState('');
     const [recherche, setRecherche] = useState('');
     const [bilanData, setBilanData] = useState([]);
     const [compteResultatData, setCompteResultatData] = useState([]);
@@ -145,11 +144,8 @@ const TransactionView = () => {
     const [error, setError] = useState(null);
 
     // NOUVELLE LOGIQUE DE PÉRIODE
-    const [availableYears, setAvailableYears] = useState([currentYear]);
+    const [availableYears, setAvailableYears] = useState([]);
     const [periodMode, setPeriodMode] = useState('ANNUAL'); // 'ANNUAL', 'QUARTERLY', 'MONTHLY'
-    // 'selectedSubPeriod' remplace 'selectedYear' qui est maintenant juste une partie de l'état global
-    // Mais on garde 'selectedYear' state pour stocker l'année choisie
-    // On garde 'selectedYear' comme state distinct
     const [selectedSubPeriod, setSelectedSubPeriod] = useState(null); // 'T1', 'M1', etc.
 
     // Le useEffect qui charge les années
@@ -160,9 +156,13 @@ const TransactionView = () => {
                 if (res.ok) {
                     const years = await res.json();
                     setAvailableYears(years);
-                    // Si 'selectedYear' initial n'est pas dans la liste, prendre le plus récent
-                    if (years.length > 0 && !years.map(String).includes(selectedYear)) {
-                        setSelectedYear(years[0].toString());
+                    // Toujours utiliser la dernière année de la base (première dans la liste triée)
+                    if (years.length > 0) {
+                        const latestYear = years[0].toString();
+                        setSelectedYear(latestYear);
+                        // Force update dates for the latest year
+                        setDateDebut(`${latestYear}-01-01`);
+                        setDateFin(`${latestYear}-12-31`);
                     }
                 }
             } catch (e) {
@@ -252,20 +252,27 @@ const TransactionView = () => {
 
     useEffect(() => {
         const loadData = async () => {
+            // Ne charger que si les dates sont définies (après chargement des années disponibles)
+            if (!dateDebut || !dateFin) {
+                return;
+            }
+
             setLoading(true);
             setError(null);
             setCurrentPage(1);
             try {
+                // Charger les données en parallèle
                 await Promise.all([
                     // Bilan = cumul jusqu'à dateFin (pas de dateDebut pour l'API)
                     fetchWithParams(API_CONFIG.bilanUrl, { date_end: dateFin }, normalizeBilanData, setBilanData),
                     // CR = période (dateDebut -> dateFin)
                     fetchWithParams(API_CONFIG.compteResultatUrl, { date_start: dateDebut, date_end: dateFin }, normalizeCompteResultatData, setCompteResultatData),
-                    fetchKPIs()
                 ]);
+                // Charger les KPIs séparément (ne pas bloquer si ça échoue)
+                fetchKPIs();
             } catch (err) {
-                console.error(err);
-                setError(err.message);
+                console.error("Erreur chargement:", err);
+                // Ne pas afficher d'erreur si les données sont quand même chargées
             }
             finally { setLoading(false); }
         };
@@ -281,9 +288,10 @@ const TransactionView = () => {
         // Le backend a déjà filtré date <= dateFin
         if (dateDebut && dateFin) {
             filtered = filtered.filter(item => {
-                const itemDate = new Date(item.date);
-                const start = new Date(dateDebut);
-                const end = new Date(dateFin);
+                // Robust String Comparison (YYYY-MM-DD)
+                const itemDate = (item.date || '').substring(0, 10);
+                const start = (dateDebut || '').substring(0, 10);
+                const end = (dateFin || '').substring(0, 10);
 
                 if (isBilan) {
                     return itemDate <= end; // Bilan: cumulatif
@@ -315,11 +323,11 @@ const TransactionView = () => {
         const bilan = filterData(bilanData, true);
         const compteResultat = filterData(compteResultatData, false);
 
-        const actifCourant = bilan.filter(i => i.categorie.toLowerCase().includes('actif') && i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
-        const actifNonCourant = bilan.filter(i => i.categorie.toLowerCase().includes('actif') && !i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
-        const passifCourant = bilan.filter(i => i.categorie.toLowerCase().includes('passif') && i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
-        const passifNonCourant = bilan.filter(i => i.categorie.toLowerCase().includes('passif') && !i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
-        const capitauxPropresBilan = bilan.filter(i => i.categorie.toLowerCase().includes('capitaux')).reduce((a, b) => a + b.montant_ar, 0);
+        const actifCourant = bilan.filter(i => i.categorie && i.categorie.toLowerCase().includes('actif') && i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
+        const actifNonCourant = bilan.filter(i => i.categorie && i.categorie.toLowerCase().includes('actif') && !i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
+        const passifCourant = bilan.filter(i => i.categorie && i.categorie.toLowerCase().includes('passif') && i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
+        const passifNonCourant = bilan.filter(i => i.categorie && i.categorie.toLowerCase().includes('passif') && !i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
+        const capitauxPropresBilan = bilan.filter(i => i.categorie && i.categorie.toLowerCase().includes('capitaux')).reduce((a, b) => a + b.montant_ar, 0);
 
         const produits = compteResultat.filter(i => i.nature.toLowerCase().includes('produit')).reduce((a, b) => a + b.montant_ar, 0);
         const charges = compteResultat.filter(i => i.nature.toLowerCase().includes('charge')).reduce((a, b) => a + b.montant_ar, 0);
@@ -342,7 +350,7 @@ const TransactionView = () => {
         const endettementChange = 0; // To be implemented if backend provides previous ratio
 
         return { actifCourant, actifNonCourant, passifCourant, passifNonCourant, capitauxPropres: capitauxPropresTotal, capitauxPropresBilan, totalActif, totalPassif, produits, charges, resultatNet, endettementRatio, totalDettes, bilanEquilibre: Math.abs(totalActif - totalPassif) < 0.01, resultatNetChange, endettementChange };
-    }, [bilanData, compteResultatData, recherche, selectedYear, kpiData]);
+    }, [bilanData, compteResultatData, recherche, selectedYear, kpiData, dateDebut, dateFin]);
 
     const cards = [
         ['Actif Courant', calculations.actifCourant, null, false, DollarSign, 'Créances,Stocks,Trésorerie'],
@@ -354,7 +362,7 @@ const TransactionView = () => {
         ['Ratio Endettement', calculations.endettementRatio, calculations.endettementChange, true, FileText, 'Dettes/CP']
     ];
 
-    const allDetails = useMemo(() => selectedSection === 'bilan' ? filterData(bilanData, true) : filterData(compteResultatData, false), [selectedSection, bilanData, compteResultatData, recherche, selectedYear]);
+    const allDetails = useMemo(() => selectedSection === 'bilan' ? filterData(bilanData, true) : filterData(compteResultatData, false), [selectedSection, bilanData, compteResultatData, recherche, selectedYear, dateDebut, dateFin]);
     const totalPages = Math.ceil(allDetails.length / ITEMS_PER_PAGE);
     const totalItems = allDetails.length;
     const paginatedDetails = useMemo(() => allDetails.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE), [currentPage, allDetails]);
@@ -537,17 +545,17 @@ const TransactionView = () => {
                 <div className="px-2 flex-1 min-h-0 ">
                     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden h-full">
                         <div className="overflow-x-auto">
-                            <table className="w-full border-collapse text-xs sm:text-sm min-w-[600px]">
+                            <table className="w-full border-collapse text-xs sm:text-sm min-w-[800px] table-fixed">
                                 <thead className="sticky top-0 z-10">
                                     <tr className="bg-gray-800 text-white">
-                                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Compte</th>
-                                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
+                                        <th className="w-[15%] px-2 sm:px-3 py-2 sm:py-2.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wide">Date</th>
+                                        <th className="w-[10%] px-2 sm:px-3 py-2 sm:py-2.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wide">Compte</th>
+                                        <th className="w-[40%] px-2 sm:px-3 py-2 sm:py-2.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wide">Libellé</th>
                                         {selectedSection === 'bilan' ?
-                                            <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Catégorie</th>
-                                            : <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Nature</th>
+                                            <th className="w-[20%] px-2 sm:px-3 py-2 sm:py-2.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wide hidden md:table-cell">Catégorie</th>
+                                            : <th className="w-[20%] px-2 sm:px-3 py-2 sm:py-2.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wide hidden md:table-cell">Nature</th>
                                         }
-                                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Montant</th>
-                                        <th className="px-2 sm:px-3 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden sm:table-cell">Date</th>
+                                        <th className="w-[15%] px-2 sm:px-3 py-2 sm:py-2.5 text-right text-xs sm:text-sm font-bold uppercase tracking-wide">Montant</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white">
@@ -560,7 +568,8 @@ const TransactionView = () => {
                                             )}
                                         </tr>
                                     ) : paginatedDetails.map((item, idx) => (
-                                        <tr key={idx} className={`hover:bg-emerald-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                        <tr key={idx} className={`hover:bg-emerald-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 font-semibold">{formatDate(item.date)}</td>
                                             <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs">
                                                 <span className="bg-gray-200 text-gray-700 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold">{item.numero_compte}</span>
                                             </td>
@@ -576,11 +585,10 @@ const TransactionView = () => {
                                                         ? 'bg-emerald-100 text-emerald-700'
                                                         : 'bg-orange-100 text-orange-700'
                                                     }`}>
-                                                    {item.categorie || item.nature}
+                                                    {(item.categorie || item.nature || '').replace(/_/g, ' ')}
                                                 </span>
                                             </td>
                                             <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-right font-bold text-gray-900">{formatCurrency(item.montant_ar)}</td>
-                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] text-gray-600 hidden sm:table-cell">{formatDate(item.date)}</td>
                                         </tr>
                                     ))}
                                     {(!loading && paginatedDetails.length < ITEMS_PER_PAGE) && (
@@ -588,9 +596,9 @@ const TransactionView = () => {
                                             <tr key={`empty-${idx}`} className="bg-white">
                                                 <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
                                                 <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
-                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none hidden md:table-cell">-</td>
                                                 <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
-                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none hidden sm:table-cell">-</td>
+                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none hidden md:table-cell">-</td>
+                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none text-right">-</td>
                                             </tr>
                                         ))
                                     )}

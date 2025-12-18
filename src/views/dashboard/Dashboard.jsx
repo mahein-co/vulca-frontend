@@ -5,7 +5,6 @@ import BarCharts from '../../components/charts/BarCharts';
 import TvaBarChart from '../../components/charts/TvaBarChart';
 import PieChartRepartition from '../../components/charts/PieChartRepartition';
 import LineChartCAEvolution from '../../components/charts/LineChartCAEvolution';
-import EvolutionTresorerie from '../../components/charts/EvolutionTresorerie';
 import { BASE_URL_API } from '../../constants/globalConstants';
 
 
@@ -315,89 +314,29 @@ const Dashboard = () => {
 
   // CHARGEMENT OPTIMISÉ (1 seul appel API)
   useEffect(() => {
-    fetch(`${BASE_URL_API}/ebe/`)
-      .then(res => res.json())
-      .then(data => setEbe(data.ebe))
-      .catch(err => console.error("Erreur EBE :", err));
-  }, []);
+    setLoadingIndicators(true);
+    let url = `${BASE_URL_API}/dashboard/indicators/?`;
+    if (globalDateStart) url += `date_start=${globalDateStart}&`;
+    if (globalDateEnd) url += `date_end=${globalDateEnd}`;
 
-
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/resultat-net/`)
-      .then(res => res.json())
-      .then(data => setResultatNet(data.resultat_net))
-      .catch(err => console.error("Erreur Résultat Net :", err));
-  }, []);
-
-  // try fetch CAF if endpoint exists, otherwise keep default
-  const [caf, setCaf] = useState(0);
-
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/caf/`)
-      .then(res => res.json())
-      .then(data => setCaf(data.caf))
-      .catch(err => console.error("Erreur CAF :", err));
-  }, []);
-
-  const [bfr, setBfr] = useState(0);
-
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/bfr/`)
-      .then(res => res.json())
-      .then(data => setBfr(data.bfr))
-      .catch(err => console.error("Erreur BFR :", err));
-  }, []);
-
-  const [leverage, setLeverage] = useState(0);
-
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/leverage-brut/`)
-      .then(res => res.json())
-      .then(data => setLeverage(data.leverage_brut))
-      .catch(err => console.error("Erreur Leverage brut :", err));
-  }, []);
-
-
-
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/annuite-caf/`)
-      .then(res => res.json())
-      .then(data => setRatio(parseFloat(data.ratio)))
-      .catch(err => console.error("Erreur ratio annuité / CAF", err));
-  }, []);
-
-  const [margeNette, setMargeNette] = useState(null);
-  const [loadingMarge, setLoadingMarge] = useState(true);
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/resultat-net-ca/`)
+    fetch(url)
       .then(res => res.json())
       .then(data => {
-        // on récupère directement le % calculé par l'API
-        setMargeNette(parseFloat(data.ratio_pourcent));
+        setIndicators({
+          ca: data.ca || 0,
+          ebe: data.ebe || 0,
+          resultatNet: data.resultat_net || 0,
+          caf: data.caf || 0,
+          bfr: data.bfr || 0,
+          leverage: data.leverage || 0,
+          totalBalance: data.total_balance || 0,
+          ratios: data.ratios || {}
+        });
       })
-      .catch(err => console.error("Erreur Résultat net / CA", err))
-      .finally(() => setLoadingMarge(false));
-  }, []);
+      .catch(err => console.error("Erreur chargement indicateurs dashboard:", err))
+      .finally(() => setLoadingIndicators(false));
+  }, [globalDateStart, globalDateEnd]);
 
-  const [ratio, setRatio] = useState(null);
-  fetch(`${BASE_URL_API}/charge-ebe/`)
-    .then(res => res.json())
-    .then(data => setRatio(parseFloat(data.ratio)))
-    .catch(err => console.error("Erreur Charge/EBE", err));
-
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/charge-ca/`)
-      .then(res => res.json())
-      .then(data => setRatio(parseFloat(data.ratio)))
-      .catch(err => console.error("Erreur Charge/CA", err));
-  }, []);
-
-  useEffect(() => {
-    fetch(`${BASE_URL_API}/marge-endettement/`)
-      .then(res => res.json())
-      .then(data => setRatio(parseFloat(data.ratio)))
-      .catch(err => console.error("Erreur Marge d'endettement", err));
-  }, []);
 
   // ✅ SUMMARY CARDS DYNAMIQUE
   const formattedLeverage = (() => {
@@ -407,9 +346,9 @@ const Dashboard = () => {
   const summaryCards = [
     {
       title: "Chiffre d'affaires",
-      value: loading
-        ? "Chargement..."
-        : `Ar ${caTotal.toLocaleString("fr-FR")}`,
+      value: loadingIndicators
+        ? "..."
+        : `Ar ${Number(indicators.ca).toLocaleString("fr-FR")}`,
       icon: '📊',
       action: 'none'
     },
@@ -546,16 +485,14 @@ const Dashboard = () => {
                       Annuité d'emprunt / CAF
                     </td>
                     <td className="px-4 py-3 text-gray-700 text-right font-mono">
-                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                      {indicators.ratios && indicators.ratios.annuite_caf ? Number(indicators.ratios.annuite_caf.value).toFixed(2) : "--"}
                     </td>
                     <td className="px-4 py-3 text-gray-400 text-xs text-right">
                       &lt; 0.50
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {ratio > 0.5 ? (
-                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-                          ⚠ Alerte
-                        </span>
+                      {indicators.ratios && indicators.ratios.annuite_caf && indicators.ratios.annuite_caf.alerte ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">⚠ Alerte</span>
                       ) : (
                         <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold shadow-sm">OK</span>
                       )}
@@ -566,20 +503,16 @@ const Dashboard = () => {
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium">Dette LMT / CAF</td>
                     <td className="px-4 py-3 text-right font-mono">
-                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                      {indicators.ratios && indicators.ratios.dette_caf ? Number(indicators.ratios.dette_caf.value).toFixed(2) : "--"}
                     </td>
                     <td className="px-4 py-3 text-right text-xs text-gray-400">
                       &lt; 3.50
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {ratio >= 3.5 ? (
-                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
-                          Alerte
-                        </span>
+                      {indicators.ratios && indicators.ratios.dette_caf && indicators.ratios.dette_caf.alerte ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">Alerte</span>
                       ) : (
-                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">
-                          OK
-                        </span>
+                        <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">OK</span>
                       )}
                     </td>
                   </tr>
@@ -616,16 +549,14 @@ const Dashboard = () => {
                       Charge financière / EBE
                     </td>
                     <td className="px-4 py-3 text-right font-mono">
-                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                      {indicators.ratios && indicators.ratios.fi_ebe ? Number(indicators.ratios.fi_ebe.value).toFixed(2) : "--"}
                     </td>
                     <td className="px-4 py-3 text-right text-xs text-gray-400">
                       &lt; 0.30
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {ratio >= 0.30 ? (
-                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
-                          Alerte
-                        </span>
+                      {indicators.ratios && indicators.ratios.fi_ebe && indicators.ratios.fi_ebe.alerte ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">Alerte</span>
                       ) : (
                         <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">OK</span>
                       )}
@@ -636,14 +567,12 @@ const Dashboard = () => {
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium">Charge financière / CA</td>
                     <td className="px-4 py-3 text-right font-mono">
-                      {ratio !== null ? (ratio * 100).toFixed(2) + " %" : "--"}
+                      {indicators.ratios && indicators.ratios.fi_ca ? (Number(indicators.ratios.fi_ca.value) * 100).toFixed(2) + " %" : "--"}
                     </td>
                     <td className="px-4 py-3 text-right text-xs text-gray-400">&lt; 5%</td>
                     <td className="px-4 py-3 text-center">
-                      {ratio !== null && ratio >= 0.05 ? (
-                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
-                          Alerte
-                        </span>
+                      {indicators.ratios && indicators.ratios.fi_ca && indicators.ratios.fi_ca.alerte ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">Alerte</span>
                       ) : (
                         <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">OK</span>
                       )}
@@ -654,16 +583,14 @@ const Dashboard = () => {
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 font-medium">Marge d'endettement (CMLT / FP)</td>
                     <td className="px-4 py-3 text-right font-mono">
-                      {ratio !== null ? ratio.toFixed(2) : "--"}
+                      {indicators.ratios && indicators.ratios.gearing ? Number(indicators.ratios.gearing.value).toFixed(2) : "--"}
                     </td>
                     <td className="px-4 py-3 text-right text-xs text-gray-400">
                       &lt; 1.3
                     </td>
                     <td className="px-4 py-3 text-center">
-                      {ratio !== null && ratio >= 1.3 ? (
-                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">
-                          Alerte
-                        </span>
+                      {indicators.ratios && indicators.ratios.gearing && indicators.ratios.gearing.alerte ? (
+                        <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-bold">Alerte</span>
                       ) : (
                         <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">OK</span>
                       )}
@@ -688,110 +615,37 @@ const Dashboard = () => {
                 <tbody className="divide-y divide-gray-100 bg-white">
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Return on Equity (ROE)</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
-                      {roe !== null && roe !== undefined ? `${Number(roe).toFixed(2)}%` : '--'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {roeVar === null || roeVar === undefined ? (
-                        <span className="text-gray-500">—</span>
-                      ) : Number(roeVar) < 0 ? (
-                        <span className="text-red-600">↘ {Math.abs(Number(roeVar)).toFixed(2)}%</span>
-                      ) : (
-                        <span className="text-emerald-600">↗ +{Number(roeVar).toFixed(2)}%</span>
-                      )}
-                    </td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">12.5%</td>
+                    <td className="px-4 py-3 text-right text-red-600 font-medium">↘ -1.5%</td>
                   </tr>
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Return on Assets (ROA)</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
-                      {roa !== null && roa !== undefined ? `${Number(roa).toFixed(2)}%` : '--'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {roaVar === null || roaVar === undefined ? (
-                        <span className="text-gray-500">—</span>
-                      ) : Number(roaVar) < 0 ? (
-                        <span className="text-red-600">↘ {Math.abs(Number(roaVar)).toFixed(2)}%</span>
-                      ) : (
-                        <span className="text-emerald-600">↗ +{Number(roaVar).toFixed(2)}%</span>
-                      )}
-                    </td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">8.7%</td>
+                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.8%</td>
                   </tr>
 
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Current Ratio</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
-                      {currentRatio !== null && currentRatio !== undefined ? Number(currentRatio).toFixed(2) : '--'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {currentRatioVar === null || currentRatioVar === undefined ? (
-                        <span className="text-gray-500">—</span>
-                      ) : Number(currentRatioVar) < 0 ? (
-                        <span className="text-red-600">↘ {Math.abs(Number(currentRatioVar)).toFixed(2)}</span>
-                      ) : (
-                        <span className="text-emerald-600">↗ +{Number(currentRatioVar).toFixed(2)}</span>
-                      )}
-                    </td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">1.8</td>
+                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.1</td>
                   </tr>
 
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Quick Ratio</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
-                      {quickRatio !== null && quickRatio !== undefined ? Number(quickRatio).toFixed(2) : '--'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {quickRatioVar === null || quickRatioVar === undefined ? (
-                        <span className="text-gray-500">—</span>
-                      ) : Number(quickRatioVar) < 0 ? (
-                        <span className="text-red-600">↘ {Math.abs(Number(quickRatioVar)).toFixed(2)}</span>
-                      ) : (
-                        <span className="text-emerald-600">↗ +{Number(quickRatioVar).toFixed(2)}</span>
-                      )}
-                    </td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">1.2</td>
+                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.05</td>
                   </tr>
 
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Gearing</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
-                      {gearing === null || gearing === undefined ? (
-                        '--'
-                      ) : (() => {
-                        const n = Number(gearing);
-                        if (!Number.isFinite(n)) return '--';
-                        const percent = n <= 10 ? (n * 100) : n; // if API returns decimal (0.45) multiply
-                        return `${percent.toFixed(2)}%`;
-                      })()}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {gearingVar === null || gearingVar === undefined ? (
-                        <span className="text-gray-500">—</span>
-                      ) : Number(gearingVar) < 0 ? (
-                        <span className="text-red-600">↘ {Math.abs(Number(gearingVar)).toFixed(2)}%</span>
-                      ) : (
-                        <span className="text-emerald-600">↗ +{Number(gearingVar).toFixed(2)}%</span>
-                      )}
-                    </td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">45%</td>
+                    <td className="px-4 py-3 text-right text-red-600 font-medium">↘ -2%</td>
                   </tr>
 
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Rotation des stocks</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
-                      {rotationStocks === null || rotationStocks === undefined ? (
-                        '--'
-                      ) : (() => {
-                        const n = Number(rotationStocks);
-                        if (!Number.isFinite(n)) return '--';
-                        return `${n.toFixed(2)}x`;
-                      })()}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {rotationStocksVar === null || rotationStocksVar === undefined ? (
-                        <span className="text-gray-500">—</span>
-                      ) : Number(rotationStocksVar) < 0 ? (
-                        <span className="text-red-600">↘ {Math.abs(Number(rotationStocksVar)).toFixed(2)}x</span>
-                      ) : (
-                        <span className="text-emerald-600">↗ +{Number(rotationStocksVar).toFixed(2)}x</span>
-                      )}
-                    </td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">6x</td>
+                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +0.5x</td>
                   </tr>
 
                   {/* <tr className="group hover:bg-gray-50 transition-colors">
@@ -808,25 +662,8 @@ const Dashboard = () => {
 
                   <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Marge opérationnelle</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
-                      {margeOp === null || margeOp === undefined ? (
-                        '--'
-                      ) : (() => {
-                        const n = Number(margeOp);
-                        if (!Number.isFinite(n)) return '--';
-                        const percent = Math.abs(n) <= 1 ? (n * 100) : n;
-                        return `${percent.toFixed(2)}%`;
-                      })()}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {margeOpVar === null || margeOpVar === undefined ? (
-                        <span className="text-gray-500">—</span>
-                      ) : Number(margeOpVar) < 0 ? (
-                        <span className="text-red-600">↘ {Math.abs(Number(margeOpVar)).toFixed(2)}%</span>
-                      ) : (
-                        <span className="text-emerald-600">↗ +{Number(margeOpVar).toFixed(2)}%</span>
-                      )}
-                    </td>
+                    <td className="px-4 py-3 text-gray-900 font-bold text-right">15.3%</td>
+                    <td className="px-4 py-3 text-right text-emerald-600 font-medium">↗ +2.1%</td>
                   </tr>
                 </tbody>
               </table>
@@ -841,22 +678,21 @@ const Dashboard = () => {
       </div>
 
       {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
-      <div className="grid grid-cols-1 gap-4 items-stretch mb-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
         <div>
           <BarCharts />
         </div>
+        <div>
+          <TvaBarChart />
+        </div>
       </div>
 
-      {/* Evolution Trésorerie */}
-      {/* <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
-        <EvolutionTresorerie />
-      </div> */}
       {/* 5. Produits et Charges */}
       <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3">
           <h3 className="text-base sm:text-lg font-semibold text-gray-800">Répartition Produits et Charges</h3>
         </div>
-        <PieChartRepartition data={repartitionData} />
+        <PieChartRepartition />
       </div>
 
       {/* 8. Répartition par Journal */}

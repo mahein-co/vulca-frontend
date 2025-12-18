@@ -49,16 +49,16 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) 
     // Default dashboard-like pastel gradient
     let iconBg = 'bg-gradient-to-br from-emerald-50 to-teal-50';
     let iconColor = 'text-emerald-600';
-    let changeColor = 'text-gray-500';
 
+    // Couleur de variation : VERT pour +, ROUGE pour - (pour toutes les cartes)
+    let changeColor = numericChange >= 0 ? 'text-emerald-600' : 'text-red-600';
+
+    // Couleurs d'icône spécifiques par type de carte
     if (title === 'Résultat Net') {
         iconBg = 'bg-gradient-to-br from-emerald-100 to-teal-100';
-        changeColor = numericChange >= 0 ? 'text-emerald-600' : 'text-red-600';
     } else if (title.includes('Ratio')) {
-        const isFavorable = numericChange < 0;
         iconBg = 'bg-gradient-to-br from-rose-50 to-red-50';
         iconColor = 'text-red-500';
-        changeColor = isFavorable ? 'text-emerald-600' : 'text-red-600';
     } else if (title.includes('Passif') || title.includes('Capitaux')) {
         iconBg = 'bg-gradient-to-br from-orange-50 to-amber-50';
         iconColor = 'text-orange-600';
@@ -68,9 +68,6 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) 
     }
 
     const changeIcon = numericChange > 0 ? '↑' : numericChange < 0 ? '↓' : '•';
-    const variationMessage = title === 'Résultat Net' && !isNaN(numericChange)
-        ? `${numericChange >= 0 ? '+' : '-'} ${Math.abs(numericChange).toLocaleString('fr-FR', { minimumFractionDigits: 2 })} Ar`
-        : '';
 
     return (
         <div className="bg-white rounded-lg shadow-md border-t-2 border-gray-300 p-2 flex flex-col justify-between hover:shadow-lg transition-all duration-300 hover:scale-[1.02] min-w-[140px] w-full h-[110px]">
@@ -80,9 +77,9 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) 
                 </div>
                 {change !== undefined && change !== null && (
                     <div className={`text-[10px] font-bold ${changeColor} flex items-center bg-gray-50 px-1.5 py-0.5 rounded-full`}>
-                        {title === 'Résultat Net'
-                            ? variationMessage
-                            : (!isNaN(numericChange) && <>{changeIcon} {Math.abs(numericChange).toFixed(1)}{isRatio ? ' pts' : '%'}</>)
+                        {isRatio
+                            ? (!isNaN(numericChange) && <>{changeIcon} {Math.abs(numericChange).toFixed(1)} pts</>)
+                            : <>{changeIcon} {numericChange >= 0 ? '+' : ''}{Math.abs(numericChange).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Ar</>
                         }
                     </div>
                 )}
@@ -140,6 +137,7 @@ const TransactionView = () => {
     const [bilanData, setBilanData] = useState([]);
     const [compteResultatData, setCompteResultatData] = useState([]);
     const [kpiData, setKpiData] = useState(null);
+    const [bilanKpisData, setBilanKpisData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -239,11 +237,21 @@ const TransactionView = () => {
                 date_start: dateDebut,
                 date_end: dateFin
             }).toString();
-            // Utiliser le endpoint resultat-net pour avoir les vraies variations
-            const res = await fetch(`${BASE_URL_API}/resultat-net/?${queryParams}`, { headers: API_CONFIG.headers });
-            if (res.ok) {
-                const data = await res.json();
+
+            // Charger les KPIs du Résultat Net et du Bilan en parallèle
+            const [resNetRes, bilanKpisRes] = await Promise.all([
+                fetch(`${BASE_URL_API}/resultat-net/?${queryParams}`, { headers: API_CONFIG.headers }),
+                fetch(`${BASE_URL_API}/bilan-kpis-variations/?${queryParams}`, { headers: API_CONFIG.headers })
+            ]);
+
+            if (resNetRes.ok) {
+                const data = await resNetRes.json();
                 setKpiData(data);
+            }
+
+            if (bilanKpisRes.ok) {
+                const data = await bilanKpisRes.json();
+                setBilanKpisData(data);
             }
         } catch (e) {
             console.error("Erreur KPI:", e);
@@ -263,8 +271,8 @@ const TransactionView = () => {
             try {
                 // Charger les données en parallèle
                 await Promise.all([
-                    // Bilan = cumul jusqu'à dateFin (pas de dateDebut pour l'API)
-                    fetchWithParams(API_CONFIG.bilanUrl, { date_end: dateFin }, normalizeBilanData, setBilanData),
+                    // Bilan = période (dateDebut -> dateFin) - Aligné avec le Compte de Résultat
+                    fetchWithParams(API_CONFIG.bilanUrl, { date_start: dateDebut, date_end: dateFin }, normalizeBilanData, setBilanData),
                     // CR = période (dateDebut -> dateFin)
                     fetchWithParams(API_CONFIG.compteResultatUrl, { date_start: dateDebut, date_end: dateFin }, normalizeCompteResultatData, setCompteResultatData),
                 ]);
@@ -284,8 +292,7 @@ const TransactionView = () => {
         let filtered = details;
 
         // Filtrer par période d'exercice
-        // Pour le Bilan, on NE filtre PAS par date de début, car c'est un cumul
-        // Le backend a déjà filtré date <= dateFin
+        // Le backend a déjà filtré par période (date_start -> date_end) pour le Bilan et le CR
         if (dateDebut && dateFin) {
             filtered = filtered.filter(item => {
                 // Robust String Comparison (YYYY-MM-DD)
@@ -293,10 +300,8 @@ const TransactionView = () => {
                 const start = (dateDebut || '').substring(0, 10);
                 const end = (dateFin || '').substring(0, 10);
 
-                if (isBilan) {
-                    return itemDate <= end; // Bilan: cumulatif
-                }
-                return itemDate >= start && itemDate <= end; // CR: période
+                // Bilan et CR : tous deux par période
+                return itemDate >= start && itemDate <= end;
             });
         } else if (selectedYear) {
             filtered = filtered.filter(item => {
@@ -335,9 +340,8 @@ const TransactionView = () => {
         // Use backend value if available, else fallback to local calculation
         const resultatNet = kpiData && kpiData.resultat_net !== undefined ? parseFloat(kpiData.resultat_net) : (produits - charges);
 
-        // Formule Demandée : Capitaux Propres = Categorie CP + Résultat cumulé à la date du Bilan (PAS celui de la période)
-        const resultatNetCumule = kpiData && kpiData.resultat_net_cumule !== undefined ? parseFloat(kpiData.resultat_net_cumule) : resultatNet;
-        const capitauxPropresTotal = capitauxPropresBilan + resultatNetCumule;
+        // Formule : Capitaux Propres = Comptes catégorie CAPITAUX_PROPRES + Résultat Net de la période
+        const capitauxPropresTotal = capitauxPropresBilan + resultatNet;
 
         const totalActif = actifCourant + actifNonCourant;
         const totalPassif = passifCourant + passifNonCourant + capitauxPropresTotal;
@@ -345,19 +349,35 @@ const TransactionView = () => {
         const totalDettes = passifCourant + passifNonCourant;
         const endettementRatio = capitauxPropresTotal ? (totalDettes / capitauxPropresTotal * 100) : 0;
 
-        // Backend provides variation
+        // Backend provides variations
         const resultatNetChange = kpiData && kpiData.variation !== undefined ? parseFloat(kpiData.variation) : 0;
-        const endettementChange = 0; // To be implemented if backend provides previous ratio
 
-        return { actifCourant, actifNonCourant, passifCourant, passifNonCourant, capitauxPropres: capitauxPropresTotal, capitauxPropresBilan, totalActif, totalPassif, produits, charges, resultatNet, endettementRatio, totalDettes, bilanEquilibre: Math.abs(totalActif - totalPassif) < 0.01, resultatNetChange, endettementChange };
-    }, [bilanData, compteResultatData, recherche, selectedYear, kpiData, dateDebut, dateFin]);
+        // Variations des KPIs du Bilan depuis le nouvel endpoint
+        const actifCourantChange = bilanKpisData?.variations?.actif_courant || 0;
+        const actifNonCourantChange = bilanKpisData?.variations?.actif_non_courant || 0;
+        const capitauxPropresChange = bilanKpisData?.variations?.capitaux_propres || 0;
+        const passifCourantChange = bilanKpisData?.variations?.passif_courant || 0;
+        const passifNonCourantChange = bilanKpisData?.variations?.passif_non_courant || 0;
+        const endettementChange = bilanKpisData?.variations?.ratio_endettement || 0;
+
+        return {
+            actifCourant, actifNonCourant, passifCourant, passifNonCourant,
+            capitauxPropres: capitauxPropresTotal, capitauxPropresBilan,
+            totalActif, totalPassif, produits, charges, resultatNet,
+            endettementRatio, totalDettes,
+            bilanEquilibre: Math.abs(totalActif - totalPassif) < 0.01,
+            resultatNetChange, endettementChange,
+            actifCourantChange, actifNonCourantChange, capitauxPropresChange,
+            passifCourantChange, passifNonCourantChange
+        };
+    }, [bilanData, compteResultatData, recherche, selectedYear, kpiData, bilanKpisData, dateDebut, dateFin]);
 
     const cards = [
-        ['Actif Courant', calculations.actifCourant, null, false, DollarSign, 'Créances,Stocks,Trésorerie'],
-        ['Actif Non Courant', calculations.actifNonCourant, null, false, Scale, 'Immobilisations'],
-        ['Capitaux Propres', calculations.capitauxPropres, null, false, Users, 'Fonds propres '],
-        ['Passif Courant', calculations.passifCourant, null, false, Briefcase, 'Dettes à court terme'],
-        ['Passif Non Courant', calculations.passifNonCourant, null, false, Briefcase, 'Dettes à long terme'],
+        ['Actif Courant', calculations.actifCourant, calculations.actifCourantChange, false, DollarSign, 'Créances,Stocks,Trésorerie'],
+        ['Actif Non Courant', calculations.actifNonCourant, calculations.actifNonCourantChange, false, Scale, 'Immobilisations'],
+        ['Capitaux Propres', calculations.capitauxPropres, calculations.capitauxPropresChange, false, Users, 'Fonds propres '],
+        ['Passif Courant', calculations.passifCourant, calculations.passifCourantChange, false, Briefcase, 'Dettes à court terme'],
+        ['Passif Non Courant', calculations.passifNonCourant, calculations.passifNonCourantChange, false, Briefcase, 'Dettes à long terme'],
         ['Résultat Net', calculations.resultatNet, calculations.resultatNetChange, false, TrendingUp, 'benefice,perte'],
         ['Ratio Endettement', calculations.endettementRatio, calculations.endettementChange, true, FileText, 'Dettes/CP']
     ];
@@ -373,7 +393,7 @@ const TransactionView = () => {
                 {/* Période d'exercice */}
                 {/* Période d'exercice */}
                 {/* 1. PÉRIODE D'EXERCICE - Style Dashboard */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-6 transition-all hover:shadow-md">
+                <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 mb-2 transition-all hover:shadow-md">
                     <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
 
                         {/* HEADER MOBILE/TABLET */}

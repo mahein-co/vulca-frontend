@@ -118,7 +118,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
       {selectedJournal && (
         <div className="fixed inset-0 bg-black/50 overflow-y-auto h-full w-full z-50 flex justify-center items-center p-2 sm:p-4">
 
-          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-5xl h-[95vh] sm:h-[90vh] lg:h-[85vh] flex flex-col border-t-2 border-gray-300">
+          <div className="relative bg-white rounded-lg shadow-xl w-full max-w-5xl max-h-[95vh] sm:max-h-[90vh] lg:max-h-[85vh] h-auto flex flex-col border-t-2 border-gray-300">
 
             {/* En-tête de la modale */}
             <div className="flex-none p-3 sm:p-4 border-b border-gray-200 flex justify-between items-center z-10 bg-white rounded-t-lg">

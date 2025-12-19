@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { BASE_URL_API } from '../../constants/globalConstants';
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 4;
 
 const API_CONFIG = {
     bilanUrl: `${BASE_URL_API}/bilans/`,
@@ -70,13 +70,13 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) 
     const changeIcon = numericChange > 0 ? '↑' : numericChange < 0 ? '↓' : '•';
 
     return (
-        <div className="bg-white rounded-lg shadow-md border-t-2 border-gray-300 p-2 flex flex-col justify-between hover:shadow-lg transition-all duration-300 hover:scale-[1.02] min-w-[140px] w-full h-[110px]">
-            <div className="flex items-start justify-between mb-1">
-                <div className={`p-1.5 rounded-lg ${iconBg} ${iconColor} shadow-sm`}>
-                    <Icon size={18} />
+        <div className="bg-white rounded-lg shadow-md border-t-2 border-gray-300 p-1 flex flex-col justify-between hover:shadow-lg transition-all duration-300 hover:scale-[1.02] min-w-[120px] w-full h-[80px]">
+            <div className="flex items-start justify-between mb-0.5">
+                <div className={`p-1 rounded-lg ${iconBg} ${iconColor} shadow-sm`}>
+                    <Icon size={10} />
                 </div>
                 {change !== undefined && change !== null && (
-                    <div className={`text-[10px] font-bold ${changeColor} flex items-center bg-gray-50 px-1.5 py-0.5 rounded-full`}>
+                    <div className={`text-[8px] font-bold ${changeColor} flex items-center bg-gray-50 px-1 py-0.5 rounded-full`}>
                         {isRatio
                             ? (!isNaN(numericChange) && <>{changeIcon} {Math.abs(numericChange).toFixed(1)} pts</>)
                             : <>{changeIcon} {numericChange >= 0 ? '+' : ''}{Math.abs(numericChange).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Ar</>
@@ -85,10 +85,10 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) 
                 )}
             </div>
 
-            <div className="mt-1">
-                <p className="text-[10px] sm:text-[11px] font-semibold text-gray-500 uppercase tracking-wide truncate">{title}</p>
-                <p className="text-sm sm:text-base font-bold text-gray-900 truncate">{value}</p>
-                <p className="text-[9px] text-gray-400 truncate">{description}</p>
+            <div className="mt-0.5">
+                <p className="text-[9px] sm:text-[10px] font-semibold text-gray-500 uppercase tracking-wide truncate">{title}</p>
+                <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">{value}</p>
+                <p className="text-[8px] text-gray-400 truncate">{description}</p>
             </div>
         </div>
     );
@@ -130,7 +130,7 @@ const PaginationControls = ({ currentPage, totalPages, totalItems, setCurrentPag
 const TransactionView = () => {
     const [selectedSection, setSelectedSection] = useState('bilan');
     const [currentPage, setCurrentPage] = useState(1);
-    const [selectedYear, setSelectedYear] = useState('');
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
     const [dateDebut, setDateDebut] = useState('');
     const [dateFin, setDateFin] = useState('');
     const [recherche, setRecherche] = useState('');
@@ -173,6 +173,8 @@ const TransactionView = () => {
     // EFFET: Calculer automatiquement les dates de début/fin quand les sélecteurs changent
     useEffect(() => {
         const year = parseInt(selectedYear);
+        if (isNaN(year)) return;
+
         let start = `${year}-01-01`;
         let end = `${year}-12-31`;
 
@@ -400,7 +402,7 @@ const TransactionView = () => {
                         <div className="flex-shrink-0">
                             <h2 className="text-lg font-bold text-gray-800 tracking-tight flex items-center">
                                 <span className="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg mr-2">
-                                    <Calendar size={18} />
+                                    <Calendar size={10} />
                                 </span>
                                 Période d'exercice
 
@@ -493,17 +495,17 @@ const TransactionView = () => {
                 </div>
 
                 {/* 2. BARRE DE RECHERCHE */}
-                <div className="bg-white p-2 rounded-xl shadow-lg border border-gray-100 mb-4">
+                <div className="bg-white p-1.5 rounded-xl shadow-lg border border-gray-100 mb-2">
                     <div className="flex items-center space-x-2">
                         <div className="pl-2">
-                            <Search className="h-5 w-5 text-gray-400" />
+                            <Search className="h-4 w-4 text-gray-400" />
                         </div>
                         <input
                             type="text"
                             placeholder="Rechercher par compte, libellé..."
                             value={recherche}
                             onChange={(e) => setRecherche(e.target.value)}
-                            className="w-full p-2 border-0 focus:ring-0 text-sm placeholder-gray-400"
+                            className="w-full p-1.5 border-0 focus:ring-0 text-xs placeholder-gray-400"
                         />
                     </div>
                 </div>
@@ -518,7 +520,7 @@ const TransactionView = () => {
                 </div>}
 
                 {/* KPI Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 mb-4 px-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1.5 mb-2 px-2">
                     {loading ? [...Array(7)].map((_, i) => <div key={i} className="min-w-[150px] h-[100px] bg-gray-200 rounded-xl animate-pulse"></div>) :
                         cards.map(([title, value, change, isRatio, Icon, description], idx) => (
                             <MetricCard key={idx} title={title} value={isRatio ? value.toFixed(1) + '%' : formatCurrency(value)} icon={Icon} change={change} isRatio={isRatio} description={description} />
@@ -527,27 +529,27 @@ const TransactionView = () => {
                 </div>
 
                 {/* Bilan & Compte Résultat */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-2 px-2">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-2 px-2">
                     <div onClick={() => { setSelectedSection('bilan'); setCurrentPage(1); }}
-                        className={`p-3.5 bg-white rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'bilan' ? 'border-t-4 border-indigo-500 scale-[1.005]' : 'border-t-2 border-gray-300 hover:border-indigo-300'}`}>
-                        <div className="flex items-center space-x-2 mb-2">
-                            <div className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600">
-                                <Scale size={18} />
+                        className={`p-2.5 bg-white rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'bilan' ? 'border-t-4 border-indigo-500 scale-[1.005]' : 'border-t-2 border-gray-300 hover:border-indigo-300'}`}>
+                        <div className="flex items-center space-x-2 mb-1.5">
+                            <div className="p-1 rounded-lg bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600">
+                                <Scale size={10} />
                             </div>
-                            <h3 className="text-sm font-bold text-gray-800">Bilan</h3>
-                            {calculations.bilanEquilibre ? <CheckCircle size={14} className="text-emerald-500 ml-auto" /> : <XCircle size={14} className="text-red-500 ml-auto" />}
+                            <h3 className="text-xs font-bold text-gray-800">Bilan</h3>
+                            {calculations.bilanEquilibre ? <CheckCircle size={12} className="text-emerald-500 ml-auto" /> : <XCircle size={12} className="text-red-500 ml-auto" />}
                         </div>
-                        <p className="text-[10px] text-gray-500 mb-2 ml-1 leading-tight">Situation financière à une date donnée (Actifs = Passifs + Capitaux Propres).</p>
-                        <div className='text-[10px] sm:text-xs space-y-1 text-gray-700 px-1'>
+                        <p className="text-[9px] text-gray-500 mb-1.5 ml-1 leading-tight">Situation financière à une date donnée (Actifs = Passifs + Capitaux Propres).</p>
+                        <div className='text-[9px] sm:text-[10px] space-y-0.5 text-gray-700 px-1'>
                             <p className="flex justify-between"><span>Total Actif :</span> <span className="font-bold text-indigo-700">{formatCurrency(calculations.totalActif)}</span></p>
                             <p className="flex justify-between"><span>Total Passif (Dettes + CP) :</span> <span className="font-bold text-indigo-700">{formatCurrency(calculations.totalPassif)}</span></p>
                         </div>
                     </div>
                     <div onClick={() => { setSelectedSection('compteResultat'); setCurrentPage(1); }}
-                        className={`p-3 bg-white rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'compteResultat' ? 'border-t-4 border-emerald-500 scale-[1.005]' : 'border-t-2 border-gray-300 hover:border-emerald-300'}`}>
+                        className={`p-2.5 bg-white rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'compteResultat' ? 'border-t-4 border-emerald-500 scale-[1.005]' : 'border-t-2 border-gray-300 hover:border-emerald-300'}`}>
                         <div className="flex items-center space-x-2 mb-2">
                             <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600">
-                                <DollarSign size={18} />
+                                <DollarSign size={10} />
                             </div>
                             <h3 className="text-sm font-bold text-gray-800">Compte de Résultat</h3>
                             <CheckCircle size={14} className="text-emerald-500 ml-auto" />
@@ -568,14 +570,14 @@ const TransactionView = () => {
                             <table className="w-full border-collapse text-xs sm:text-sm min-w-[800px] table-fixed">
                                 <thead className="sticky top-0 z-10">
                                     <tr className="bg-gray-800 text-white">
-                                        <th className="w-[15%] px-2 sm:px-3 py-2 sm:py-2.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wide">Date</th>
-                                        <th className="w-[10%] px-2 sm:px-3 py-2 sm:py-2.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wide">Compte</th>
-                                        <th className="w-[40%] px-2 sm:px-3 py-2 sm:py-2.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wide">Libellé</th>
+                                        <th className="w-[15%] px-2 py-1.5 sm:py-2 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Date</th>
+                                        <th className="w-[10%] px-2 py-1.5 sm:py-2 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Compte</th>
+                                        <th className="w-[40%] px-2 py-1.5 sm:py-2 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
                                         {selectedSection === 'bilan' ?
-                                            <th className="w-[20%] px-2 sm:px-3 py-2 sm:py-2.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wide hidden md:table-cell">Catégorie</th>
-                                            : <th className="w-[20%] px-2 sm:px-3 py-2 sm:py-2.5 text-left text-xs sm:text-sm font-bold uppercase tracking-wide hidden md:table-cell">Nature</th>
+                                            <th className="w-[20%] px-2 py-1.5 sm:py-2 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Catégorie</th>
+                                            : <th className="w-[20%] px-2 py-1.5 sm:py-2 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Nature</th>
                                         }
-                                        <th className="w-[15%] px-2 sm:px-3 py-2 sm:py-2.5 text-right text-xs sm:text-sm font-bold uppercase tracking-wide">Montant</th>
+                                        <th className="w-[15%] px-2 py-1.5 sm:py-2 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Montant</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white">
@@ -589,12 +591,12 @@ const TransactionView = () => {
                                         </tr>
                                     ) : paginatedDetails.map((item, idx) => (
                                         <tr key={idx} className={`hover:bg-emerald-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm text-gray-700 font-semibold">{formatDate(item.date)}</td>
-                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs">
-                                                <span className="bg-gray-200 text-gray-700 px-1.5 sm:px-2 py-0.5 rounded text-[10px] sm:text-xs font-mono font-bold">{item.numero_compte}</span>
+                                            <td className="border-b border-gray-100 px-2 py-1.5 sm:py-2 text-xs text-gray-700 font-semibold">{formatDate(item.date)}</td>
+                                            <td className="border-b border-gray-100 px-2 py-1.5 sm:py-2 text-xs">
+                                                <span className="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{item.numero_compte}</span>
                                             </td>
-                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-gray-800 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
-                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 hidden md:table-cell">
+                                            <td className="border-b border-gray-100 px-2 py-1.5 sm:py-2 text-[10px] sm:text-xs text-gray-800 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
+                                            <td className="border-b border-gray-100 px-2 py-1.5 sm:py-2 hidden md:table-cell">
                                                 <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 inline-flex text-[10px] font-bold rounded-full ${selectedSection === 'bilan'
                                                     ? item.categorie?.toLowerCase().includes('actif')
                                                         ? 'bg-blue-100 text-blue-700'

@@ -11,6 +11,7 @@ const determinePieceType = (data) => {
     if (typeDoc === 'BON_DE_CAISSE' || typeDoc === 'FICHE_PAYE') return typeDoc.replace('_', ' ').toLowerCase();
     return 'Autres';
 };
+
 // Styles CSS pour les animations
 const styles = `
 @keyframes fadeIn {
@@ -331,9 +332,6 @@ const OcrValidationForm = ({
                     )
                 )}
 
-
-
-
                 {isExtracted && (
                     <>
                         {/* HEADER DU DOCUMENT */}
@@ -359,51 +357,144 @@ const OcrValidationForm = ({
                                     if (key === 'type_document' || key === 'typeDocument') return null;
 
                                     // Ignorer les champs qui étaient null/undefined dès l'extraction initiale
-                                    // MAIS garder les champs que l'utilisateur a vidés manuellement
                                     const initialValue = currentDocument?.rawResponse?.extracted_json?.[key];
                                     if (initialValue === null || initialValue === undefined) {
-                                        // Si le champ n'existait pas dans l'extraction initiale, ne pas l'afficher
                                         if (value === null || value === '' || value === undefined) return null;
                                     }
 
-                                    // Cas tableau : affichage tableau (ex: produits)
+                                    // ✅ CAS TABLEAU : Affichage différencié selon le type de contenu
                                     if (Array.isArray(value)) {
                                         if (value.length === 0) return null;
+
+                                        // ✅ CAS SPÉCIAL : Si c'est "description" ET qu'on a des arrays de quantite/prix
+                                        // VÉRIFICATION : Les arrays doivent avoir la MÊME LONGUEUR pour être fusionnés
+                                        if (key === 'description' &&
+                                            Array.isArray(formData.extractedJson?.quantite) &&
+                                            Array.isArray(formData.extractedJson?.prix_unitaire) &&
+                                            formData.extractedJson.quantite.length === value.length &&
+                                            formData.extractedJson.prix_unitaire.length === value.length) {
+
+                                            const descriptions = formData.extractedJson.description || [];
+                                            const quantites = formData.extractedJson.quantite || [];
+                                            const prixUnitaires = formData.extractedJson.prix_unitaire || [];
+                                            const devise = formData.extractedJson.devise || 'Ar';
+
+                                            // Calculer montant = quantite * prix_unitaire
+                                            const items = descriptions.map((desc, idx) => ({
+                                                description: desc,
+                                                quantite: quantites[idx] || '-',
+                                                prix_unitaire: prixUnitaires[idx] || 0,
+                                                montant: (quantites[idx] || 0) * (prixUnitaires[idx] || 0)
+                                            }));
+
+                                            return (
+                                                <div key={key} className="mb-3">
+                                                    <h5 className="font-bold text-xs text-gray-800 mb-2 capitalize border-b border-gray-100 pb-1">
+                                                        Articles / Produits
+                                                    </h5>
+                                                    <div className="border border-gray-200 rounded overflow-x-auto bg-white shadow-sm">
+                                                        <table className="min-w-full divide-y divide-gray-200 text-xs">
+                                                            <thead className="bg-gray-50">
+                                                                <tr>
+                                                                    <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-600 uppercase tracking-wider">
+                                                                        Description
+                                                                    </th>
+                                                                    <th className="px-3 py-2 text-center text-[10px] font-bold text-gray-600 uppercase tracking-wider">
+                                                                        Quantité
+                                                                    </th>
+                                                                    <th className="px-3 py-2 text-right text-[10px] font-bold text-gray-600 uppercase tracking-wider">
+                                                                        Prix Unitaire
+                                                                    </th>
+                                                                    <th className="px-3 py-2 text-right text-[10px] font-bold text-gray-600 uppercase tracking-wider">
+                                                                        Montant
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="bg-white divide-y divide-gray-100">
+                                                                {items.map((item, idx) => (
+                                                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                                                                        <td className="px-3 py-2 text-gray-900 font-medium">
+                                                                            {item.description}
+                                                                        </td>
+                                                                        <td className="px-3 py-2 text-center text-gray-700">
+                                                                            {item.quantite}
+                                                                        </td>
+                                                                        <td className="px-3 py-2 text-right text-gray-700">
+                                                                            {item.prix_unitaire.toLocaleString()} {devise}
+                                                                        </td>
+                                                                        <td className="px-3 py-2 text-right font-semibold text-gray-900">
+                                                                            {item.montant.toLocaleString()} {devise}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                            {/* Total supprimé - déjà affiché dans montant_ht */}
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+
+                                        // ✅ Si c'est quantite ou prix_unitaire mais PAS array de même longueur, on les affiche normalement
+                                        // Sinon on les ignore (déjà fusionnés dans le tableau)
+                                        if ((key === 'quantite' || key === 'prix_unitaire') &&
+                                            Array.isArray(formData.extractedJson?.description) &&
+                                            Array.isArray(formData.extractedJson?.[key]) &&
+                                            formData.extractedJson[key].length === formData.extractedJson.description.length) {
+                                            return null; // Déjà affiché dans le tableau fusionné
+                                        }
+
                                         return (
                                             <div key={key} className="mb-2">
                                                 <h5 className="font-bold text-xs text-gray-800 mb-1 capitalize border-b border-gray-100 pb-1">
                                                     {key.replace(/_/g, ' ')}
                                                 </h5>
-                                                <div className="border border-gray-200 rounded overflow-x-auto">
-                                                    <table className="min-w-full divide-y divide-gray-200">
-                                                        <thead className="bg-gray-50">
-                                                            <tr>
-                                                                {Object.keys(value[0] || {}).map((header) => (
-                                                                    <th key={header} className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
-                                                                        {header.replace(/_/g, ' ')}
-                                                                    </th>
-                                                                ))}
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="bg-white divide-y divide-gray-200">
+
+                                                {/* ✅ VÉRIFICATION : Array de strings ou d'objets ? */}
+                                                {typeof value[0] === 'string' ? (
+                                                    // CAS 1 : Array de strings - Liste à puces
+                                                    <div className="border border-gray-200 rounded bg-gray-50 p-3">
+                                                        <ul className="list-disc list-inside space-y-1.5">
                                                             {value.map((item, idx) => (
-                                                                <tr key={idx}>
-                                                                    {Object.values(item).map((val, vIdx) => (
-                                                                        <td key={vIdx} className="px-2 py-1 text-[10px] text-gray-900 whitespace-nowrap">
-                                                                            {typeof val === 'object' ? JSON.stringify(val) : String(val)}
-                                                                        </td>
+                                                                <li key={idx} className="text-xs text-gray-900 leading-relaxed">
+                                                                    {item}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                ) : (
+                                                    // CAS 2 : Array d'objets - Tableau HTML
+                                                    <div className="border border-gray-200 rounded overflow-x-auto">
+                                                        <table className="min-w-full divide-y divide-gray-200">
+                                                            <thead className="bg-gray-50">
+                                                                <tr>
+                                                                    {Object.keys(value[0] || {}).map((header) => (
+                                                                        <th key={header} className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                                                                            {header.replace(/_/g, ' ')}
+                                                                        </th>
                                                                     ))}
                                                                 </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
+                                                            </thead>
+                                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                                {value.map((item, idx) => (
+                                                                    <tr key={idx}>
+                                                                        {Object.values(item).map((val, vIdx) => (
+                                                                            <td key={vIdx} className="px-2 py-1 text-[10px] text-gray-900 whitespace-nowrap">
+                                                                                {typeof val === 'object' ? JSON.stringify(val) : String(val)}
+                                                                            </td>
+                                                                        ))}
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                )}
                                             </div>
                                         );
                                     }
 
                                     // Cas objet (nested) : Affichage en sous-formulaire formatté
-                                    if (typeof value === 'object') {
+                                    if (typeof value === 'object' && value !== null) {
                                         return (
                                             <div key={key} className="mb-3 mt-1 p-2 bg-gray-50 rounded border border-gray-200">
                                                 <h6 className="text-[10px] font-bold text-gray-700 uppercase mb-2 border-b border-gray-200 pb-1">
@@ -494,7 +585,7 @@ export default function ImportFichier() {
     const [isDragActive, setIsDragActive] = useState(false);
     const [showFormOnMobile, setShowFormOnMobile] = useState(false);
     const [errorNotification, setErrorNotification] = useState(null);
-    const [notification, setNotification] = useState(null); // { type: 'success'|'warning'|'error', message: '' }
+    const [notification, setNotification] = useState(null);
 
     // API Hooks
     const [extractData, { isLoading: isExtracting }] = useExtractDataFromFileMutation();
@@ -506,7 +597,6 @@ export default function ImportFichier() {
     // Fonction pour afficher une notification d'erreur animée
     const showErrorNotification = useCallback((message) => {
         setErrorNotification(message);
-        // Disparaît automatiquement après 3 secondes (comme demandé)
         setTimeout(() => setErrorNotification(null), 3000);
     }, []);
 
@@ -570,13 +660,10 @@ export default function ImportFichier() {
     const extractDate = useCallback((dateValue) => {
         if (!dateValue) return '';
 
-        // Si c'est déjà une chaîne au format YYYY-MM-DD ou avec timestamp
         if (typeof dateValue === 'string') {
-            // Extraire seulement la partie date (ignorer l'heure si présente)
             const match = dateValue.match(/(\d{4}-\d{2}-\d{2})/);
             if (match) return match[1];
 
-            // Essayer de parser comme date si format différent
             try {
                 const parsed = new Date(dateValue);
                 if (!isNaN(parsed.getTime())) {
@@ -587,7 +674,6 @@ export default function ImportFichier() {
             }
         }
 
-        // Si c'est un timestamp ou un objet Date
         if (typeof dateValue === 'number' || dateValue instanceof Date) {
             try {
                 const date = new Date(dateValue);
@@ -602,7 +688,7 @@ export default function ImportFichier() {
         return '';
     }, []);
 
-    // Extraction OCR via API (DRF) - AVEC GESTION D'ERREUR
+    // Extraction OCR via API (DRF)
     const handleExtractText = useCallback(async () => {
         if (!currentFile) return;
 
@@ -613,28 +699,22 @@ export default function ImportFichier() {
             const response = await extractData(formData).unwrap();
             console.log("OCR Response:", response);
 
-            // ✅ Vérifier si le document est non reconnu
             if (response.error && response.error.includes("Document non reconnu")) {
                 throw new Error("Document non reconnu");
             }
 
-            // Extraction du sous-objet JSON s'il existe
             const extractedJson = response.extracted_json || response;
 
-            // Mapping intelligent des données extraites
             const mappedData = {
                 ...EMPTY_FORM_DATA,
                 fileName: currentFile.name,
                 typeDocument: response.type_document || extractedJson.type_document || '',
                 extractedJson: extractedJson,
-
                 montant: extractedJson.montant_total_facture_ttc || extractedJson.montant_ttc || extractedJson.amount_total || '',
-                // Calcul du HT si manquant : TTC - TVA
                 totalHT: (() => {
                     let ht = extractedJson.montant_ht || extractedJson.total_ht;
                     if (ht) return ht;
 
-                    // Essayer de trouver la TVA
                     const tva = extractedJson.montant_tva || extractedJson.tax_amount || extractedJson.vat_amount || extractedJson.tva || extractedJson.montant_taxe;
                     const ttc = extractedJson.montant_total_facture_ttc || extractedJson.montant_ttc || extractedJson.amount_total;
 
@@ -642,7 +722,7 @@ export default function ImportFichier() {
                         const ttcVal = parseFloat(String(ttc).replace(/[^0-9.]/g, ''));
                         const tvaVal = parseFloat(String(tva).replace(/[^0-9.]/g, ''));
                         if (!isNaN(ttcVal) && !isNaN(tvaVal)) {
-                            return (ttcVal - tvaVal).toFixed(2); // Calcul HT = TTC - TVA
+                            return (ttcVal - tvaVal).toFixed(2);
                         }
                     }
                     return '';
@@ -671,27 +751,23 @@ export default function ImportFichier() {
         } catch (error) {
             console.error("Erreur Extraction:", error);
 
-            // Réinitialiser le formulaire en cas d'erreur
             updateCurrentDocument({
                 data: { ...EMPTY_FORM_DATA, fileName: currentFile.name },
                 isExtracted: false,
                 rawResponse: null
             });
 
-            // ✅ Vérifier si l'erreur contient le message "Document non reconnu"
             const errorMessage = error.data?.error || error.data?.detail || error.message || 'Erreur inconnue';
 
             if (errorMessage.includes("Document non reconnu")) {
                 showErrorNotification("Document non reconnu comme pièce comptable. Veuillez vérifier que le fichier est bien une facture, un devis ou un document comptable valide.");
-                // Supprimer le fichier de la liste car invalide
                 handleRemoveCurrentDocument();
             } else {
                 showErrorNotification(`Erreur lors de l'extraction: ${errorMessage}`);
             }
         }
-    }, [currentFile, extractData, updateCurrentDocument, showErrorNotification, handleRemoveCurrentDocument]);
+    }, [currentFile, extractData, updateCurrentDocument, showErrorNotification, handleRemoveCurrentDocument, extractDate]);
 
-    // Annule l'extraction (réinitialise le formulaire)
     const handleCancelExtraction = useCallback(() => {
         if (!currentFile) return;
         updateCurrentDocument({
@@ -739,8 +815,6 @@ export default function ImportFichier() {
         e.target.value = null;
     };
 
-
-
     const handleNext = () => {
         if (currentIndex < documents.length - 1) {
             setCurrentIndex(currentIndex + 1);
@@ -762,7 +836,6 @@ export default function ImportFichier() {
             const results = await Promise.all(documents.map(doc => {
                 if (!doc.data.extractedJson) throw new Error("OCR manquant pour un document");
 
-                // Préparer FormData pour l'upload du fichier avec les données extraites
                 const formData = new FormData();
                 formData.append('file', doc.file);
                 formData.append('extracted_json', JSON.stringify(doc.data.extractedJson));
@@ -770,21 +843,16 @@ export default function ImportFichier() {
                     formData.append('ref_file', doc.data.ref_file);
                 }
 
-                // Envoi au backend via /api/files/
                 return saveFile(formData).unwrap();
             }));
 
-            // Analyser les résultats
             const duplicates = results.filter(r => r.duplicate === true);
             const successes = results.filter(r => r.duplicate !== true);
 
             if (duplicates.length > 0) {
                 const msg = `Ce document a déjà été importé dans le système.Veuillez vérifier la liste des fichiers existants ou importer un autre document!!!`;
-
-                // Afficher comme une ERREUR (Rouge) comme demandé
                 showErrorNotification(msg);
 
-                // Si on a aussi des succès, on peut le notifier discrètement
                 if (successes.length > 0) {
                     setNotification({
                         type: 'success',
@@ -797,17 +865,12 @@ export default function ImportFichier() {
                     message: `${results.length} document(s) importés avec succès !`
                 });
 
-                // Petit délai avant de vider pour voir le succès
                 setTimeout(() => {
                     handleClearAll();
                 }, 1500);
 
-                // Notification disparaît auto après 3s
                 setTimeout(() => setNotification(null), 3000);
             }
-
-            // Si pas de doublons, on vide tout de suite (ou après délai si on veut)
-            // Mais ici handleClearAll est appelé dans le bloc else ci-dessus
 
         } catch (error) {
             console.error("Erreur validation:", error);
@@ -819,36 +882,27 @@ export default function ImportFichier() {
 
     return (
         <div className="fixed inset-0 p-2 sm:p-3 bg-gray-50 flex flex-col overflow-hidden pt-24 sm:pt-20">
-            {/* Injection des styles CSS */}
             <style>{styles}</style>
 
-            {/* Notification d'ERREUR Globale (Visible partout, même sur mobile) */}
             {errorNotification && (
                 <div className="fixed top-40 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-md
                     bg-red-500 text-white p-4 rounded-lg shadow-2xl border border-red-600
                     animate-fadeIn flex items-start gap-3">
-
                     <svg className="w-6 h-6 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
-
                     <div className="flex-1">
                         <p className="font-bold text-base mb-1">Erreur</p>
-                        <p className="text-sm leading-snug whitespace-pre-line">
-                            {errorNotification}
-                        </p>
+                        <p className="text-sm leading-snug whitespace-pre-line">{errorNotification}</p>
                     </div>
                 </div>
             )}
 
-            {/* Notification Toast Moderne */}
             {notification && (
-                <div
-                    className={`fixed top-40 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-out animate-[slideIn_0.3s_ease-out]
-                        ${notification.type === 'success' ? 'bg-white border-l-4 border-green-500' :
-                            notification.type === 'warning' ? 'bg-white border-l-4 border-yellow-500' :
-                                'bg-white border-l-4 border-red-500'}`}
-                >
+                <div className={`fixed top-40 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-out animate-[slideIn_0.3s_ease-out]
+                    ${notification.type === 'success' ? 'bg-white border-l-4 border-green-500' :
+                        notification.type === 'warning' ? 'bg-white border-l-4 border-yellow-500' :
+                            'bg-white border-l-4 border-red-500'}`}>
                     <div className="p-4 flex items-start">
                         <div className="flex-shrink-0">
                             {notification.type === 'success' && <svg className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
@@ -866,34 +920,24 @@ export default function ImportFichier() {
                 </div>
             )}
 
-            {/* Titre */}
-
-
-            {/* Toggle Mobile View */}
             {documents.length > 0 && (
                 <div className="lg:hidden flex gap-2 mb-2 flex-shrink-0">
                     <button
                         onClick={() => setShowFormOnMobile(false)}
-                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm ${!showFormOnMobile ? 'bg-gray-800 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'}`}
-                    >
+                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm ${!showFormOnMobile ? 'bg-gray-800 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'}`}>
                         📄 Document
                     </button>
                     <button
                         onClick={() => setShowFormOnMobile(true)}
-                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm ${showFormOnMobile ? 'bg-gray-800 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'}`}
-                    >
+                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm ${showFormOnMobile ? 'bg-gray-800 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'}`}>
                         📝 Formulaire
                     </button>
                 </div>
             )}
 
-            {/* Conteneur principal */}
             <div className="flex-grow min-h-0 overflow-hidden lg:overflow-y-auto">
                 <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 max-w-7xl mx-auto h-full">
-
-                    {/* BLOC GAUCHE : VISUALISATION */}
                     <div className={`${documents.length > 0 ? (showFormOnMobile ? 'hidden lg:flex' : 'flex') : 'flex'} lg:w-1/2 flex-col min-h-0`}>
-                        {/* Navigation */}
                         <div className="bg-gray-800 p-3 sm:p-4 rounded-t-lg text-white flex justify-between items-center shadow-md flex-shrink-0 relative overflow-hidden">
                             <h3 className="font-bold text-sm sm:text-base relative z-10">
                                 <span className="inline-block w-2 h-2 bg-green-400 rounded-full mr-2" />
@@ -906,25 +950,18 @@ export default function ImportFichier() {
                                         {currentIndex + 1} / {documents.length}
                                     </span>
 
-                                    <button
-                                        onClick={handlePrevious}
-                                        disabled={currentIndex === 0}
-                                        className="p-1 sm:p-1.5 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 transition"
-                                    >
+                                    <button onClick={handlePrevious} disabled={currentIndex === 0}
+                                        className="p-1 sm:p-1.5 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 transition">
                                         <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                                     </button>
-                                    <button
-                                        onClick={handleNext}
-                                        disabled={currentIndex === documents.length - 1}
-                                        className="p-1 sm:p-1.5 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 transition"
-                                    >
+                                    <button onClick={handleNext} disabled={currentIndex === documents.length - 1}
+                                        className="p-1 sm:p-1.5 rounded-full bg-gray-700 hover:bg-gray-600 disabled:opacity-30 transition">
                                         <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                                     </button>
                                 </div>
                             )}
                         </div>
 
-                        {/* DocumentViewer */}
                         <div className="flex-grow min-h-0">
                             <DocumentViewer
                                 file={currentFile}
@@ -937,7 +974,6 @@ export default function ImportFichier() {
                         </div>
                     </div>
 
-                    {/* BLOC DROIT : FORMULAIRE */}
                     <div className={`${documents.length > 0 ? (showFormOnMobile ? 'flex' : 'hidden lg:flex') : 'hidden lg:flex'} lg:w-1/2 flex-col min-h-0`}>
                         <OcrValidationForm
                             formData={currentFormData}

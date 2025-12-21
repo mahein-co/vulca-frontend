@@ -353,10 +353,26 @@ const OcrValidationForm = ({
                         {formData.extractedJson && (
                             <div className="space-y-3">
                                 {Object.entries(formData.extractedJson).map(([key, value]) => {
-                                    // Ignorer le type de document car déjà affiché en haut
+                                    // 1. Ignorer le type de document car déjà affiché en haut
                                     if (key === 'type_document' || key === 'typeDocument') return null;
 
-                                    // Ignorer les champs qui étaient null/undefined dès l'extraction initiale
+                                    // 2. Ignorer 'objet_description' (demande utilisateur)
+                                    if (key === 'objet_description' || key.toLowerCase() === 'objet description') return null;
+
+                                    // 3. Ignorer les valeurs nulles, undefined, vide ou 0
+                                    // Vérification stricte pour 0, '0', '0.00' et valeurs vides
+                                    if (value === null || value === undefined || value === '') return null;
+                                    if (value === 0 || value === '0' || value === '0.00') return null;
+
+                                    // 4. Eviter doublon Reference si identique au Numéro Facture
+                                    if (key === 'reference') {
+                                        const numFacture = formData.extractedJson.numero_facture || formData.extractedJson.invoice_number;
+                                        if (numFacture && String(numFacture).trim() === String(value).trim()) {
+                                            return null;
+                                        }
+                                    }
+
+                                    // Ignorer les champs qui étaient null/undefined dès l'extraction initiale (code existant, conservé pour sécurité)
                                     const initialValue = currentDocument?.rawResponse?.extracted_json?.[key];
                                     if (initialValue === null || initialValue === undefined) {
                                         if (value === null || value === '' || value === undefined) return null;

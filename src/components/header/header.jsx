@@ -36,12 +36,12 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
     return (
         <header className="bg-white shadow-md border-b border-gray-200 fixed top-0 left-0 right-0 w-full z-30">
             <div className="max-w-full mx-auto px-3 sm:px-4 lg:px-8">
-                <div className="flex items-center h-14 sm:h-16">
+                <div className="flex items-center h-10 sm:h-12 font-sans">
 
-                    {/* Logo - Style italique bleu */}
-                    <div className="flex items-center flex-shrink-0 mr-6 lg:mr-8">
+                    {/* Logo - Standard Style */}
+                    <div className="flex items-center flex-shrink-0 mr-4 lg:mr-6">
                         <h1
-                            className="text-lg sm:text-xl lg:text-2xl font-bold text-indigo-600 cursor-pointer"
+                            className="text-sm font-bold text-gray-900 cursor-pointer not-italic tracking-tight"
                             onClick={() => handleNavClick('dashboard')}
                         >
                             Assistant Comptable
@@ -49,21 +49,21 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
                     </div>
 
                     {/* Navigation Desktop - Centrée */}
-                    <nav className="hidden lg:flex items-center space-x-4 xl:space-x-6 flex-grow justify-center">
+                    <nav className="hidden lg:flex items-center space-x-3 xl:space-x-5 flex-grow justify-center">
                         {navItems.map((item) => {
                             const isActive = displayActiveKey === item.key;
                             return (
                                 <button
                                     key={item.key}
                                     onClick={() => handleNavClick(item.key)}
-                                    className={`flex items-center text-xs xl:text-sm font-medium pb-1 transition duration-150 whitespace-nowrap
+                                    className={`flex items-center text-xs font-medium pb-0.5 transition duration-150 whitespace-nowrap not-italic
                                         ${isActive
-                                            ? 'text-indigo-600 border-b-2 border-indigo-600 font-bold'
+                                            ? 'text-gray-900 border-b-2 border-gray-800 font-semibold'
                                             : 'text-gray-600 hover:text-gray-900 border-b-2 border-transparent hover:border-gray-300'
                                         }
                                     `}
                                 >
-                                    <span className="text-base xl:text-lg mr-1">{item.icon}</span>
+                                    <span className="text-sm xl:text-base mr-1">{item.icon}</span>
                                     {item.name}
                                 </button>
                             );

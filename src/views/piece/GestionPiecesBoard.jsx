@@ -157,7 +157,7 @@ export default function GestionPiecesBoard() {
     }, [documents, recherche]);
 
     return (
-        <div className="pt-20 pb-6 h-screen bg-gray-50 overflow-hidden flex flex-col">
+        <div className="pt-14 pb-6 h-screen bg-gray-50 overflow-hidden flex flex-col">
 
             <div className="px-6 space-y-4 flex-shrink-0">
 

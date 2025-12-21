@@ -12,6 +12,22 @@ DynamicJsonForm.propTypes = {
   setIsShowVerification: PropType.any,
 };
 
+// Composant Overlay de Chargement (Identique aux autres formulaires)
+const LoadingOverlay = ({ message }) => (
+  <div className="fixed inset-0 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
+    <div className="flex flex-col items-center max-w-sm w-full text-center">
+      {/* Spinner style iOS/moderne */}
+      <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
+        <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+        <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+      </div>
+      <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">
+        {message}
+      </p>
+    </div>
+  </div>
+);
+
 export default function DynamicJsonForm({
   initialData,
   setIsShowVerification,
@@ -89,19 +105,16 @@ export default function DynamicJsonForm({
   // USE-EFFECT: Save one file success =====================================
   useEffect(() => {
     if (isSavingOneFile && !isSaveOneFileSuccess) {
-      toast.loading("Sauvegarde du fichier en cours...");
+      // On n'utilise plus toast.loading ici, l'overlay s'en occupe
       return;
     }
 
     if (isSaveOneFileSuccess && !isSavingOneFile) {
-      toast.dismiss();
-      toast.success("Sauvegarde du fichier avec succès");
       handleGenerateJournal(); // OK
       return;
     }
 
     if (isSaveOneFileError && !isSavingOneFile) {
-      toast.dismiss();
       toast.error(
         saveOneFileError?.data?.error || "Erreur lors de la sauvegarde."
       );
@@ -117,20 +130,16 @@ export default function DynamicJsonForm({
   // USE-EFFECT: Generate Journal  =====================================
   useEffect(() => {
     if (isLoadingJournal) {
-      toast.dismiss();
-      toast.loading("Génération du journal en cours...");
       return;
     }
     if (isSuccessJournal && !isLoadingJournal) {
-      toast.dismiss();
-      toast.success("Journal généré avec succès !");
+      toast.success("Enregistrement succès");
       dispatch(actionClearUploadedFiles());
       navigate("/app/classification");
       return;
     }
 
     if (!isLoadingJournal && isErrorJournal) {
-      toast.dismiss();
       toast.error("Erreur de génération du journal");
       return;
     }
@@ -138,6 +147,11 @@ export default function DynamicJsonForm({
 
   return (
     <React.Fragment>
+      {/* Loading Overlay */}
+      {(isSavingOneFile || isLoadingJournal) && (
+        <LoadingOverlay message="Validation et enregistrement en cours..." />
+      )}
+
       <div className="p-6 mx-auto bg-slate-900 shadow-lg rounded-xl max-w-lg space-y-4">
         <div className="flex items-center justify-between gap-x-2">
           <button
@@ -243,7 +257,7 @@ export default function DynamicJsonForm({
           onClick={handleSubmit}
           className="mt-4 w-full bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700"
         >
-          Enregistrer les modifications
+          Valider
         </button>
       </div>
     </React.Fragment>

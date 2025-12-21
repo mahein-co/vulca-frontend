@@ -67,7 +67,7 @@ export default function NewInvoiceForm({ type = 'Vente', onSaisieCompleted }) { 
 
         // Calcul du Reste à Payer / Recouvrer
         const reste = totauxCalculated.totalTTC - parseFloat(infoGenerales.montantPaye || 0);
-        
+
         return {
             ...totauxCalculated,
             reste: reste
@@ -120,7 +120,7 @@ export default function NewInvoiceForm({ type = 'Vente', onSaisieCompleted }) { 
         };
 
         console.log(`Données finales de la facture ${titre} :`, factureFinale);
-        
+
         // --------------------------------------------------------------------------------
         // REMARQUE COMPTABLE CLÉ :
         // Le statut "Comptabilisée" génère l'écriture suivante (simplifiée) :
@@ -135,7 +135,7 @@ export default function NewInvoiceForm({ type = 'Vente', onSaisieCompleted }) { 
             // await fetch(`${BASE_URL_API}/Factures`, { method: 'POST', body: JSON.stringify(factureFinale) });
             // await new Promise(resolve => setTimeout(resolve, 1000)); 
 
-            alert(`✅ Facture de ${titre} enregistrée avec succès !\nStatut initial: ${factureFinale.statut}.\nSolde dû: ${totaux.reste.toFixed(2)} Ar.`);
+            alert("Enregistrement succès");
             onSaisieCompleted && onSaisieCompleted();
             // Optionnel : Réinitialiser le formulaire
             // setLignesProduit([]);
@@ -146,7 +146,7 @@ export default function NewInvoiceForm({ type = 'Vente', onSaisieCompleted }) { 
             alert('❌ Erreur lors de l\'enregistrement.');
         }
     };
-    
+
     const formatMontant = (montant) => montant.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 
@@ -154,7 +154,7 @@ export default function NewInvoiceForm({ type = 'Vente', onSaisieCompleted }) { 
     return (
         <div className="bg-gray-50 min-h-screen p-4 sm:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto">
-                
+
                 {/* En-tête de la page */}
                 <div className="flex justify-between items-center mb-6 border-b pb-4">
                     <h1 className="text-3xl font-bold text-gray-800">
@@ -168,9 +168,9 @@ export default function NewInvoiceForm({ type = 'Vente', onSaisieCompleted }) { 
                     <h2 className="text-xl font-semibold text-gray-700 mb-4">
                         Informations Générales et Suivi
                     </h2>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        
+
                         {/* Tiers (Client/Fournisseur) */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">{isVente ? 'Client' : 'Fournisseur'} *</label>
@@ -208,7 +208,7 @@ export default function NewInvoiceForm({ type = 'Vente', onSaisieCompleted }) { 
                                 {STATUTS.map(s => <option key={s} value={s}>{s}</option>)}
                             </select>
                         </div>
-                         {/* Montant Payé (Gestion du Reste) */}
+                        {/* Montant Payé (Gestion du Reste) */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Montant déjà Payé</label>
                             <input
@@ -251,8 +251,8 @@ export default function NewInvoiceForm({ type = 'Vente', onSaisieCompleted }) { 
                             <label className="block text-sm font-medium text-gray-700 mb-1">TVA (%)</label>
                             <input type="number" name="tauxTVA" value={nouvelleLigne.tauxTVA} onChange={handleChangeLigne} step="0.01" className="w-full px-3 py-2 border rounded-lg" />
                         </div>
-                        <button 
-                            onClick={ajouterLigne} 
+                        <button
+                            onClick={ajouterLigne}
                             className="bg-gray-700 hover:bg-gray-800 text-white font-semibold py-2 rounded-lg transition duration-200"
                         >
                             Ajouter
@@ -264,9 +264,9 @@ export default function NewInvoiceForm({ type = 'Vente', onSaisieCompleted }) { 
                 {lignesProduit.length > 0 && (
                     <div className="bg-white rounded-xl shadow-lg overflow-hidden border">
                         <div className="p-4 bg-gray-50 border-b">
-                             <h2 className="text-xl font-semibold text-gray-700">Détails de la Facture</h2>
+                            <h2 className="text-xl font-semibold text-gray-700">Détails de la Facture</h2>
                         </div>
-                        
+
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
@@ -304,7 +304,7 @@ export default function NewInvoiceForm({ type = 'Vente', onSaisieCompleted }) { 
                                 </tbody>
                             </table>
                         </div>
-                        
+
                         {/* Totaux & Reste à Payer */}
                         <div className="p-6 bg-white border-t flex justify-end">
                             <div className="w-full max-w-sm">

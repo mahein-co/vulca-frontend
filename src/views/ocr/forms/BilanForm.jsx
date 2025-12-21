@@ -335,7 +335,7 @@ export default function BilanForm({ onSaisieCompleted }) {
 
         try {
             console.log(`Tentative d'enregistrement de ${lignes.length} lignes vers ${BASE_URL_API}/bilans/`);
-            alert(`✅ Bilan enregistré avec succès !\nStatut: ${statut}.\n${lignes.length} ligne(s) insérée(s).`);
+            alert("Enregistrement succès");
             setLignes([]);
             if (onSaisieCompleted) {
                 onSaisieCompleted();
@@ -606,7 +606,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                                 className="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
                             >
                                 <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Valider et Enregistrer
+                                Valider
                             </button>
                         </div>
                     )}
@@ -619,6 +619,6 @@ export default function BilanForm({ onSaisieCompleted }) {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

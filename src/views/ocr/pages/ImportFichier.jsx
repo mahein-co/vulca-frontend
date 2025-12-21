@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import toast from "react-hot-toast";
 
 import { useExtractDataFromFileMutation, useSaveOneFileSourceMutation } from '../../../states/ocr/ocrApiSlice';
 
@@ -631,10 +632,9 @@ export default function ImportFichier({ onSaisieCompleted }) {
     // Etat pour le chargement global de la validation (batch)
     const [isSaving, setIsSaving] = useState(false);
 
-    // Fonction pour afficher une notification d'erreur animée
+    // Fonction pour afficher une notification d'erreur
     const showErrorNotification = useCallback((message) => {
-        setErrorNotification(message);
-        setTimeout(() => setErrorNotification(null), 3000);
+        toast.error(message);
     }, []);
 
     // --- Logique Métier ---
@@ -811,22 +811,16 @@ export default function ImportFichier({ onSaisieCompleted }) {
 
             if (duplicates.length > 0) {
                 const msg = `Ce document a déjà été importé dans le système. Veuillez vérifier la liste des fichiers existants.`;
-                showErrorNotification(msg);
+                toast.error(msg);
 
                 if (successes.length > 0) {
-                    setNotification({
-                        type: 'success',
-                        message: `${successes.length} autres documents importés avec succès. Redirection...`
-                    });
+                    toast.success("Enregistrement succès");
                     setTimeout(() => {
                         if (onSaisieCompleted) onSaisieCompleted();
                     }, 1500);
                 }
             } else {
-                setNotification({
-                    type: 'success',
-                    message: `${results.length} document(s) importés avec succès ! Redirection...`
-                });
+                toast.success("Enregistrement succès");
 
                 setTimeout(() => {
                     handleClearAll();

@@ -226,7 +226,7 @@ function App() {
                 return <div className="pt-0"><GestionPiecesBoard /></div>;
 
             case 'import-ocr':
-                return <ImportFichier type="OCR" isFullScreen={true} onSaisieCompleted={() => navigate('gestion-pieces')} />;
+                return <ImportFichier type="OCR" isFullScreen={true} onSaisieCompleted={() => navigate('dashboard')} />;
 
             case 'saisie-manuelle':
                 // 🛑 Affiche le Dashboard en arrière-plan lorsque la modale est ouverte

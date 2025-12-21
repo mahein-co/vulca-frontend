@@ -161,7 +161,19 @@ const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
         </div>
 
         {/* Corps du tableau (Zone Scrollable) */}
-        <div className="flex-grow overflow-y-auto p-2 sm:p-4 min-h-0 bg-white">
+        <div className="flex-grow overflow-y-auto p-2 sm:p-4 min-h-0 bg-white relative">
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex justify-center items-center">
+              <div className="flex flex-col items-center max-w-sm w-full text-center">
+                <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
+                  <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                  <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                </div>
+                <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">Chargement de la balance...</p>
+              </div>
+            </div>
+          )}
+
           <div className="border border-gray-200 rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-xs sm:text-sm whitespace-nowrap min-w-[640px]">

@@ -12,7 +12,7 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
-export default function BarCharts() {
+export default function BarCharts({ globalDateStart, globalDateEnd }) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -21,15 +21,19 @@ export default function BarCharts() {
 
   useEffect(() => {
     // Fetch top 10 accounts data
-    axios.get(`${BASE_URL_API}/top-comptes-mouvementes/`)
+    let url = `${BASE_URL_API}/top-comptes-mouvementes/?`;
+    if (globalDateStart) url += `date_start=${globalDateStart}&`;
+    if (globalDateEnd) url += `date_end=${globalDateEnd}`;
+
+    axios.get(url)
       .then(res => {
         // Map backend API response to chart data format
-        // Backend: { numero_compte, libelle, montant_total }
+        // Backend: { compte, libelle, mt_mvt }
         // Chart: { account, label, movement }
         const formattedData = res.data.map(item => ({
-          account: item.numero_compte,
+          account: item.compte,
           label: item.libelle,
-          movement: parseFloat(item.montant_total)
+          movement: parseFloat(item.mt_mvt)
         }));
         setData(formattedData);
         setLoading(false);
@@ -38,7 +42,7 @@ export default function BarCharts() {
         console.error("Erreur lors de la récupération du Top 10 comptes", err);
         setLoading(false);
       });
-  }, []);
+  }, [globalDateStart, globalDateEnd]);
 
   if (loading) {
     return (

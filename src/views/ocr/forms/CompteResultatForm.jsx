@@ -153,7 +153,7 @@ export default function CompteResultatForm() {
         }
       }
 
-      alert(`✅ Compte de résultat enregistré avec succès !\n${lignes.length} ligne(s) insérée(s).`);
+      alert("Enregistrement succès");
       setLignes([]);
     } catch (error) {
       console.error('Erreur réseau ou serveur:', error);
@@ -161,7 +161,7 @@ export default function CompteResultatForm() {
     }
   };
 
- 
+
 
   return (
     <div className="min-h-screen from-purple-50 to-pink-50 p-4">
@@ -177,9 +177,8 @@ export default function CompteResultatForm() {
                   name="numeroCompte"
                   value={nouvelleLigne.numeroCompte}
                   onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                    errorNumeroCompte ? 'border-red-500 animate-shake' : 'border-gray-300'
-                  }`}
+                  className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent ${errorNumeroCompte ? 'border-red-500 animate-shake' : 'border-gray-300'
+                    }`}
                   placeholder="Ex: 601"
                 />
                 {errorNumeroCompte && (

@@ -117,12 +117,13 @@ const SaisieModal = ({ children, onClose }) => (
         <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-7xl h-[90vh] overflow-y-auto">
             <button
                 onClick={onClose}
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-900 z-10 p-2 bg-white rounded-full shadow-lg"
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 z-10 p-1.5 bg-white rounded-full shadow-md hover:shadow-lg transition-all"
+                aria-label="Fermer"
             >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
 
-            <div className="p-4 sm:p-6 md:p-8 h-full">
+            <div className="p-3 sm:p-4 md:p-6 h-full">
                 {children}
             </div>
         </div>
@@ -214,7 +215,7 @@ function App() {
     const renderPage = () => {
         // Wrapper par défaut avec padding pour les vues internes qui ne gèrent pas le Header fixe
         const ContentWrapper = ({ children }) => (
-            <div className="pt-20 p-6 max-w-full mx-auto">{children}</div>
+            <div className="pt-14 p-4 max-w-full mx-auto">{children}</div>
         );
 
         switch (currentPage) {
@@ -226,7 +227,7 @@ function App() {
                 return <div className="pt-0"><GestionPiecesBoard /></div>;
 
             case 'import-ocr':
-                return <ImportFichier type="OCR" isFullScreen={true} onSaisieCompleted={() => navigate('gestion-pieces')} />;
+                return <ImportFichier type="OCR" isFullScreen={true} onSaisieCompleted={() => navigate('dashboard')} />;
 
             case 'saisie-manuelle':
                 // 🛑 Affiche le Dashboard en arrière-plan lorsque la modale est ouverte

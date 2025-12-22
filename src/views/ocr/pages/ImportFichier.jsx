@@ -1,11 +1,27 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import toast from "react-hot-toast";
+
 import { useExtractDataFromFileMutation, useSaveOneFileSourceMutation } from '../../../states/ocr/ocrApiSlice';
 
+// Composant Overlay de Chargement
+const LoadingOverlay = ({ message }) => (
+    <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center animate-simpleFadeIn p-4">
+        <div className="flex flex-col items-center max-w-sm w-full text-center">
+            {/* Spinner style iOS/moderne */}
+            <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
+                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">{message}</p>
+        </div>
+    </div>
+);
 
 const determinePieceType = (data) => {
     if (!data) return 'Autres';
     const typeDoc = (data.type_document || '').toUpperCase();
     if (typeDoc === 'VENTE' || typeDoc === 'ACHAT' || data.numeroFacture) return 'facture';
+    // ... (rest of the file)
     if (typeDoc === 'VIREMENT') return 'virement bancaire';
     if (typeDoc === 'RELEVES') return 'relevé bancaire';
     if (typeDoc === 'BON_DE_CAISSE' || typeDoc === 'FICHE_PAYE') return typeDoc.replace('_', ' ').toLowerCase();
@@ -46,17 +62,22 @@ const styles = `
     animation: fadeIn 0.4s ease-out forwards, shake 0.5s ease-in-out 0.3s;
 }
 
+@keyframes simpleFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.animate-simpleFadeIn {
+    animation: simpleFadeIn 0.3s ease-out forwards;
+}
+
 .animate-fadeOut {
     animation: fadeOut 0.3s ease-out forwards;
 }
 `;
 
 // --- Constantes et Données MOCK ---
-const INITIAL_FORM_DATA = {
-    fileName: 'Facture_SARL_2024.pdf', montant: '5880000', totalHT: '4900000', client: 'Santatra client SARL',
-    numeroFacture: 'FAC-2024-128', dateEmission: '2025-11-29', dateEcheance: '2025-12-29',
-    ventilation: '701', categorie: 'Vente', commentaires: ''
-};
+
 const EMPTY_FORM_DATA = {
     fileName: '', montant: '', totalHT: '', client: '', numeroFacture: '',
     dateEmission: '', dateEcheance: '', ventilation: '', categorie: '', commentaires: ''
@@ -255,7 +276,7 @@ const OcrValidationForm = ({
     // Calcul de la TVA et du Taux
     const totalTTC = parseFloat(String(formData.montant || '0').replace(/[^0-9.]/g, '')) || 0;
     const totalHT = parseFloat(String(formData.totalHT || '0').replace(/[^0-9.]/g, '')) || 0;
-    const totalTVA = totalTTC - totalHT;
+
 
     return (
         <div className="relative bg-white rounded-lg shadow-md border border-gray-200 p-2 sm:p-3 h-full flex flex-col min-h-0 overflow-hidden text-sm">
@@ -353,10 +374,26 @@ const OcrValidationForm = ({
                         {formData.extractedJson && (
                             <div className="space-y-3">
                                 {Object.entries(formData.extractedJson).map(([key, value]) => {
-                                    // Ignorer le type de document car déjà affiché en haut
+                                    // 1. Ignorer le type de document car déjà affiché en haut
                                     if (key === 'type_document' || key === 'typeDocument') return null;
 
-                                    // Ignorer les champs qui étaient null/undefined dès l'extraction initiale
+                                    // 2. Ignorer 'objet_description' (demande utilisateur)
+                                    if (key === 'objet_description' || key.toLowerCase() === 'objet description') return null;
+
+                                    // 3. Ignorer les valeurs nulles, undefined, vide ou 0
+                                    // Vérification stricte pour 0, '0', '0.00' et valeurs vides
+                                    if (value === null || value === undefined || value === '') return null;
+                                    if (value === 0 || value === '0' || value === '0.00') return null;
+
+                                    // 4. Eviter doublon Reference si identique au Numéro Facture
+                                    if (key === 'reference') {
+                                        const numFacture = formData.extractedJson.numero_facture || formData.extractedJson.invoice_number;
+                                        if (numFacture && String(numFacture).trim() === String(value).trim()) {
+                                            return null;
+                                        }
+                                    }
+
+                                    // Ignorer les champs qui étaient null/undefined dès l'extraction initiale (code existant, conservé pour sécurité)
                                     const initialValue = currentDocument?.rawResponse?.extracted_json?.[key];
                                     if (initialValue === null || initialValue === undefined) {
                                         if (value === null || value === '' || value === undefined) return null;
@@ -579,7 +616,7 @@ const OcrValidationForm = ({
 };
 
 // --- 3. Composant Principal (ImportFichier) ---
-export default function ImportFichier() {
+export default function ImportFichier({ onSaisieCompleted }) {
     const [documents, setDocuments] = useState([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isDragActive, setIsDragActive] = useState(false);
@@ -589,243 +626,166 @@ export default function ImportFichier() {
 
     // API Hooks
     const [extractData, { isLoading: isExtracting }] = useExtractDataFromFileMutation();
-    const [saveFile, { isLoading: isMutationSaving }] = useSaveOneFileSourceMutation();
+    const [saveFile] = useSaveOneFileSourceMutation();
+
 
     // Etat pour le chargement global de la validation (batch)
     const [isSaving, setIsSaving] = useState(false);
 
-    // Fonction pour afficher une notification d'erreur animée
+    // Fonction pour afficher une notification d'erreur
     const showErrorNotification = useCallback((message) => {
-        setErrorNotification(message);
-        setTimeout(() => setErrorNotification(null), 3000);
+        toast.error(message);
     }, []);
 
-    // Données du document actuellement sélectionné
-    const currentDocument = documents[currentIndex];
-    const currentFile = currentDocument ? currentDocument.file : null;
-    const currentFormData = currentDocument ? currentDocument.data : EMPTY_FORM_DATA;
-    const currentIsExtracted = currentDocument ? currentDocument.isExtracted : false;
+    // --- Logique Métier ---
 
-    // Vérifie si TOUS les documents sont extraits pour valider le lot
-    const isLotValidatable = useMemo(() => {
-        return documents.length > 0 && documents.every(doc => doc.isExtracted) && !isSaving;
-    }, [documents, isSaving]);
+    // 1. Gestion des Fichiers
+    const addFiles = useCallback((newFiles) => {
+        const validFiles = [...newFiles]; // Accepte tout pour l'instant, le filtrage est fait par l'input accept
 
-    const updateCurrentDocument = useCallback((updates) => {
-        setDocuments(prevDocuments => {
-            if (prevDocuments.length === 0) return prevDocuments;
-            const newDocuments = [...prevDocuments];
-            if (newDocuments[currentIndex]) {
-                newDocuments[currentIndex] = {
-                    ...newDocuments[currentIndex],
-                    ...updates,
-                    data: updates.data !== undefined ? updates.data : newDocuments[currentIndex].data
-                };
-            }
-            return newDocuments;
-        });
-    }, [currentIndex]);
+        if (documents.length + validFiles.length > MAX_FILE_UPLOAD) {
+            showErrorNotification(`Maximum ${MAX_FILE_UPLOAD} fichiers autorisés.`);
+            return;
+        }
+
+        const newDocs = validFiles.map(file => ({
+            id: Math.random().toString(36).substr(2, 9),
+            file,
+            data: { ...EMPTY_FORM_DATA, fileName: file.name, typeDocument: 'NON DÉTECTÉ' },
+            isExtracted: false
+        }));
+
+        setDocuments(prev => [...prev, ...newDocs]);
+        // Si c'est le premier fichier, on le sélectionne
+        if (documents.length === 0 && newDocs.length > 0) {
+            setCurrentIndex(0);
+        }
+    }, [documents, showErrorNotification]);
+
+    const handleFileDrop = useCallback((e) => {
+        e.preventDefault();
+        setIsDragActive(false);
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            addFiles(e.dataTransfer.files);
+        }
+    }, [addFiles]);
+
+    const handleFileSelect = useCallback((e) => {
+        if (e.target.files && e.target.files.length > 0) {
+            addFiles(e.target.files);
+        }
+    }, [addFiles]);
+
+    const handleRemoveCurrentDocument = useCallback(() => {
+        if (documents.length === 0) return;
+
+        const newDocs = documents.filter((_, idx) => idx !== currentIndex);
+        setDocuments(newDocs);
+
+        // Ajuster l'index
+        if (newDocs.length === 0) {
+            setCurrentIndex(0);
+        } else if (currentIndex >= newDocs.length) {
+            setCurrentIndex(newDocs.length - 1);
+        }
+    }, [documents, currentIndex]);
 
     const handleClearAll = useCallback(() => {
         setDocuments([]);
         setCurrentIndex(0);
-        setShowFormOnMobile(false);
+        setNotification(null);
     }, []);
 
-    const handleFormChange = useCallback((name, rawValue) => {
+    // 2. Navigation
+    const handlePrevious = () => setCurrentIndex(prev => Math.max(0, prev - 1));
+    const handleNext = () => setCurrentIndex(prev => Math.min(documents.length - 1, prev + 1));
+
+    // 3. Variables Dérivées du Document Courant
+    const currentDocument = documents[currentIndex];
+    const currentFile = currentDocument?.file || null;
+    const currentIsExtracted = currentDocument?.isExtracted || false;
+
+    // Fusion des données : priorité au form data local, sinon vide
+    const currentFormData = currentDocument?.data || EMPTY_FORM_DATA;
+
+    const isLotValidatable = useMemo(() => {
+        return documents.length > 0 && documents.every(doc => doc.isExtracted);
+    }, [documents]);
+
+
+    // 4. Gestion du Formulaire
+    const handleFormChange = useCallback((field, value) => {
         if (!currentDocument) return;
-        let value = rawValue;
-        if (name === 'montant' || name === 'totalHT') {
-            value = String(rawValue).replace(/[^\d.]/g, '');
-        }
-        updateCurrentDocument({
-            data: { ...currentFormData, [name]: value }
-        });
-    }, [currentDocument, currentFormData, updateCurrentDocument]);
 
-    const handleRemoveCurrentDocument = useCallback(() => {
-        if (!currentDocument) return;
-        const updatedDocuments = documents.filter((_, index) => index !== currentIndex);
-        setDocuments(updatedDocuments);
-
-        if (updatedDocuments.length === 0) {
-            setCurrentIndex(0);
-            setShowFormOnMobile(false);
-        } else if (currentIndex >= updatedDocuments.length) {
-            setCurrentIndex(updatedDocuments.length - 1);
-        }
-    }, [documents, currentIndex, currentDocument]);
-
-    // ✅ Fonction utilitaire pour extraire et formater les dates de manière sûre
-    const extractDate = useCallback((dateValue) => {
-        if (!dateValue) return '';
-
-        if (typeof dateValue === 'string') {
-            const match = dateValue.match(/(\d{4}-\d{2}-\d{2})/);
-            if (match) return match[1];
-
-            try {
-                const parsed = new Date(dateValue);
-                if (!isNaN(parsed.getTime())) {
-                    return parsed.toISOString().slice(0, 10);
-                }
-            } catch (e) {
-                console.warn('Impossible de parser la date:', dateValue);
+        setDocuments(prev => prev.map((doc, idx) => {
+            if (idx === currentIndex) {
+                return {
+                    ...doc,
+                    data: { ...doc.data, [field]: value }
+                };
             }
-        }
+            return doc;
+        }));
+    }, [currentDocument, currentIndex]);
 
-        if (typeof dateValue === 'number' || dateValue instanceof Date) {
-            try {
-                const date = new Date(dateValue);
-                if (!isNaN(date.getTime())) {
-                    return date.toISOString().slice(0, 10);
-                }
-            } catch (e) {
-                console.error('Erreur conversion date:', e);
-            }
-        }
 
-        return '';
-    }, []);
-
-    // Extraction OCR via API (DRF)
-    const handleExtractText = useCallback(async () => {
+    // 5. Extraction OCR
+    const handleExtractText = async () => {
         if (!currentFile) return;
 
         const formData = new FormData();
         formData.append('file', currentFile);
 
         try {
-            const response = await extractData(formData).unwrap();
-            console.log("OCR Response:", response);
+            const result = await extractData(formData).unwrap();
 
-            if (response.error && response.error.includes("Document non reconnu")) {
-                throw new Error("Document non reconnu");
-            }
+            // Mise à jour du document avec les résultats
+            setDocuments(prev => prev.map((doc, idx) => {
+                if (idx === currentIndex) {
+                    // Mapping intelligent des résultats vers notre structure de formulaire
+                    const extracted = result.extracted_json || {};
+                    const typeDoc = determinePieceType(extracted);
 
-            const extractedJson = response.extracted_json || response;
-
-            const mappedData = {
-                ...EMPTY_FORM_DATA,
-                fileName: currentFile.name,
-                typeDocument: response.type_document || extractedJson.type_document || '',
-                extractedJson: extractedJson,
-                montant: extractedJson.montant_total_facture_ttc || extractedJson.montant_ttc || extractedJson.amount_total || '',
-                totalHT: (() => {
-                    let ht = extractedJson.montant_ht || extractedJson.total_ht;
-                    if (ht) return ht;
-
-                    const tva = extractedJson.montant_tva || extractedJson.tax_amount || extractedJson.vat_amount || extractedJson.tva || extractedJson.montant_taxe;
-                    const ttc = extractedJson.montant_total_facture_ttc || extractedJson.montant_ttc || extractedJson.amount_total;
-
-                    if (ttc && tva) {
-                        const ttcVal = parseFloat(String(ttc).replace(/[^0-9.]/g, ''));
-                        const tvaVal = parseFloat(String(tva).replace(/[^0-9.]/g, ''));
-                        if (!isNaN(ttcVal) && !isNaN(tvaVal)) {
-                            return (ttcVal - tvaVal).toFixed(2);
+                    return {
+                        ...doc,
+                        isExtracted: true,
+                        rawResponse: result,
+                        data: {
+                            ...doc.data,
+                            extractedJson: extracted,
+                            typeDocument: typeDoc,
+                            montant: extracted.montant_ttc || extracted.total_amount || doc.data.montant,
+                            totalHT: extracted.montant_ht || extracted.net_amount || doc.data.totalHT,
+                            numeroFacture: extracted.numero_facture || extracted.invoice_number || doc.data.numeroFacture,
+                            dateEmission: extracted.date || extracted.date_emission || doc.data.dateEmission,
+                            // Simplification: on stocke tout le JSON extrait pour l'affichage dynamique
                         }
-                    }
-                    return '';
-                })(),
-                client: extractedJson.nom_client || extractedJson.client || extractedJson.supplier || '',
-                adresse_client: extractedJson.adresse_client || '',
-                telephone_client: extractedJson.telephone_client || '',
-                telephone_commercial: extractedJson.telephone_commercial || '',
-                numeroFacture: extractedJson.numero_facture || extractedJson.invoice_number || '',
-                produits: extractedJson.description_produits || [],
-                garantie: extractedJson.garantie || '',
-                sav: extractedJson.sav || '',
-                dateEmission: extractDate(extractedJson.date_facture || extractedJson.date_emission || extractedJson.date),
-                dateEcheance: extractDate(extractedJson.date_echeance || extractedJson.due_date),
-                fileId: response.id || response.file_id || null,
-                ventilation: '',
-                categorie: ''
-            };
+                    };
+                }
+                return doc;
+            }));
 
-            updateCurrentDocument({
-                data: mappedData,
-                isExtracted: true,
-                rawResponse: response
-            });
-
-        } catch (error) {
-            console.error("Erreur Extraction:", error);
-
-            updateCurrentDocument({
-                data: { ...EMPTY_FORM_DATA, fileName: currentFile.name },
-                isExtracted: false,
-                rawResponse: null
-            });
-
-            const errorMessage = error.data?.error || error.data?.detail || error.message || 'Erreur inconnue';
-
-            if (errorMessage.includes("Document non reconnu")) {
-                showErrorNotification("Document non reconnu comme pièce comptable. Veuillez vérifier que le fichier est bien une facture, un devis ou un document comptable valide.");
-                handleRemoveCurrentDocument();
-            } else {
-                showErrorNotification(`Erreur lors de l'extraction: ${errorMessage}`);
-            }
+        } catch (err) {
+            console.error(err);
+            showErrorNotification("Echec de l'extraction OCR verifiez le fichier.");
         }
-    }, [currentFile, extractData, updateCurrentDocument, showErrorNotification, handleRemoveCurrentDocument, extractDate]);
+    };
 
     const handleCancelExtraction = useCallback(() => {
-        if (!currentFile) return;
-        updateCurrentDocument({
-            data: { ...EMPTY_FORM_DATA, fileName: currentFile.name },
-            isExtracted: false,
-            rawResponse: null
-        });
-    }, [currentFile, updateCurrentDocument]);
+        if (!currentDocument) return;
 
-    const processFiles = useCallback((newFiles) => {
-        if (!newFiles || newFiles.length === 0) return;
-        const spaceAvailable = MAX_FILE_UPLOAD - documents.length;
-        const filesToProcess = Array.from(newFiles).slice(0, spaceAvailable);
-
-        if (filesToProcess.length === 0 && documents.length > 0) {
-            alert(`Limite atteinte. Maximum ${MAX_FILE_UPLOAD} documents autorisés.`);
-            return;
-        }
-
-        const newDocuments = filesToProcess.map(file => ({
-            file: file,
-            data: { ...EMPTY_FORM_DATA, fileName: file.name },
-            isExtracted: false
+        setDocuments(prev => prev.map((doc, idx) => {
+            if (idx === currentIndex) {
+                return {
+                    ...doc,
+                    isExtracted: false,
+                    // On garde le nom du fichier mais on reset le reste
+                    data: { ...EMPTY_FORM_DATA, fileName: doc.file.name }
+                };
+            }
+            return doc;
         }));
-
-        setDocuments(prev => [...prev, ...newDocuments]);
-
-        if (documents.length === 0 && newDocuments.length > 0) {
-            setCurrentIndex(0);
-        }
-
-        if (Array.from(newFiles).length > filesToProcess.length) {
-            alert(`Seuls ${filesToProcess.length} fichiers ajoutés, limite de ${MAX_FILE_UPLOAD} atteinte.`);
-        }
-    }, [documents.length]);
-
-    const handleFileDrop = (e) => {
-        e.preventDefault();
-        setIsDragActive(false);
-        processFiles(e.dataTransfer.files);
-    };
-
-    const handleFileSelect = (e) => {
-        processFiles(e.target.files);
-        e.target.value = null;
-    };
-
-    const handleNext = () => {
-        if (currentIndex < documents.length - 1) {
-            setCurrentIndex(currentIndex + 1);
-        }
-    };
-
-    const handlePrevious = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(currentIndex - 1);
-        }
-    };
+    }, [currentDocument, currentIndex]);
 
     // Validation du Lot via API (DRF)
     const handleValiderAll = async () => {
@@ -850,26 +810,22 @@ export default function ImportFichier() {
             const successes = results.filter(r => r.duplicate !== true);
 
             if (duplicates.length > 0) {
-                const msg = `Ce document a déjà été importé dans le système.Veuillez vérifier la liste des fichiers existants ou importer un autre document!!!`;
-                showErrorNotification(msg);
+                const msg = `Ce document a déjà été importé dans le système. Veuillez vérifier la liste des fichiers existants.`;
+                toast.error(msg);
 
                 if (successes.length > 0) {
-                    setNotification({
-                        type: 'success',
-                        message: `${successes.length} autres documents importés avec succès.`
-                    });
+                    toast.success("Enregistrement succès");
+                    setTimeout(() => {
+                        if (onSaisieCompleted) onSaisieCompleted();
+                    }, 1500);
                 }
             } else {
-                setNotification({
-                    type: 'success',
-                    message: `${results.length} document(s) importés avec succès !`
-                });
+                toast.success("Enregistrement succès");
 
                 setTimeout(() => {
                     handleClearAll();
-                }, 1500);
-
-                setTimeout(() => setNotification(null), 3000);
+                    if (onSaisieCompleted) onSaisieCompleted();
+                }, 1000);
             }
 
         } catch (error) {
@@ -883,6 +839,13 @@ export default function ImportFichier() {
     return (
         <div className="fixed inset-0 p-2 sm:p-3 bg-gray-50 flex flex-col overflow-hidden pt-24 sm:pt-20">
             <style>{styles}</style>
+
+            {/* OVERLAY DE CHARGEMENT */}
+            {(isExtracting || isSaving) && (
+                <LoadingOverlay
+                    message={isSaving ? "Validation et enregistrement en cours..." : "Extraction des données (OCR) en cours..."}
+                />
+            )}
 
             {errorNotification && (
                 <div className="fixed top-40 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-md

@@ -43,7 +43,7 @@ const formatCurrency = (amount) => {
     return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(amount) + ' Ar';
 };
 
-const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) => {
+const MetricCard = ({ title, value, icon: Icon, change, changeLabel, isRatio, description }) => {
     const numericChange = parseFloat(change);
 
     // Default dashboard-like pastel gradient
@@ -67,8 +67,6 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) 
         iconColor = 'text-blue-600';
     }
 
-    const changeIcon = numericChange > 0 ? '↑' : numericChange < 0 ? '↓' : '•';
-
     return (
         <div className="bg-white rounded-lg shadow-md border-t-2 border-gray-300 p-1 flex flex-col justify-between hover:shadow-lg transition-all duration-300 hover:scale-[1.02] min-w-[120px] w-full h-[80px]">
             <div className="flex items-start justify-between mb-0.5">
@@ -77,10 +75,7 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio, description }) 
                 </div>
                 {change !== undefined && change !== null && (
                     <div className={`text-[8px] font-bold ${changeColor} flex items-center bg-gray-50 px-1 py-0.5 rounded-full`}>
-                        {isRatio
-                            ? (!isNaN(numericChange) && <>{changeIcon} {Math.abs(numericChange).toFixed(1)} pts</>)
-                            : <>{changeIcon} {numericChange >= 0 ? '+' : ''}{Math.abs(numericChange).toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Ar</>
-                        }
+                        {changeLabel}
                     </div>
                 )}
             </div>
@@ -522,9 +517,44 @@ const TransactionView = () => {
                 {/* KPI Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1.5 mb-2 px-2">
                     {loading ? [...Array(7)].map((_, i) => <div key={i} className="min-w-[150px] h-[100px] bg-gray-200 rounded-xl animate-pulse"></div>) :
-                        cards.map(([title, value, change, isRatio, Icon, description], idx) => (
-                            <MetricCard key={idx} title={title} value={isRatio ? value.toFixed(1) + '%' : formatCurrency(value)} icon={Icon} change={change} isRatio={isRatio} description={description} />
-                        ))
+                        cards.map(([title, value, change, isRatio, Icon, description], idx) => {
+                            // Calcul du pourcentage d'évolution pour les montants (si non ratio)
+                            let changeLabel = null;
+                            let numericChange = parseFloat(change);
+                            const changeIcon = numericChange > 0 ? '↑' : numericChange < 0 ? '↓' : '•';
+
+                            if (isRatio) {
+                                // Pour les ratios, "change" est déjà une différence en points
+                                // On affiche ex: + 1.2 %
+                                changeLabel = !isNaN(numericChange) ? `${changeIcon} ${Math.abs(numericChange).toFixed(1)} %` : '-';
+                            } else {
+                                // Pour les montants, on calcule le % d'évolution
+                                // Valeur précédente = Valeur actuelle - Variation
+                                const previousValue = value - numericChange;
+
+                                if (previousValue === 0) {
+                                    // Si précédent était 0
+                                    if (numericChange === 0) changeLabel = `${changeIcon} 0 %`;
+                                    else changeLabel = `${changeIcon} 100 %`; // Ou N/A
+                                } else {
+                                    const percent = (numericChange / previousValue) * 100;
+                                    changeLabel = `${changeIcon} ${Math.abs(percent).toFixed(1)} %`;
+                                }
+                            }
+
+                            return (
+                                <MetricCard
+                                    key={idx}
+                                    title={title}
+                                    value={isRatio ? value.toFixed(1) + '%' : formatCurrency(value)}
+                                    icon={Icon}
+                                    change={numericChange} // On garde change numérique pour la couleur
+                                    changeLabel={changeLabel} // On passe le label formaté
+                                    isRatio={isRatio}
+                                    description={description}
+                                />
+                            );
+                        })
                     }
                 </div>
 
@@ -564,7 +594,18 @@ const TransactionView = () => {
                 </div>
 
                 {/* Table des détails */}
-                <div className="px-2 flex-1 min-h-0 ">
+                <div className="px-2 flex-1 min-h-0 relative">
+                    {loading && (
+                        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex justify-center items-center rounded-xl">
+                            <div className="flex flex-col items-center max-w-sm w-full text-center">
+                                <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
+                                    <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                                    <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                                </div>
+                                <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">Chargement des données...</p>
+                            </div>
+                        </div>
+                    )}
                     <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden h-full">
                         <div className="overflow-x-auto">
                             <table className="w-full border-collapse text-xs sm:text-sm min-w-[800px] table-fixed">

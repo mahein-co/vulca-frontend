@@ -67,23 +67,6 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
     const [dataToGenerateJournal, setDataToGenerateJournal] = useState(null);
 
     // Handlers
-    const remplirExemple = () => {
-        setFormData({
-            employe: 'Rakoto Jean',
-            numFichePaie: 'PAIE-2023-12',
-            periodePaie: 'Décembre 2023',
-            dateEmission: getTodayDate(),
-            dateEcheance: getTodayDate(),
-            salaireBrut: '800000', // Example from user rules: 800,000 leads to IRSA 65,900
-            // The useEffect will calculate the rest (CNaPS 8000, IRSA 65900, Net 726100)
-            cotisationSalariale: '',
-            cotisationPatronale: '',
-            retenueSource: '',
-            netAPayer: '',
-        });
-        toast.success("Exemple chargé !");
-    };
-
     const handleChange = useCallback((e) => {
         const { name, value } = e.target;
         // For numeric fields, we allow typing but could apply regex if needed
@@ -177,6 +160,7 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
                 retenue_source: parseAmount(formData.retenueSource),
                 net_a_payer: parseAmount(formData.netAPayer),
             },
+            ref_file: formData.numFichePaie,
         };
 
         setDataToGenerateJournal(data);
@@ -231,14 +215,7 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
                             <h1 className="text-base font-bold text-gray-800 flex-1 text-center px-4">
                                 Saisie Manuelle de Fiche de Paie
                             </h1>
-                            <div className="flex-shrink-0 w-[88px] flex justify-end">
-                                <button
-                                    onClick={remplirExemple}
-                                    className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100 transition"
-                                >
-                                    Exemple
-                                </button>
-                            </div>
+                            <div className="flex-shrink-0 w-[88px]"></div>
                         </div>
                     </div>
                 </div>

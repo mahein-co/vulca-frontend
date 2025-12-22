@@ -54,7 +54,6 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
     nomTitulaire: '',
     numeroCompte: '',
     nomBanque: '',
-    soldeInitial: '0',
     dateDebut: '',
     dateFin: getTodayDate(),
   });
@@ -62,6 +61,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
   const [transactions, setTransactions] = useState([]);
   const [nouvelleLigne, setNouvelleLigne] = useState({
     date: getTodayDate(),
+    reference: '',
     description: '',
     debit: '',
     credit: '',
@@ -70,23 +70,6 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
   const [dataToGenerateJournal, setDataToGenerateJournal] = useState(null);
 
   // Handlers
-  const remplirExemple = () => {
-    setHeader({
-      nomTitulaire: 'Société Mahein',
-      numeroCompte: '00001 23456 78901 23',
-      nomBanque: 'BNI Madagascar',
-      soldeInitial: '5000000',
-      dateDebut: '2023-12-01',
-      dateFin: getTodayDate(),
-    });
-    setTransactions([
-      { id: 1699999001, date: '2023-12-05', description: 'Virement Client A', debit: 0, credit: 1500000 },
-      { id: 1699999002, date: '2023-12-10', description: 'Paiement Loyer', debit: 800000, credit: 0 },
-      { id: 1699999003, date: '2023-12-15', description: 'Frais Tenue Compte', debit: 15000, credit: 0 },
-    ]);
-    toast.success("Exemple chargé !");
-  };
-
   const handleChangeHeader = useCallback((e) => {
     const { name, value } = e.target;
     setHeader(prev => ({ ...prev, [name]: value }));
@@ -103,12 +86,12 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
   }, []);
 
   const resetNouvelleLigne = useCallback(() => {
-    setNouvelleLigne({ date: getTodayDate(), description: '', debit: '', credit: '' });
+    setNouvelleLigne({ date: getTodayDate(), reference: '', description: '', debit: '', credit: '' });
     setLigneEnModification(null);
   }, []);
 
   const validateAndGetLigneData = () => {
-    const { date, description, debit, credit } = nouvelleLigne;
+    const { date, reference, description, debit, credit } = nouvelleLigne;
     if (!date || !description) {
       toast.error('La date et la description sont obligatoires.');
       return null;
@@ -122,11 +105,9 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
       return null;
     }
 
-    /* Typically a bank transaction is either debit or credit, but we'll allow both if needed (though rare)
-       or we could enforce XOR. For now, strict validation isn't requested so we pass values. */
-
     return {
       date,
+      reference: reference || '',
       description,
       debit: debitVal,
       credit: creditVal
@@ -143,13 +124,14 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
     const ligne = { ...data, id: Date.now() };
     setTransactions(prev => [...prev, ligne]);
     // Preserve date for next entry as it might be sequential
-    setNouvelleLigne(prev => ({ ...prev, description: '', debit: '', credit: '' }));
+    setNouvelleLigne(prev => ({ ...prev, reference: '', description: '', debit: '', credit: '' }));
   };
 
   const modifierLigne = (ligne) => {
     setLigneEnModification(ligne.id);
     setNouvelleLigne({
       date: ligne.date,
+      reference: ligne.reference || '',
       description: ligne.description,
       debit: ligne.debit === 0 ? '' : ligne.debit.toString(),
       credit: ligne.credit === 0 ? '' : ligne.credit.toString()
@@ -171,27 +153,13 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
   };
 
   // Calculations
-  const soldeInitialVal = parseFloat(header.soldeInitial || 0);
-
   const checkTotals = useMemo(() => {
     const totalDebit = transactions.reduce((sum, t) => sum + t.debit, 0);
     const totalCredit = transactions.reduce((sum, t) => sum + t.credit, 0);
-    const soldeFinal = soldeInitialVal + totalCredit - totalDebit; // Usually Credit increases balance (Deposit), Debit decreases (Withdrawal) in bank perspective? 
-    // Wait, "Relevé Bancaire" from company perspective:
-    // Debit = Money leaving the bank (Expense) -> Decreases balance?
-    // Credit = Money entering the bank (Income) -> Increases balance?
-    // Let's assume standard accounting: Bank Debit = Increase Asset (Money In), Credit = Decrease Asset (Money Out).
-    // BUT "Relevé Bancaire" (Bank Statement) sent by Bank has Debit = Withdrawal, Credit = Deposit.
-    // Let's stick to user logic from previous code: `soldeFinal = totalCredit - totalDebit` (if initial was 0).
-    // With initial in previous code: It wasn't explicitly adding initial?
-    // Previous Code: `soldeFinal = totalCredit - totalDebit` (line 73). It ignored Initial Sold in calculation?
-    // Line 86 passed `initial_sold` to backend.
-    // I should probably include it for display. 
-    // Let's assume: Solde Final = Solde Initial + Credit - Debit.
-    const soldeFinalCalc = soldeInitialVal + totalCredit - totalDebit;
+    const soldeFinal = totalCredit - totalDebit; // Solde du relevé (net)
 
-    return { totalDebit, totalCredit, soldeFinal: soldeFinalCalc };
-  }, [transactions, soldeInitialVal]);
+    return { totalDebit, totalCredit, soldeFinal };
+  }, [transactions]);
 
 
   // Validation & Save
@@ -202,19 +170,20 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
     }
 
     const data = {
-      piece_type: "Type Revelé Bancaire",
+      piece_type: "Relevé bancaire",
       description_json: {
         name_titulaire: header.nomTitulaire,
         account_number: header.numeroCompte,
         bank_name: header.nomBanque,
         periode_date_start: header.dateDebut,
         periode_date_end: header.dateFin,
-        initial_sold: header.soldeInitial,
+        initial_sold: 0,
         transactions_details: transactions,
         totalDebit: checkTotals.totalDebit,
         totalCredit: checkTotals.totalCredit,
         soldeFinal: checkTotals.soldeFinal,
       },
+      ref_file: header.numeroCompte,
     };
 
     setDataToGenerateJournal(data);
@@ -240,7 +209,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
       toast.success("Enregistrement succès");
       setTransactions([]);
       setHeader({
-        nomTitulaire: '', numeroCompte: '', nomBanque: '', soldeInitial: '0', dateDebut: '', dateFin: getTodayDate()
+        nomTitulaire: '', numeroCompte: '', nomBanque: '', dateDebut: '', dateFin: getTodayDate()
       });
       if (onSaveComplete) onSaveComplete();
     } else if (isErrorJournal) {
@@ -270,12 +239,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                 Saisie Manuelle de Relevé Bancaire
               </h1>
               <div className="flex-shrink-0 w-[88px] flex justify-end">
-                <button
-                  onClick={remplirExemple}
-                  className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100 transition"
-                >
-                  Exemple
-                </button>
+                {/* Exemple Button Removed */}
               </div>
             </div>
           </div>
@@ -292,32 +256,36 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                 <h2 className="text-base font-semibold text-gray-800 mb-3">
                   Informations Compte
                 </h2>
+
+                {transactions.length > 0 && (
+                  <p className="text-xs text-red-600 bg-red-50 p-1 rounded mb-2 border border-red-200">
+                    ⚠️ Les informations de l'en-tête sont bloquées car des lignes ont déjà été ajoutées. Supprimez toutes les lignes pour les modifier.
+                  </p>
+                )}
+
                 <div className="grid grid-cols-1 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Banque</label>
-                    <input type="text" name="nomBanque" value={header.nomBanque} onChange={handleChangeHeader} placeholder="Ex: BNI, BOA..." className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                    <input type="text" name="nomBanque" value={header.nomBanque} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: BNI, BOA..." className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">N° Compte (RIB)</label>
-                    <input type="text" name="numeroCompte" value={header.numeroCompte} onChange={handleChangeHeader} placeholder="Ex: 0000 1234..." className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                    <input type="text" name="numeroCompte" value={header.numeroCompte} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: 0000 1234..." className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Titulaire</label>
-                    <input type="text" name="nomTitulaire" value={header.nomTitulaire} onChange={handleChangeHeader} placeholder="Nom du titulaire" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                    <input type="text" name="nomTitulaire" value={header.nomTitulaire} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Nom du titulaire" className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Solde Initial (Ar)</label>
-                    <input type="number" name="soldeInitial" value={header.soldeInitial} onChange={handleChangeHeader} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right font-medium" />
-                  </div>
+                  {/* Solde Initial input removed */}
 
                   <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
                     <div>
                       <label className="block text-[10px] font-medium text-gray-500 mb-1">Période Du</label>
-                      <input type="date" name="dateDebut" value={header.dateDebut} onChange={handleChangeHeader} className="w-full px-1 py-1 text-xs border border-gray-300 rounded-md" />
+                      <input type="date" name="dateDebut" value={header.dateDebut} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border border-gray-300 rounded-md ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
                     </div>
                     <div>
                       <label className="block text-[10px] font-medium text-gray-500 mb-1">Au</label>
-                      <input type="date" name="dateFin" value={header.dateFin} onChange={handleChangeHeader} className="w-full px-1 py-1 text-xs border border-gray-300 rounded-md" />
+                      <input type="date" name="dateFin" value={header.dateFin} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border border-gray-300 rounded-md ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
                     </div>
                   </div>
                 </div>
@@ -330,11 +298,15 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
-                  <div className="md:col-span-3">
+                  <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
                     <input type="date" name="date" value={nouvelleLigne.date} onChange={handleChangeLigne} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
                   </div>
-                  <div className="md:col-span-5">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Référence</label>
+                    <input type="text" name="reference" value={nouvelleLigne.reference} onChange={handleChangeLigne} placeholder="Ex: VIRM-... " className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                  </div>
+                  <div className="md:col-span-4">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Description / Libellé</label>
                     <input type="text" name="description" value={nouvelleLigne.description} onChange={handleChangeLigne} placeholder="Ex: Virement reçu..." className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
                   </div>
@@ -384,7 +356,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                     <p className='text-emerald-600 font-bold text-base'>{formatMontant(checkTotals.totalCredit)} Ar</p>
                   </div>
                   <div className='text-center'>
-                    <p className='text-gray-500 text-xs uppercase font-bold'>Solde Final</p>
+                    <p className='text-gray-500 text-xs uppercase font-bold'>Solde (Net)</p>
                     <p className={`font-bold text-base ${checkTotals.soldeFinal < 0 ? 'text-red-700' : 'text-blue-700'}`}>{formatMontant(checkTotals.soldeFinal)} Ar</p>
                   </div>
                 </div>
@@ -394,17 +366,19 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                     <table className="w-full border-collapse">
                       <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
                         <tr>
-                          <th className="border-b-2 border-gray-200 px-3 py-2 text-left text-xs font-bold text-gray-700 uppercase w-[15%]">Date</th>
-                          <th className="border-b-2 border-gray-200 px-3 py-2 text-left text-xs font-bold text-gray-700 uppercase w-[45%]">Description</th>
-                          <th className="border-b-2 border-gray-200 px-3 py-2 text-right text-xs font-bold text-gray-700 uppercase w-[15%]">Débit</th>
-                          <th className="border-b-2 border-gray-200 px-3 py-2 text-right text-xs font-bold text-gray-700 uppercase w-[15%]">Crédit</th>
-                          <th className="border-b-2 border-gray-200 px-3 py-2 text-center text-xs font-bold text-gray-700 uppercase w-[10%]">Action</th>
+                          <th className="border-b-2 border-gray-200 px-3 py-2 text-left text-xs font-bold text-gray-700 uppercase w-[12%]">Date</th>
+                          <th className="border-b-2 border-gray-200 px-3 py-2 text-left text-xs font-bold text-gray-700 uppercase w-[15%]">Référence</th>
+                          <th className="border-b-2 border-gray-200 px-3 py-2 text-left text-xs font-bold text-gray-700 uppercase w-[33%]">Description</th>
+                          <th className="border-b-2 border-gray-200 px-3 py-2 text-right text-xs font-bold text-gray-700 uppercase w-[13%]">Débit</th>
+                          <th className="border-b-2 border-gray-200 px-3 py-2 text-right text-xs font-bold text-gray-700 uppercase w-[13%]">Crédit</th>
+                          <th className="border-b-2 border-gray-200 px-3 py-2 text-center text-xs font-bold text-gray-700 uppercase w-[14%]">Action</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-100">
                         {transactions.map((t, index) => (
                           <tr key={t.id} className={`${index % 2 === 1 ? 'bg-gray-50/50' : ''} hover:bg-indigo-50/30 transition-colors duration-150`}>
                             <td className="px-3 py-2 text-sm text-gray-600">{t.date}</td>
+                            <td className="px-3 py-2 text-sm text-gray-700 font-medium">{t.reference || '-'}</td>
                             <td className="px-3 py-2 text-sm text-gray-800 font-medium">{t.description}</td>
                             <td className="px-3 py-2 text-sm text-right text-red-600 font-medium">{t.debit > 0 ? formatMontant(t.debit) : '-'}</td>
                             <td className="px-3 py-2 text-sm text-right text-emerald-600 font-medium">{t.credit > 0 ? formatMontant(t.credit) : '-'}</td>
@@ -427,8 +401,9 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                     <div key={t.id} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm text-sm">
                       <div className="flex justify-between items-start mb-2">
                         <span className="text-xs text-gray-500">{t.date}</span>
-                        <div className="font-bold text-gray-800">{t.description}</div>
+                        {t.reference && <span className="text-xs font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">{t.reference}</span>}
                       </div>
+                      <div className="font-bold text-gray-800 mb-2">{t.description}</div>
                       <div className="flex justify-between items-center mb-2">
                         <div className="text-red-600">Déb: {t.debit > 0 ? formatMontant(t.debit) : '-'}</div>
                         <div className="text-emerald-600">Cré: {t.credit > 0 ? formatMontant(t.credit) : '-'}</div>

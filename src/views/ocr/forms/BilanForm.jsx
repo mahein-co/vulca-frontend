@@ -42,6 +42,8 @@ const PCG_MAPPING = {
     '41': { 'libelle': 'Clients et comptes rattachés', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
     '42': { 'libelle': 'Personnel et comptes rattachés', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
     '43': { 'libelle': 'Organismes sociaux', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
+    '44': { 'libelle': 'Etat, impôts et taxes', 'type_bilan': 'PASSIF', 'categorie': 'PASSIFS_COURANTS' },
+    // # État - Impôts et taxes (442, 443, 444...) Etat, impôts et taxes
     '4456': { 'libelle': 'TVA déductible', 'type_bilan': 'Actif', 'categorie': 'Actif courants' },
     '4457': { 'libelle': 'TVA collectée', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },
     '45': { 'libelle': 'Associés et Groupe', 'type_bilan': 'Passif', 'categorie': 'Passifs courants' },

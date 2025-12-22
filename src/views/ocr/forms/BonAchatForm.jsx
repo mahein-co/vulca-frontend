@@ -80,22 +80,6 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
     setLigneEnModification(null);
   }, []);
 
-  const remplirExemple = () => {
-    setHeader({
-      ...header,
-      fournisseur: 'Jovenna Station',
-      client: 'Mahein Co',
-      reference: 'TICKET-254',
-      date: getTodayDate(),
-      lieu: 'Antananarivo',
-      tauxTVA: '20'
-    });
-    setLignes([
-      { id: 1, description: 'Carburant Super Sans Plomb', quantite: 40, prixUnitaire: 5900, totalLigneHT: 236000, montantTVALigne: 47200, totalLigneTTC: 283200 },
-      { id: 2, description: 'Lavage Auto', quantite: 1, prixUnitaire: 15000, totalLigneHT: 15000, montantTVALigne: 3000, totalLigneTTC: 18000 }
-    ]);
-    toast.success("Exemple chargé !");
-  };
 
   const handleChangeHeader = useCallback((e) => {
     const { name, value } = e.target;
@@ -229,7 +213,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
     }
 
     const data = {
-      piece_type: "Type bon d'achat",
+      piece_type: "Bon d'achat",
       description_json: {
         fournisseur: header.fournisseur,
         client: header.client || 'Client divers',
@@ -250,6 +234,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
         totalGeneral: totalTTC,
         totalHT: totalHT,
       },
+      ref_file: header.numeroBon,
     };
 
     setDataToGenerateJournal(data);
@@ -277,12 +262,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                 Saisie Manuelle de Bon d'Achat
               </h1>
               <div className="flex-shrink-0 w-[88px] flex justify-end">
-                <button
-                  onClick={remplirExemple}
-                  className="text-xs bg-indigo-50 text-indigo-600 px-2 py-1 rounded border border-indigo-100 hover:bg-indigo-100 transition"
-                >
-                  Exemple
-                </button>
+                {/* Exemple Button Removed */}
               </div>
             </div>
           </div>
@@ -299,30 +279,36 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                   Informations Générales
                 </h2>
 
+                {hasLines && (
+                  <p className="text-xs text-red-600 bg-red-50 p-1 rounded mb-2 border border-red-200">
+                    ⚠️ Les informations de l'en-tête sont bloquées car des lignes ont déjà été ajoutées. Supprimez toutes les lignes pour les modifier.
+                  </p>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Fournisseur</label>
-                    <input type="text" name="fournisseur" value={header.fournisseur} onChange={handleChangeHeader} placeholder="Nom du fournisseur" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                    <input type="text" name="fournisseur" value={header.fournisseur} onChange={handleChangeHeader} disabled={hasLines} placeholder="Nom du fournisseur" className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
                   </div>
 
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Client</label>
-                    <input type="text" name="client" value={header.client} onChange={handleChangeHeader} placeholder="Nom du client" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                    <input type="text" name="client" value={header.client} onChange={handleChangeHeader} disabled={hasLines} placeholder="Nom du client" className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
                   </div>
 
                   <div className="col-span-1">
                     <label className="block text-xs font-medium text-gray-600 mb-1">N° Bon</label>
-                    <input type="text" name="numeroBon" value={header.numeroBon} onChange={handleChangeHeader} placeholder="BA-001" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                    <input type="text" name="numeroBon" value={header.numeroBon} onChange={handleChangeHeader} disabled={hasLines} placeholder="BA-001" className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
                   </div>
 
                   <div className="col-span-1">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
-                    <input type="date" name="dateBon" value={header.dateBon} onChange={handleChangeHeader} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                    <input type="date" name="dateBon" value={header.dateBon} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
                   </div>
 
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Lieu / Adresse</label>
-                    <input type="text" name="address" value={header.address} onChange={handleChangeHeader} placeholder="Adresse" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                    <input type="text" name="address" value={header.address} onChange={handleChangeHeader} disabled={hasLines} placeholder="Adresse" className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
                   </div>
                 </div>
 
@@ -335,19 +321,19 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     <div className="col-span-1">
                       <label className="block text-[10px] font-medium text-gray-500 mb-1">RCS</label>
-                      <input type="text" name="rcs" value={header.rcs} onChange={handleChangeHeader} className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md" placeholder="RCS..." />
+                      <input type="text" name="rcs" value={header.rcs} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-xs border border-gray-300 rounded-md ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} placeholder="RCS..." />
                     </div>
                     <div className="col-span-1">
                       <label className="block text-[10px] font-medium text-gray-500 mb-1">NIF</label>
-                      <input type="text" name="nif" value={header.nif} onChange={handleChangeHeader} className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md" placeholder="NIF..." />
+                      <input type="text" name="nif" value={header.nif} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-xs border border-gray-300 rounded-md ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} placeholder="NIF..." />
                     </div>
                     <div className="col-span-1">
                       <label className="block text-[10px] font-medium text-gray-500 mb-1">STAT</label>
-                      <input type="text" name="stat" value={header.stat} onChange={handleChangeHeader} className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md" placeholder="STAT..." />
+                      <input type="text" name="stat" value={header.stat} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-xs border border-gray-300 rounded-md ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} placeholder="STAT..." />
                     </div>
                     <div className="col-span-1">
                       <label className="block text-[10px] font-medium text-gray-500 mb-1">TVA (%)</label>
-                      <input type="number" name="tauxTVA" value={header.tauxTVA} onChange={handleChangeHeader} className="w-full px-2 py-1 text-xs border border-gray-300 rounded-md text-right" placeholder="0" />
+                      <input type="number" name="tauxTVA" value={header.tauxTVA} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-xs border border-gray-300 rounded-md text-right ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} placeholder="0" />
                     </div>
                   </div>
                 </div>
@@ -356,9 +342,9 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                   {ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une ligne'}
                 </h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3">
+                <div className="grid grid-cols-12 gap-3">
 
-                  <div className="md:col-span-2 lg:col-span-3">
+                  <div className="col-span-12 lg:col-span-5">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Désignation</label>
                     <input
                       type="text"
@@ -370,7 +356,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                     />
                   </div>
 
-                  <div className="lg:col-span-1">
+                  <div className="col-span-6 md:col-span-3 lg:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Qté</label>
                     <input
                       type="number"
@@ -383,8 +369,8 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                     />
                   </div>
 
-                  <div className="lg:col-span-1">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Prix U. HT (Ar) </label>
+                  <div className="col-span-6 md:col-span-3 lg:col-span-2">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">P.U. HT (Ar)</label>
                     <input
                       type="text"
                       name="prixUnitaire"
@@ -395,7 +381,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                     />
                   </div>
 
-                  <div className="md:col-span-2 lg:col-span-2">
+                  <div className="col-span-12 md:col-span-6 lg:col-span-3">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Total Ligne TTC (Ar)</label>
                     <p className="w-full px-2 py-1 text-sm border border-gray-200 bg-gray-50 rounded-md text-gray-700 text-right font-bold">
                       {formatMontant(nouvelleLigne.quantite * nouvelleLigne.prixUnitaire * (1 + tvaRateDecimal))}
@@ -448,7 +434,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                 </div>
 
                 <div className="hidden md:block">
-                  <div className="max-h-[60vh] overflow-y-auto">
+                  <div className="max-h-[60vh] overflow-y-auto overflow-x-auto">
                     <table className="w-full border-collapse">
                       <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
                         <tr>

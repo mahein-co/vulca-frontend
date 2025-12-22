@@ -387,9 +387,9 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                     {ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une ligne'}
                                 </h2>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-3">
+                                <div className="grid grid-cols-12 gap-3">
 
-                                    <div className="md:col-span-2 lg:col-span-3">
+                                    <div className="col-span-12 lg:col-span-5">
                                         <label className="block text-xs font-medium text-gray-600 mb-1">Description</label>
                                         <input
                                             type="text"
@@ -401,7 +401,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                         />
                                     </div>
 
-                                    <div className="lg:col-span-1">
+                                    <div className="col-span-6 md:col-span-3 lg:col-span-2">
                                         <label className="block text-xs font-medium text-gray-600 mb-1">Qté</label>
                                         <input
                                             type="number"
@@ -414,8 +414,8 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                         />
                                     </div>
 
-                                    <div className="lg:col-span-1">
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Prix U. HT (Ar) </label>
+                                    <div className="col-span-6 md:col-span-3 lg:col-span-2">
+                                        <label className="block text-xs font-medium text-gray-600 mb-1">P.U. HT (Ar)</label>
                                         <input
                                             type="text"
                                             name="prixUnitaire"
@@ -426,7 +426,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                         />
                                     </div>
 
-                                    <div className="md:col-span-2 lg:col-span-2">
+                                    <div className="col-span-12 md:col-span-6 lg:col-span-3">
                                         <label className="block text-xs font-medium text-gray-600 mb-1">Total Ligne TTC (Ar)</label>
                                         <p className="w-full px-2 py-1 text-sm border border-gray-200 bg-gray-50 rounded-md text-gray-700 text-right font-bold">
                                             {formatMontant(nouvelleLigne.quantite * nouvelleLigne.prixUnitaire * (1 + tvaRateDecimal))}
@@ -478,13 +478,13 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                 </div>
 
                                 <div className="hidden md:block">
-                                    <div className="max-h-[60vh] overflow-y-auto">
+                                    <div className="max-h-[60vh] overflow-y-auto overflow-x-auto">
                                         <table className="w-full border-collapse">
                                             <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
                                                 <tr>
                                                     <th className="border-b-2 border-gray-200 px-2 py-1.5 text-left text-xs font-bold text-gray-700 uppercase w-[30%]">Description</th>
                                                     <th className="border-b-2 border-gray-200 px-2 py-1.5 text-right text-xs font-bold text-gray-700 uppercase w-[10%]">Qté</th>
-                                                    <th className="border-b-2 border-gray-200 px-2 py-1.5 text-right text-xs font-bold text-gray-700 uppercase w-[15%]">Prix U. HT (Ar)</th>
+                                                    <th className="border-b-2 border-gray-200 px-2 py-1.5 text-right text-xs font-bold text-gray-700 uppercase w-[15%]">P.U. HT (Ar)</th>
                                                     <th className="border-b-2 border-gray-200 px-2 py-1.5 text-right text-xs font-bold text-gray-700 uppercase w-[15%]">Total HT (Ar)</th>
                                                     <th className="border-b-2 border-gray-200 px-2 py-1.5 text-right text-xs font-bold text-gray-700 uppercase w-[10%]">TVA (Ar)</th>
                                                     <th className="border-b-2 border-gray-200 px-2 py-1.5 text-right text-xs font-bold text-gray-700 uppercase w-[10%]">Total TTC (Ar)</th>

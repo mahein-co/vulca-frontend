@@ -763,45 +763,52 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* 2. Cartes de Résumé */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 mb-6 items-start">
-        {summaryCards.map((card, index) => (
-          <div
-            key={index}
-            className={`flex items-center justify-start text-left p-2 sm:p-3 rounded-lg shadow-sm bg-white border-t border-gray-200 h-24 sm:h-28 ${card.action === 'openBalance' ? 'cursor-pointer hover:shadow-md hover:border-emerald-400' : 'hover:shadow-md'} transition-all duration-150`}
-            onClick={card.action === 'openBalance' ? () => handleCardClick(card.action) : null}
-          >
-            <div className="p-1 rounded-md mr-3 bg-emerald-50 text-emerald-300 flex-shrink-0">
-              <span className="text-xl">{card.icon}</span>
-            </div>
+      {/* 2. Cartes de Résumé - identique au style des cartes Bilan & États */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-3 pb-2 mb-6">
+        {summaryCards.map((card, index) => {
+          const hasVariation = card.variation !== undefined && card.variation !== null;
+          const isPositive = hasVariation && card.variation >= 0;
+          const variationClass = card.invertColors
+            ? hasVariation && (card.variation < 0 ? 'text-green-600' : 'text-red-600')
+            : hasVariation && (card.variation >= 0 ? 'text-green-600' : 'text-red-600');
 
-            <div className="flex-1">
-              <p className="text-[10px] font-semibold text-gray-500 uppercase">{card.title}</p>
-              <p className="text-sm sm:text-base font-bold text-gray-900 my-0.5">{card.value}</p>
-              
-              {/* Variation indicator */}
-              {card.variation !== undefined && card.variation !== null && (
-                <div className={`flex items-center text-xs font-semibold mt-1 ${
-                  card.invertColors
-                    ? (card.variation < 0 ? 'text-green-600' : 'text-red-600')
-                    : (card.variation >= 0 ? 'text-green-600' : 'text-red-600')
-                }`}>
-                  {card.invertColors ? (
-                    card.variation < 0 ? '↓' : '↑'
-                  ) : (
-                    card.variation >= 0 ? '↑' : '↓'
+          return (
+            <div key={index}>
+              <div
+                className={`bg-white border border-gray-200 rounded-lg p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[60px] ${
+                  card.action === 'openBalance' ? 'cursor-pointer hover:border-emerald-400' : ''
+                }`}
+                onClick={card.action === 'openBalance' ? () => handleCardClick(card.action) : null}
+              >
+                <div className="flex items-start gap-2 w-full">
+                  <div className="p-1 rounded-full text-indigo-700 bg-white border border-gray-200 shadow group-hover:scale-110 transition-transform duration-200 flex items-center justify-center">
+                    <span className="text-base">{card.icon}</span>
+                  </div>
+
+                  <div className="flex-1">
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wide mb-0.5">
+                      {card.title}
+                    </p>
+                    <p className="text-xs font-extrabold text-indigo-700 mb-0.5">
+                      {card.value}
+                    </p>
+                  </div>
+
+                  {hasVariation && (
+                    <div className={`text-[7px] font-bold ${variationClass}`}>
+                      <span className="inline-block px-1.5 py-0.5 rounded-full bg-gray-100 shadow-sm">
+                        {card.invertColors
+                          ? (card.variation < 0 ? '↓' : '↑')
+                          : (isPositive ? '↑' : '↓')}{' '}
+                        {Math.abs(card.variation).toFixed(1)}%
+                      </span>
+                    </div>
                   )}
-                  <span className="ml-1">
-                    {Math.abs(card.variation).toFixed(1)}%
-                  </span>
                 </div>
-              )}
-              
-              {card.unit && !card.variation && <p className="text-[11px] text-gray-400">{card.unit}</p>}
-
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
 

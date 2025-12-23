@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Eye, X, FileText } from 'lucide-react';
+import { BASE_URL_API } from '../../constants/globalConstants';
 
 // --- 0. COMPOSANT : Modale de Détails ---
 const DetailsModal = ({ isOpen, document, onClose }) => {
@@ -7,8 +8,8 @@ const DetailsModal = ({ isOpen, document, onClose }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-            <div className="bg-white rounded-lg shadow-2xl p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
-                <div className="flex justify-between items-start border-b pb-3 mb-4">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+                <div className="flex justify-between items-start border-b p-6 pb-3 flex-shrink-0">
                     <h3 className="text-xl font-bold text-gray-800">
                         Détails de la pièce
                     </h3>
@@ -20,7 +21,7 @@ const DetailsModal = ({ isOpen, document, onClose }) => {
                     </button>
                 </div>
 
-                <div className="space-y-3">
+                <div className="p-6 pt-4 space-y-3 overflow-y-auto flex-1">
                     <div className="flex justify-between items-center text-sm">
                         <span className="font-semibold text-gray-600 uppercase tracking-wider text-[10px]">Origine</span>
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${document.source_type === 'file' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
@@ -65,6 +66,7 @@ const DetailsModal = ({ isOpen, document, onClose }) => {
                             </pre>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -150,14 +152,10 @@ const DocumentCard = ({ piece, onClick, onViewDetails }) => {
 
             <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                 <div className="flex items-center text-[11px] text-gray-500 overflow-hidden">
-                    {piece.source_type === 'file' ? (
-                        <>
-                            <span className="font-semibold mr-1 flex-shrink-0">Ref:</span>
-                            <span className="truncate">{piece.ref || '---'}</span>
-                        </>
-                    ) : (
-                        <span className="text-gray-400 italic">Saisie manuelle</span>
-                    )}
+                    <>
+                        <span className="font-semibold mr-1 flex-shrink-0">Ref:</span>
+                        <span className="truncate">{piece.ref || '---'}</span>
+                    </>
                 </div>
                 <div className="text-[11px] text-gray-400 whitespace-nowrap ml-2 bg-gray-100 px-1.5 py-0.5 rounded">
                     {piece.date || '---'}
@@ -186,8 +184,8 @@ export default function GestionPiecesBoard() {
         const fetchPieces = async () => {
             try {
                 setLoading(true);
-                console.log("Fetching pieces from http://127.0.0.1:8000/api/pieceslist/ ...");
-                const response = await fetch('http://127.0.0.1:8000/api/pieceslist/');
+                console.log(`Fetching pieces from ${BASE_URL_API}/pieceslist/ ...`);
+                const response = await fetch(`${BASE_URL_API}/pieceslist/`);
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                 const data = await response.json();
@@ -251,7 +249,18 @@ export default function GestionPiecesBoard() {
     }, [documents, recherche, dateDebut, dateFin]);
 
     return (
-        <div className="pt-14 pb-6 h-screen bg-gray-50 overflow-hidden flex flex-col">
+        <div className="relative pt-14 pb-6 h-screen bg-gray-50 overflow-hidden flex flex-col">
+            {loading && (
+                <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex justify-center items-center">
+                    <div className="flex flex-col items-center max-w-sm w-full text-center">
+                        <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
+                            <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                            <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                        </div>
+                        <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">Chargement des pièces...</p>
+                    </div>
+                </div>
+            )}
 
             <div className="px-6 space-y-4 flex-shrink-0">
 
@@ -297,7 +306,7 @@ export default function GestionPiecesBoard() {
                         </svg>
                         <input
                             type="text"
-                            placeholder="Numéro, nom du fichier"
+                            placeholder="Ref, nom du fichier"
                             value={recherche}
                             onChange={(e) => setRecherche(e.target.value)}
                             className="w-full p-2 border-0 focus:ring-0 text-sm placeholder-gray-400"

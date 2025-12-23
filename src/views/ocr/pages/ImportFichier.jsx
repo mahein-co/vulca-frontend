@@ -21,7 +21,7 @@ const determinePieceType = (data) => {
     if (!data) return 'Autres';
     const typeDoc = (data.type_document || '').toUpperCase();
     if (typeDoc === 'VENTE' || typeDoc === 'ACHAT' || data.numeroFacture) return 'facture';
-    // ... (rest of the file)
+    if (typeDoc === 'BANQUE') return 'BANQUE';
     if (typeDoc === 'VIREMENT') return 'virement bancaire';
     if (typeDoc === 'RELEVES') return 'relevé bancaire';
     if (typeDoc === 'BON_DE_CAISSE' || typeDoc === 'FICHE_PAYE') return typeDoc.replace('_', ' ').toLowerCase();
@@ -389,6 +389,14 @@ const OcrValidationForm = ({
                                     if (key === 'reference') {
                                         const numFacture = formData.extractedJson.numero_facture || formData.extractedJson.invoice_number;
                                         if (numFacture && String(numFacture).trim() === String(value).trim()) {
+                                            return null;
+                                        }
+                                    }
+
+                                    // 5. Eviter doublon Identifiant si identique à Reference
+                                    if (key === 'identifiant') {
+                                        const reference = formData.extractedJson.reference;
+                                        if (reference && String(reference).trim() === String(value).trim()) {
                                             return null;
                                         }
                                     }

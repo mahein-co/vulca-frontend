@@ -775,7 +775,7 @@ const Dashboard = () => {
           return (
             <div key={index}>
               <div
-                className={`bg-white border border-gray-200 rounded-lg p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[60px] ${
+                className={`bg-white border border-gray-200 rounded-lg p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[150px] ${
                   card.action === 'openBalance' ? 'cursor-pointer hover:border-emerald-400' : ''
                 }`}
                 onClick={card.action === 'openBalance' ? () => handleCardClick(card.action) : null}
@@ -795,7 +795,7 @@ const Dashboard = () => {
                   </div>
 
                   {hasVariation && (
-                    <div className={`text-[7px] font-bold ${variationClass}`}>
+                    <div className={`text-[10px] font-bold ${variationClass}`}>
                       <span className="inline-block px-1.5 py-0.5 rounded-full bg-gray-100 shadow-sm">
                         {card.invertColors
                           ? (card.variation < 0 ? '↓' : '↑')

@@ -14,15 +14,25 @@ import { BASE_URL_API } from '../../constants/globalConstants';
 export default function LineChartCAEvolution() {
   const [evolutionData, setEvolutionData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [visibleMetrics, setVisibleMetrics] = useState({
+    ca: true,
+    charges: true,
+    resultatNet: true
+  });
+
+  const toggleMetric = (metric) => {
+    setVisibleMetrics(prev => ({
+      ...prev,
+      [metric]: !prev[metric]
+    }));
+  };
 
   useEffect(() => {
-    // Utiliser AbortController pour éviter les double-fetches
     const abortController = new AbortController();
     
     const fetchEvolutionData = async () => {
       setLoading(true);
       try {
-        // 1. Récupérer la date max des factures
         const dateRangeResponse = await fetch(`${BASE_URL_API}/journals/date-range/`, {
           signal: abortController.signal
         });
@@ -32,7 +42,6 @@ export default function LineChartCAEvolution() {
           ? new Date(dateRangeData.max_date) 
           : new Date();
         
-        // 2. Préparer toutes les requêtes pour les 6 derniers mois
         const monthPromises = [];
         
         for (let i = 5; i >= 0; i--) {
@@ -43,7 +52,6 @@ export default function LineChartCAEvolution() {
           const dateEnd = monthEnd.toISOString().split('T')[0];
           const monthName = monthStart.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
 
-          // Récupérer CA et Charges en parallèle pour chaque mois
           monthPromises.push(
             Promise.all([
               fetch(`${BASE_URL_API}/chiffre-affaire/?date_start=${dateStart}&date_end=${dateEnd}`, {
@@ -68,7 +76,6 @@ export default function LineChartCAEvolution() {
           );
         }
 
-        // 3. Exécuter toutes les requêtes en parallèle
         const monthsData = await Promise.all(monthPromises);
         
         if (!abortController.signal.aborted) {
@@ -87,82 +94,135 @@ export default function LineChartCAEvolution() {
 
     fetchEvolutionData();
 
-    // Cleanup
     return () => {
       abortController.abort();
     };
   }, []);
 
   return (
-    <div className="w-full h-80 md:h-96 relative">
-      {loading ? (
-        <div className="w-full h-full flex items-center justify-center">
-          <div className="text-gray-500">Chargement de l'évolution...</div>
+    <div className="w-full">
+      {/* Sélecteur de métriques */}
+      {!loading && (
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+          <p className="text-sm font-medium text-gray-700 mb-2">Métriques à afficher :</p>
+          <div className="flex gap-4 flex-wrap">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={visibleMetrics.ca}
+                onChange={() => toggleMetric('ca')}
+                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700 flex items-center gap-1">
+                <span className="w-3 h-3 rounded-full bg-blue-500"></span>
+                Chiffre d'Affaires
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={visibleMetrics.charges}
+                onChange={() => toggleMetric('charges')}
+                className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
+              />
+              <span className="text-sm text-gray-700 flex items-center gap-1">
+                <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                Charges
+              </span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={visibleMetrics.resultatNet}
+                onChange={() => toggleMetric('resultatNet')}
+                className="w-4 h-4 text-emerald-600 rounded focus:ring-emerald-500"
+              />
+              <span className="text-sm text-gray-700 flex items-center gap-1">
+                <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
+                Résultat Net
+              </span>
+            </label>
+          </div>
         </div>
-      ) : (
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={evolutionData} margin={{ top: 10, right: 30, left: 60, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis 
-              dataKey="name" 
-              stroke="#4b5563"
-              tick={{ fontSize: 12 }}
-              angle={-15}
-              textAnchor="end"
-              height={60}
-            />
-            <YAxis 
-              stroke="#4b5563" 
-              width={80}
-              tickFormatter={(value) => `${(value / 1000).toFixed(0)}K Ar`}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: '#fff',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-              }}
-              labelStyle={{ fontWeight: 'bold', color: '#1f2937' }}
-              formatter={(value) => value.toLocaleString('fr-FR') + ' Ar'}
-            />
-            <Legend wrapperStyle={{ paddingTop: '10px' }} />
-            
-            {/* Chiffre d'Affaires - Bleu */}
-            <Line
-              type="monotone"
-              dataKey="ca"
-              stroke="#3b82f6"
-              strokeWidth={3}
-              dot={{ fill: '#3b82f6', r: 5 }}
-              activeDot={{ r: 7, stroke: '#1d4ed8', strokeWidth: 2 }}
-              name="Chiffre d'Affaires"
-            />
-            
-            {/* Charges - Rouge */}
-            <Line
-              type="monotone"
-              dataKey="charges"
-              stroke="#ef4444"
-              strokeWidth={3}
-              dot={{ fill: '#ef4444', r: 5 }}
-              activeDot={{ r: 7, stroke: '#dc2626', strokeWidth: 2 }}
-              name="Charges"
-            />
-            
-            {/* Résultat Net - Vert */}
-            <Line
-              type="monotone"
-              dataKey="resultatNet"
-              stroke="#10b981"
-              strokeWidth={3}
-              dot={{ fill: '#10b981', r: 5 }}
-              activeDot={{ r: 7, stroke: '#059669', strokeWidth: 2 }}
-              name="Résultat Net"
-            />
-          </LineChart>
-        </ResponsiveContainer>
       )}
+
+      <div className="w-full h-80 md:h-96 relative">
+        {loading ? (
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="text-gray-500">Chargement de l'évolution...</div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={evolutionData} margin={{ top: 10, right: 30, left: 60, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+              <XAxis 
+                dataKey="name" 
+                stroke="#4b5563"
+                tick={{ fontSize: 12 }}
+                angle={-15}
+                textAnchor="end"
+                height={60}
+              />
+              <YAxis 
+                stroke="#4b5563" 
+                width={80}
+                tickFormatter={(value) => `${(value / 1000).toFixed(0)}K Ar`}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#fff',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                }}
+                labelStyle={{ fontWeight: 'bold', color: '#1f2937' }}
+                formatter={(value) => value.toLocaleString('fr-FR') + ' Ar'}
+              />
+              <Legend wrapperStyle={{ paddingTop: '10px' }} />
+              
+              {visibleMetrics.ca && (
+                <Line
+                  type="monotone"
+                  dataKey="ca"
+                  stroke="#3b82f6"
+                  strokeWidth={3}
+                  dot={{ fill: '#3b82f6', r: 5 }}
+                  activeDot={{ r: 7, stroke: '#1d4ed8', strokeWidth: 2 }}
+                  name="Chiffre d'Affaires"
+                  animationDuration={300}
+                />
+              )}
+              
+              {visibleMetrics.charges && (
+                <Line
+                  type="monotone"
+                  dataKey="charges"
+                  stroke="#ef4444"
+                  strokeWidth={3}
+                  dot={{ fill: '#ef4444', r: 5 }}
+                  activeDot={{ r: 7, stroke: '#dc2626', strokeWidth: 2 }}
+                  name="Charges"
+                  animationDuration={300}
+                />
+              )}
+              
+              {visibleMetrics.resultatNet && (
+                <Line
+                  type="monotone"
+                  dataKey="resultatNet"
+                  stroke="#10b981"
+                  strokeWidth={3}
+                  dot={{ fill: '#10b981', r: 5 }}
+                  activeDot={{ r: 7, stroke: '#059669', strokeWidth: 2 }}
+                  name="Résultat Net"
+                  animationDuration={300}
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </div>
     </div>
   );
 }
+

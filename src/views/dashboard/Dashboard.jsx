@@ -5,6 +5,7 @@ import BarCharts from '../../components/charts/BarCharts';
 import TvaBarChart from '../../components/charts/TvaBarChart';
 import PieChartRepartition from '../../components/charts/PieChartRepartition';
 import LineChartCAEvolution from '../../components/charts/LineChartCAEvolution';
+import LineChartCategorized from '../../components/charts/LineChartCategorized';
 import ThreePieCharts from '../../components/charts/ThreePieCharts';
 import { BASE_URL_API } from '../../constants/globalConstants';
 
@@ -41,17 +42,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
     fetch(url)
       .then(res => res.json())
       .then(data => {
-        const colors = [
-          'bg-blue-600', 'bg-emerald-500', 'bg-violet-600',
-          'bg-amber-500', 'bg-rose-500', 'bg-cyan-600', 'bg-fuchsia-600'
-        ];
-
-        const journalsWithColors = (data.journals || []).map((j, idx) => ({
-          ...j,
-          color: colors[idx % colors.length]
-        }));
-
-        setJournals(journalsWithColors);
+        setJournals(data.journals || []);
         setTotalFormatted(new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(data.total_global || 0).replace('MGA', 'Ar'));
       })
       .catch(err => console.error("Erreur chargement répartition journaux:", err));
@@ -333,7 +324,7 @@ const Dashboard = () => {
   });
 
   const [loadingIndicators, setLoadingIndicators] = useState(true);
-
+  
   // État pour le ROE
   const [roeData, setRoeData] = useState({
     roe: null,
@@ -400,6 +391,8 @@ const Dashboard = () => {
   const [leverageDataVar, setLeverageDataVar] = useState({ leverage: 0, variation: null });
   const [bfrDataVar, setBfrDataVar] = useState({ bfr: 0, variation: null });
   const [margeBruteDataVar, setMargeBruteDataVar] = useState({ marge_brute: 0, variation: null });
+  const [margeNetteDataVar, setMargeNetteDataVar] = useState({ marge_nette: null, variation: null });
+  const [tresorerieDataVar, setTresorerieDataVar] = useState({ tresorerie: 0, variation: null });
 
   // CHARGEMENT OPTIMISÉ (1 seul appel API)
   useEffect(() => {
@@ -664,6 +657,41 @@ const Dashboard = () => {
       .catch(err => console.error("Erreur chargement Marge Brute:", err));
   }, [globalDateStart, globalDateEnd]);
 
+  // Chargement des données Marge Nette avec variation
+  useEffect(() => {
+    let url = `${BASE_URL_API}/marge-nette/?`;
+    if (globalDateStart) url += `date_start=${globalDateStart}&`;
+    if (globalDateEnd) url += `date_end=${globalDateEnd}`;
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        setMargeNetteDataVar({
+          marge_nette: data.marge_nette,
+          variation: data.variation
+        });
+      })
+      .catch(err => console.error("Erreur chargement Marge Nette:", err));
+  }, [globalDateStart, globalDateEnd]);
+
+  // Chargement des données Trésorerie avec variation
+  useEffect(() => {
+    let url = `${BASE_URL_API}/tresorerie/?`;
+    if (globalDateStart) url += `date_start=${globalDateStart}&`;
+    if (globalDateEnd) url += `date_end=${globalDateEnd}`;
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        setTresorerieDataVar({
+          tresorerie: data.tresorerie || 0,
+          variation: data.variation
+        });
+      })
+      .catch(err => console.error("Erreur chargement Trésorerie:", err));
+  }, [globalDateStart, globalDateEnd]);
+
+
 
   // ✅ SUMMARY CARDS DYNAMIQUE
   const formattedLeverage = (() => {
@@ -726,6 +754,42 @@ const Dashboard = () => {
       icon: "💵",
       variation: bfrDataVar.variation
     },
+    {
+      title: "ROE",
+      value: roeData.roe !== null ? `${Number(roeData.roe).toFixed(2)}%` : '--',
+      icon: "📈",
+      variation: roeData.variation
+    },
+    {
+      title: "ROA",
+      value: roaData.roa !== null ? `${Number(roaData.roa).toFixed(2)}%` : '--',
+      icon: "💹",
+      variation: roaData.variation
+    },
+    {
+      title: "Rotation stocks",
+      value: rotationStockData.rotation_stock !== null ? `${Number(rotationStockData.rotation_stock).toFixed(1)}x` : '--',
+      icon: "🔄",
+      variation: rotationStockData.variation
+    },
+    {
+      title: "Marge opé.",
+      value: margeOperationnelleData.marge_operationnelle !== null ? `${Number(margeOperationnelleData.marge_operationnelle).toFixed(1)}%` : '--',
+      icon: "�",
+      variation: margeOperationnelleData.variation
+    },
+    {
+      title: "Marge nette",
+      value: margeNetteDataVar.marge_nette !== null ? `${Number(margeNetteDataVar.marge_nette).toFixed(1)}%` : '--',
+      icon: "💰",
+      variation: margeNetteDataVar.variation
+    },
+    {
+      title: "Trésorerie",
+      value: `Ar ${Number(tresorerieDataVar.tresorerie).toLocaleString("fr-FR")}`,
+      icon: "🏦",
+      variation: tresorerieDataVar.variation
+    },
   ];
 
 
@@ -785,11 +849,9 @@ const Dashboard = () => {
           return (
             <div key={index}>
               <div
-                className={`bg-white border border-gray-200 rounded-lg p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[150px] ${
+                className={`bg-white border border-gray-200 rounded-lg p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[60px] ${
                   card.action === 'openBalance' ? 'cursor-pointer hover:border-emerald-400' : ''
                 }`}
-                className={`bg-white border border-gray-200 rounded-lg p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[60px] ${card.action === 'openBalance' ? 'cursor-pointer hover:border-emerald-400' : ''
-                  }`}
                 onClick={card.action === 'openBalance' ? () => handleCardClick(card.action) : null}
               >
                 <div className="flex items-start gap-2 w-full">
@@ -980,37 +1042,6 @@ const Dashboard = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-100 bg-white">
                   <tr className="group hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-800 font-medium">Return on Equity (ROE)</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
-                      {roeData.roe !== null ? `${Number(roeData.roe).toFixed(2)}%` : '--'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {roeData.variation !== null ? (
-                        <span className={roeData.variation >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                          {roeData.variation >= 0 ? '↗' : '↘'} {Math.abs(Number(roeData.variation)).toFixed(2)}%
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">--</span>
-                      )}
-                    </td>
-                  </tr>
-                  <tr className="group hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-800 font-medium">Return on Assets (ROA)</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
-                      {roaData.roa !== null ? `${Number(roaData.roa).toFixed(2)}%` : '--'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {roaData.variation !== null ? (
-                        <span className={roaData.variation >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                          {roaData.variation >= 0 ? '↗' : '↘'} {Math.abs(Number(roaData.variation)).toFixed(2)}%
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">--</span>
-                      )}
-                    </td>
-                  </tr>
-
-                  <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Current Ratio</td>
                     <td className="px-4 py-3 text-gray-900 font-bold text-right">
                       {currentRatioData.current_ratio !== null ? Number(currentRatioData.current_ratio).toFixed(2) : '--'}
@@ -1058,22 +1089,6 @@ const Dashboard = () => {
                     </td>
                   </tr>
 
-                  <tr className="group hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-800 font-medium">Rotation des stocks</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
-                      {rotationStockData.rotation_stock !== null ? `${Number(rotationStockData.rotation_stock).toFixed(1)}x` : '--'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {rotationStockData.variation !== null ? (
-                        <span className={rotationStockData.variation >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                          {rotationStockData.variation >= 0 ? '↗' : '↘'} {rotationStockData.variation >= 0 ? '+' : ''}{Number(rotationStockData.variation).toFixed(1)}x
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">--</span>
-                      )}
-                    </td>
-                  </tr>
-
                   {/* <tr className="group hover:bg-gray-50 transition-colors">
                     <td className="px-4 py-3 text-gray-800 font-medium">Délais clients</td>
                     <td className="px-4 py-3 text-gray-900 font-bold text-right">45 j</td>
@@ -1085,22 +1100,6 @@ const Dashboard = () => {
                     <td className="px-4 py-3 text-gray-900 font-bold text-right">60 j</td>
                     <td className="px-4 py-3 text-right text-emerald-600 font-medium">↘ -2 j</td>
                   </tr> */}
-
-                  <tr className="group hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-gray-800 font-medium">Marge opérationnelle</td>
-                    <td className="px-4 py-3 text-gray-900 font-bold text-right">
-                      {margeOperationnelleData.marge_operationnelle !== null ? `${Number(margeOperationnelleData.marge_operationnelle).toFixed(1)}%` : '--'}
-                    </td>
-                    <td className="px-4 py-3 text-right font-medium">
-                      {margeOperationnelleData.variation !== null ? (
-                        <span className={margeOperationnelleData.variation >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                          {margeOperationnelleData.variation >= 0 ? '↗' : '↘'} {margeOperationnelleData.variation >= 0 ? '+' : ''}{Number(margeOperationnelleData.variation).toFixed(1)}%
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">--</span>
-                      )}
-                    </td>
-                  </tr>
                 </tbody>
               </table>
             </div>
@@ -1113,6 +1112,12 @@ const Dashboard = () => {
         <LineChartCAEvolution />
       </div>
 
+      {/* 3b. Graphique d'Évolution des Métriques Financières (Catégorisé) */}
+      <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-3">Évolution des Métriques Financières</h3>
+        <LineChartCategorized globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+      </div>
+
       {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
       <div className="grid grid-cols-1 gap-4 items-stretch mb-4">
         <div>
@@ -1120,8 +1125,8 @@ const Dashboard = () => {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 items-stretch mb-4">
-        <TvaBarChart globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
-      </div>
+          <TvaBarChart globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+        </div>
       {/* 5. Trois Camemberts: Produits, Charges, et Comparaison */}
       <ThreePieCharts globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
 

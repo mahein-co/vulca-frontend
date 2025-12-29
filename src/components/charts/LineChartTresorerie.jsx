@@ -1,0 +1,103 @@
+import { useState, useEffect } from 'react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from 'recharts';
+import { BASE_URL_API } from '../../constants/globalConstants';
+
+export default function LineChartTresorerie({ globalDateStart, globalDateEnd }) {
+  const [evolutionData, setEvolutionData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    
+    const fetchEvolutionData = async () => {
+      setLoading(true);
+      try {
+        // Ne pas envoyer de paramètres de dates pour utiliser les 6 derniers mois par défaut
+        let url = `${BASE_URL_API}/evolution-tresorerie/`;
+        
+        const response = await fetch(url, {
+          signal: abortController.signal
+        });
+        const data = await response.json();
+        
+        if (!abortController.signal.aborted) {
+          setEvolutionData(data.evolution || []);
+        }
+      } catch (error) {
+        if (error.name !== 'AbortError') {
+          console.error('Erreur chargement évolution trésorerie:', error);
+        }
+      } finally {
+        if (!abortController.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchEvolutionData();
+
+    return () => {
+      abortController.abort();
+    };
+  }, []); // Removed dependencies on globalDateStart and globalDateEnd
+
+  return (
+    <div className="w-full h-80 md:h-96 relative">
+      {loading ? (
+        <div className="w-full h-full flex items-center justify-center">
+          <div className="text-gray-500">Chargement de l'évolution de la trésorerie...</div>
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={evolutionData} margin={{ top: 10, right: 30, left: 60, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
+            <XAxis 
+              dataKey="mois" 
+              stroke="#4b5563"
+              tick={{ fontSize: 12 }}
+              angle={-15}
+              textAnchor="end"
+              height={60}
+            />
+            <YAxis 
+              stroke="#4b5563" 
+              width={80}
+              tickFormatter={(value) => `${(value / 1000).toFixed(0)}K Ar`}
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: '#fff',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              }}
+              labelStyle={{ fontWeight: 'bold', color: '#1f2937' }}
+              formatter={(value) => value.toLocaleString('fr-FR') + ' Ar'}
+            />
+            <Legend wrapperStyle={{ paddingTop: '10px' }} />
+            
+            {/* Trésorerie - Bleu cyan */}
+            <Line
+              type="monotone"
+              dataKey="montant"
+              stroke="#06b6d4"
+              strokeWidth={3}
+              dot={{ fill: '#06b6d4', r: 5 }}
+              activeDot={{ r: 7, stroke: '#0891b2', strokeWidth: 2 }}
+              name="Trésorerie"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  );
+}

@@ -41,7 +41,17 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
     fetch(url)
       .then(res => res.json())
       .then(data => {
-        setJournals(data.journals || []);
+        const colors = [
+          'bg-blue-600', 'bg-emerald-500', 'bg-violet-600',
+          'bg-amber-500', 'bg-rose-500', 'bg-cyan-600', 'bg-fuchsia-600'
+        ];
+
+        const journalsWithColors = (data.journals || []).map((j, idx) => ({
+          ...j,
+          color: colors[idx % colors.length]
+        }));
+
+        setJournals(journalsWithColors);
         setTotalFormatted(new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(data.total_global || 0).replace('MGA', 'Ar'));
       })
       .catch(err => console.error("Erreur chargement répartition journaux:", err));
@@ -323,7 +333,7 @@ const Dashboard = () => {
   });
 
   const [loadingIndicators, setLoadingIndicators] = useState(true);
-  
+
   // État pour le ROE
   const [roeData, setRoeData] = useState({
     roe: null,
@@ -775,9 +785,8 @@ const Dashboard = () => {
           return (
             <div key={index}>
               <div
-                className={`bg-white border border-gray-200 rounded-lg p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[60px] ${
-                  card.action === 'openBalance' ? 'cursor-pointer hover:border-emerald-400' : ''
-                }`}
+                className={`bg-white border border-gray-200 rounded-lg p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[60px] ${card.action === 'openBalance' ? 'cursor-pointer hover:border-emerald-400' : ''
+                  }`}
                 onClick={card.action === 'openBalance' ? () => handleCardClick(card.action) : null}
               >
                 <div className="flex items-start gap-2 w-full">
@@ -1108,8 +1117,8 @@ const Dashboard = () => {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 items-stretch mb-4">
-          <TvaBarChart globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
-        </div>
+        <TvaBarChart globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+      </div>
       {/* 5. Trois Camemberts: Produits, Charges, et Comparaison */}
       <ThreePieCharts globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
 

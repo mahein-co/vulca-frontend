@@ -20,7 +20,8 @@ const LoadingOverlay = ({ message }) => (
 const determinePieceType = (data) => {
     if (!data) return 'Autres';
     const typeDoc = (data.type_document || '').toUpperCase();
-    if (typeDoc === 'VENTE' || typeDoc === 'ACHAT' || data.numeroFacture) return 'facture';
+    if (typeDoc === 'VENTE' || typeDoc === 'ACHAT') return typeDoc;
+    if (data.numeroFacture) return 'facture';
     if (typeDoc === 'BANQUE') return 'BANQUE';
     if (typeDoc === 'VIREMENT') return 'virement bancaire';
     if (typeDoc === 'RELEVES') return 'relevé bancaire';
@@ -271,11 +272,9 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
 
 // --- 2. Composant : OcrValidationForm ---
 const OcrValidationForm = ({
-    formData, onFormChange, onValider, isDocumentLoaded, isExtracted, onExtractText, onCancelExtraction, documentsCount, isLotValidatable, isLoading, errorNotification, onCloseError, currentDocument, isSaving
+    formData, onFormChange, onValider, isDocumentLoaded, isExtracted, onExtractText, onCancelExtraction, documentsCount, isLotValidatable, isLoading, errorNotification, onCloseError, currentDocument, isSaving, onExtractAll
 }) => {
-    // Calcul de la TVA et du Taux
-    const totalTTC = parseFloat(String(formData.montant || '0').replace(/[^0-9.]/g, '')) || 0;
-    const totalHT = parseFloat(String(formData.totalHT || '0').replace(/[^0-9.]/g, '')) || 0;
+
 
 
     return (
@@ -285,31 +284,33 @@ const OcrValidationForm = ({
 
             {/* Boutons d'Action OCR */}
             <div className="mb-2 sm:mb-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-gray-100 pb-2 flex-shrink-0">
-                <button
-                    type="button"
-                    onClick={onExtractText}
-                    disabled={!isDocumentLoaded || isExtracted || isLoading}
-                    className={`flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded text-xs font-medium transition duration-150 w-full sm:w-auto
-                        ${!isDocumentLoaded || isExtracted || isLoading
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'}`
-                    }
-                >
-                    {isLoading ? (
-                        <>
-                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>Extraction...</span>
-                        </>
-                    ) : (
-                        <>
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13l-3 3m0 0l-3-3m3 3V8m0 8-3-3m3 3l3-3m-3 3zM12 21a9 9 0 100-18 9 9 0 000 18z" /></svg>
-                            <span>Extraire (OCR)</span>
-                        </>
-                    )}
-                </button>
+                <div className="flex gap-2 w-full sm:w-auto">
+                    <button
+                        type="button"
+                        onClick={documentsCount > 1 ? onExtractAll : onExtractText}
+                        disabled={isLoading || documentsCount === 0 || isLotValidatable}
+                        className={`flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded text-xs font-medium transition duration-150 flex-1 sm:flex-initial
+                            ${isLoading || documentsCount === 0 || isLotValidatable
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : 'bg-indigo-600 text-white hover:bg-indigo-700'}`
+                        }
+                    >
+                        {isLoading ? (
+                            <>
+                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Extraction des informations en cours...</span>
+                            </>
+                        ) : (
+                            <>
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13l-3 3m0 0l-3-3m3 3V8m0 8-3-3m3 3l3-3m-3 3zM12 21a9 9 0 100-18 9 9 0 000 18z" /></svg>
+                                <span>Extraire les informations</span>
+                            </>
+                        )}
+                    </button>
+                </div>
 
                 {isExtracted && (
                     <button
@@ -340,14 +341,14 @@ const OcrValidationForm = ({
 
                 {isExtracted ? (
                     <div className="relative bg-amber-50 border-l-2 border-amber-400 p-2 rounded-sm text-xs text-amber-900 mb-2">
-                        <p className="font-bold flex items-center">⚠️ Vérification OCR</p>
+                        <p className="font-bold flex items-center">⚠️ Veuillez vérifier les informations extraites par l’OCR. En cas d’erreur, vous pouvez modifier les champs manuellement </p>
                     </div>
                 ) : (
                     isDocumentLoaded && (
                         <div className="relative bg-blue-50 border-l-2 border-blue-400 p-2 rounded-sm text-xs text-blue-900 mb-2">
                             <h4 className="font-bold mb-0.5 mb-1">{isLoading ? 'Extraction en cours...' : 'En attente d\'extraction'}</h4>
                             <p className="leading-tight">
-                                {isLoading ? 'Veuillez patienter pendant l\'analyse de votre document.' : 'Cliquez sur "Extraire (OCR)" pour remplir le formulaire.'}
+                                {isLoading ? 'Veuillez patienter pendant l\'analyse de votre document.' : 'Cliquez sur "Extraire les informations" pour remplir le formulaire.'}
                             </p>
                         </div>
                     )
@@ -615,11 +616,11 @@ const OcrValidationForm = ({
                             Traitement...
                         </>
                     ) : (
-                        documentsCount > 1 ? `Valider Lot (${documentsCount})` : 'Valider'
+                        'Valider'
                     )}
                 </button>
             </div>
-        </div>
+        </div >
     );
 };
 
@@ -639,6 +640,7 @@ export default function ImportFichier({ onSaisieCompleted }) {
 
     // Etat pour le chargement global de la validation (batch)
     const [isSaving, setIsSaving] = useState(false);
+    const [isBatchExtracting, setIsBatchExtracting] = useState(false);
 
     // Fonction pour afficher une notification d'erreur
     const showErrorNotification = useCallback((message) => {
@@ -795,6 +797,71 @@ export default function ImportFichier({ onSaisieCompleted }) {
         }));
     }, [currentDocument, currentIndex]);
 
+    // Extraction en lot (Batch)
+    const handleExtractAll = async () => {
+        // Filtrer les documents qui ne sont pas encore extraits
+        const docsToExtract = documents.filter(doc => !doc.isExtracted);
+
+        if (docsToExtract.length === 0) {
+            toast.success("Tous les documents sont déjà extraits.");
+            return;
+        }
+
+        setIsBatchExtracting(true);
+        let successCount = 0;
+        let errors = [];
+
+        try {
+            await Promise.all(docsToExtract.map(async (docToExtract) => {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', docToExtract.file);
+
+                    const result = await extractData(formData).unwrap();
+
+                    // Mettre à jour le document spécifique dans l'état
+                    setDocuments(prev => prev.map(doc => {
+                        if (doc.id === docToExtract.id) {
+                            const extracted = result.extracted_json || {};
+                            const typeDoc = determinePieceType(extracted);
+                            return {
+                                ...doc,
+                                isExtracted: true,
+                                rawResponse: result,
+                                data: {
+                                    ...doc.data,
+                                    extractedJson: extracted,
+                                    typeDocument: typeDoc,
+                                    montant: extracted.montant_ttc || extracted.total_amount || doc.data.montant,
+                                    totalHT: extracted.montant_ht || extracted.net_amount || doc.data.totalHT,
+                                    numeroFacture: extracted.numero_facture || extracted.invoice_number || doc.data.numeroFacture,
+                                    dateEmission: extracted.date || extracted.date_emission || doc.data.dateEmission,
+                                }
+                            };
+                        }
+                        return doc;
+                    }));
+                    successCount++;
+                } catch (err) {
+                    console.error(`Echec extraction pour ${docToExtract.file.name}`, err);
+                    errors.push(docToExtract.file.name);
+                }
+            }));
+
+            if (errors.length > 0) {
+                showErrorNotification(`Echec pour ${errors.length} fichier(s): ${errors.join(', ')}`);
+            } else {
+                toast.success(`${successCount} documents extraits avec succès !`);
+            }
+
+        } catch (globalErr) {
+            console.error(globalErr);
+            showErrorNotification("Erreur lors de l'extraction par lot.");
+        } finally {
+            setIsBatchExtracting(false);
+        }
+    };
+
     // Validation du Lot via API (DRF)
     const handleValiderAll = async () => {
         if (!isLotValidatable) return alert("Extraction OCR requise pour tous les documents.");
@@ -849,9 +916,9 @@ export default function ImportFichier({ onSaisieCompleted }) {
             <style>{styles}</style>
 
             {/* OVERLAY DE CHARGEMENT */}
-            {(isExtracting || isSaving) && (
+            {(isExtracting || isSaving || isBatchExtracting) && (
                 <LoadingOverlay
-                    message={isSaving ? "Validation et enregistrement en cours..." : "Extraction des données (OCR) en cours..."}
+                    message={isSaving ? "Validation et enregistrement en cours..." : (isBatchExtracting ? "Extraction par lot en cours..." : "Extraction des données (OCR) en cours...")}
                 />
             )}
 
@@ -956,11 +1023,12 @@ export default function ImportFichier({ onSaisieCompleted }) {
                             onCancelExtraction={handleCancelExtraction}
                             documentsCount={documents.length}
                             isLotValidatable={isLotValidatable}
-                            isLoading={isExtracting}
+                            isLoading={isExtracting || isBatchExtracting}
                             errorNotification={errorNotification}
                             onCloseError={() => setErrorNotification(null)}
                             currentDocument={currentDocument}
                             isSaving={isSaving}
+                            onExtractAll={handleExtractAll}
                         />
                     </div>
                 </div>

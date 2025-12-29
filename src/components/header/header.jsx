@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 
 const navItems = [
     { name: 'Pièces comptables', key: 'gestion-pieces', icon: '📝' },
-    { name: 'Import OCR', key: 'import-ocr', icon: '📎' },
+    { name: 'Importer des fichiers', key: 'import-ocr', icon: '📎' },
     { name: 'Saisie Facture', key: 'saisie-manuelle', icon: '✍️' },
-    { name: 'Bilan & États', key: 'gestion-transactions-cr', icon: '📦' },
+    { name: 'États financiers', key: 'gestion-transactions-cr', icon: '📦' },
     { name: 'Gestion salaire', key: 'gestion-salaire', icon: '💲' },
     { name: 'Tableau de bord', key: 'dashboard', icon: '📊' },
 ];

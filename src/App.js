@@ -97,6 +97,8 @@ import TransactionView from './views/finance/TransactionView';
 import GestionPiecesBoard from './views/piece/GestionPiecesBoard';
 import ImportFichier from './views/ocr/pages/ImportFichier';
 import IndexAddByFormsPage from './views/ocr/pages/IndexAddByFormsPage';
+// --- Import composant chatbot
+import ChatWidget from "./components/chatbot/ChatWidget"; 
 
 // 🎯 NOUVEL IMPORT : Le formulaire de Bilan
 import BilanForm from './views/ocr/forms/BilanForm'; // <--- ASSUREZ-VOUS QUE LE CHEMIN EST CORRECT
@@ -105,6 +107,7 @@ import FactureForm from './views/ocr/forms/FactureForm'; // Si vous l'avez
 import BonAchatForm from './views/ocr/forms/BonAchatForm';
 import BankForm from './views/ocr/forms/BankForm';
 import FichePayeForm from './views/ocr/forms/FichePaye.jsx';
+
 
 // Composant Simple de Modale (Overlay) 
 const SaisieModal = ({ children, onClose }) => (
@@ -276,6 +279,9 @@ function App() {
                     error: { duration: 6000, style: { color: "#1f2937" } },
                 }}
             />
+
+            {/*CHATBOT*/}
+            <ChatWidget />
         </div>
     );
 }

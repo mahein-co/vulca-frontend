@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
+import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 
@@ -49,6 +50,9 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
         nomClient: '',
         nomFournisseur: '',
         tauxTVA: TAUX_TVA_DEFAULT.toString(),
+        rcs: '',
+        nif: '',
+        stat: '',
     });
     const [lignes, setLignes] = useState([]);
     const [nouvelleLigne, setNouvelleLigne] = useState({
@@ -57,6 +61,9 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
         prixUnitaire: '',
     });
     const [ligneEnModification, setLigneEnModification] = useState(null);
+    const [validationErrors, setValidationErrors] = useState({});
+
+    const [headerErrors, setHeaderErrors] = useState({});
 
     const hasLines = useMemo(() => lignes.length > 0, [lignes]);
 
@@ -77,16 +84,24 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
     const handleChangeHeader = useCallback((e) => {
         const { name, value } = e.target;
         setHeader(prev => ({ ...prev, [name]: value }));
-    }, []);
+        if (headerErrors[name]) {
+            setHeaderErrors(prev => ({ ...prev, [name]: false }));
+        }
+    }, [headerErrors]);
 
     const handleChangeLigne = useCallback((e) => {
         const { name, value } = e.target;
         let newValue = value;
         if (name === 'quantite' || name === 'prixUnitaire') {
-            newValue = value.replace(/[^0-9.]/g, '');
+            const cleanValue = removeSpacesFromNumber(value);
+            newValue = formatNumberWithSpaces(cleanValue);
         }
         setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
-    }, []);
+        // Clear validation error if exists
+        if (validationErrors[name]) {
+            setValidationErrors(prev => ({ ...prev, [name]: false }));
+        }
+    }, [validationErrors]);
 
     const tvaRateDecimal = useMemo(() => {
         const tvaPercent = parseFloat(header.tauxTVA);
@@ -104,17 +119,29 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
 
     const validateAndGetLigneData = () => {
         const { description, quantite, prixUnitaire } = nouvelleLigne;
-        if (!description || !quantite || !prixUnitaire) {
-            alert('Veuillez remplir la description, la quantité et le prix unitaire.');
-            return null;
-        }
-        const qteValue = parseFloat(quantite);
-        const puValue = parseFloat(prixUnitaire);
-        if (isNaN(qteValue) || isNaN(puValue) || qteValue <= 0 || puValue <= 0) {
-            alert('La quantité et le prix unitaire doivent être des nombres positifs valides.');
+        const errors = {};
+
+        if (!description) errors.description = true;
+        if (!quantite) errors.quantite = true;
+        if (!prixUnitaire) errors.prixUnitaire = true;
+
+        if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            toast.error('Veuillez remplir tous les champs obligatoires de la ligne (Description, Quantité, Prix unitaire).', { duration: 2000 });
             return null;
         }
 
+        const qteValue = parseFloat(quantite);
+        const puValue = parseFloat(prixUnitaire);
+        if (isNaN(qteValue) || isNaN(puValue) || qteValue <= 0 || puValue <= 0) {
+            if (isNaN(qteValue) || qteValue <= 0) errors.quantite = true;
+            if (isNaN(puValue) || puValue <= 0) errors.prixUnitaire = true;
+            setValidationErrors(errors);
+            toast.error('La quantité et le prix unitaire doivent être des nombres positifs valides.');
+            return null;
+        }
+
+        setValidationErrors({});
         const totalHTLigne = qteValue * puValue;
         const montantTVALigne = totalHTLigne * tvaRateDecimal;
 
@@ -132,8 +159,57 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
         if (ligneEnModification) {
             sauvegarderModification(); return;
         }
-        const data = validateAndGetLigneData();
-        if (data === null) return;
+
+        // Validate both header and line fields together
+        const nomPartenaire = typeFacture === 'vente' ? header.nomClient : header.nomFournisseur;
+        const headerErrors = {};
+        const lineErrors = {};
+
+        // Check header fields
+        if (!header.numeroFacture) headerErrors.numeroFacture = true;
+        if (!nomPartenaire) {
+            if (typeFacture === 'vente') headerErrors.nomClient = true;
+            else headerErrors.nomFournisseur = true;
+        }
+        if (!header.dateFacture) headerErrors.dateFacture = true;
+
+        // Check line fields
+        const { description, quantite, prixUnitaire } = nouvelleLigne;
+        if (!description) lineErrors.description = true;
+        if (!quantite) lineErrors.quantite = true;
+        if (!prixUnitaire) lineErrors.prixUnitaire = true;
+
+        // If any errors, show them all at once
+        if (Object.keys(headerErrors).length > 0 || Object.keys(lineErrors).length > 0) {
+            setHeaderErrors(headerErrors);
+            setValidationErrors(lineErrors);
+            toast.error('Veuillez remplir tous les champs obligatoires (En-tête et Ligne).', { duration: 2000 });
+            return;
+        }
+
+        // Validate numeric values
+        const qteValue = parseFloat(removeSpacesFromNumber(quantite));
+        const puValue = parseFloat(removeSpacesFromNumber(prixUnitaire));
+        if (isNaN(qteValue) || isNaN(puValue) || qteValue <= 0 || puValue <= 0) {
+            if (isNaN(qteValue) || qteValue <= 0) lineErrors.quantite = true;
+            if (isNaN(puValue) || puValue <= 0) lineErrors.prixUnitaire = true;
+            setValidationErrors(lineErrors);
+            toast.error('La quantité et le prix unitaire doivent être des nombres positifs valides.', { duration: 2000 });
+            return;
+        }
+
+        setValidationErrors({});
+        const totalHTLigne = qteValue * puValue;
+        const montantTVALigne = totalHTLigne * tvaRateDecimal;
+        const data = {
+            description,
+            quantite: qteValue,
+            prixUnitaire: puValue,
+            totalLigneHT: totalHTLigne,
+            montantTVALigne: montantTVALigne,
+            totalLigneTTC: totalHTLigne + montantTVALigne
+        };
+
         const ligne = { ...data, id: Date.now() };
         setLignes(prevLignes => [...prevLignes, ligne]);
         resetNouvelleLigne();
@@ -152,10 +228,8 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
     };
 
     const supprimerLigne = (id) => {
-        if (window.confirm("Êtes-vous sûr de vouloir supprimer cette ligne ?")) {
-            setLignes(lignes.filter(ligne => ligne.id !== id));
-            if (ligneEnModification === id) resetNouvelleLigne();
-        }
+        setLignes(lignes.filter(ligne => ligne.id !== id));
+        if (ligneEnModification === id) resetNouvelleLigne();
     };
 
     useEffect(() => {
@@ -172,11 +246,22 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
 
     const enregistrerFacture = async () => {
         const nomPartenaire = typeFacture === 'vente' ? header.nomClient : header.nomFournisseur;
+        const errors = {};
 
-        if (!header.numeroFacture || !nomPartenaire || lignes.length === 0) {
-            toast.error(`Veuillez renseigner le numéro de facture, le nom du ${typeFacture === 'vente' ? 'client' : 'fournisseur'} et ajouter au moins une ligne.`);
+        if (!header.numeroFacture) errors.numeroFacture = true;
+        if (!nomPartenaire) {
+            if (typeFacture === 'vente') errors.nomClient = true;
+            else errors.nomFournisseur = true;
+        }
+        if (!header.dateFacture) errors.dateFacture = true;
+
+        if (Object.keys(errors).length > 0 || lignes.length === 0) {
+            setHeaderErrors(errors);
+            toast.error(`Veuillez renseigner tous les champs obligatoires de l'en-tête (Numéro, Date, ${typeFacture === 'vente' ? 'Client' : 'Fournisseur'}) et ajouter au moins une ligne.`);
             return;
         }
+
+        setHeaderErrors({});
 
         const data = {
             piece_type: "Facture",
@@ -187,6 +272,9 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                 nom_client: header.nomClient,
                 nom_fournisseur: header.nomFournisseur,
                 taux_tva: header.tauxTVA,
+                rcs: header.rcs,
+                nif: header.nif,
+                stat: header.stat,
                 details: lignes.map(l => ({
                     designation: l.description,
                     quantite: l.quantite,
@@ -230,13 +318,16 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                 nomClient: '',
                 nomFournisseur: '',
                 tauxTVA: TAUX_TVA_DEFAULT.toString(),
+                rcs: '',
+                nif: '',
+                stat: '',
             });
             resetNouvelleLigne();
             if (onSaveComplete) onSaveComplete();
         } else if (isErrorJournal) {
             toast.error(errorJournal?.data?.error || "Erreur lors de la génération du journal.");
         }
-    }, [isSuccessJournal, isErrorJournal, errorJournal, onSaveComplete]);
+    }, [isSuccessJournal, isErrorJournal, errorJournal, onSaveComplete, resetNouvelleLigne]);
 
     const isSaveDisabled = !header.numeroFacture || !(typeFacture === 'vente' ? header.nomClient : header.nomFournisseur);
 
@@ -256,7 +347,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
             <div className="w-full h-full flex flex-col overflow-hidden">
                 {/* Header fixe */}
                 <div className="flex-shrink-0 bg-white border-b shadow-sm sticky top-0 z-20">
-                    <div className="max-w-7xl mx-auto px-3 py-2">
+                    <div className="w-full px-3 py-2">
                         <div className="flex justify-between items-center">
                             <div className="flex-shrink-0">
                                 <BackToFormsPage onClick={onSaisieCompleted} />
@@ -271,7 +362,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
 
                 {/* Contenu scrollable */}
                 <div className="flex-1 overflow-y-auto">
-                    <div className="max-w-7xl mx-auto w-full p-3">
+                    <div className="w-full p-3">
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
 
@@ -330,7 +421,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             onChange={handleChangeHeader}
                                             placeholder="F-2024-001"
                                             disabled={hasLines}
-                                            className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                                            className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''} ${headerErrors.numeroFacture ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
                                         />
                                     </div>
 
@@ -344,7 +435,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             value={header.dateFacture}
                                             onChange={handleChangeHeader}
                                             disabled={hasLines}
-                                            className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                                            className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''} ${headerErrors.dateFacture ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300'}`}
                                         />
                                     </div>
 
@@ -359,30 +450,74 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             onChange={handleChangeHeader}
                                             placeholder={`Ex: Société Alpha SARL`}
                                             disabled={hasLines}
-                                            className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                                            className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''} ${headerErrors.nomClient || headerErrors.nomFournisseur ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
                                         />
-                                    </div>
 
-                                    <div className="col-span-2">
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">
-                                            Taux TVA (%)
-                                        </label>
-                                        <input
-                                            type="number"
-                                            name="tauxTVA"
-                                            value={header.tauxTVA}
-                                            onChange={handleChangeHeader}
-                                            step="1"
-                                            placeholder="20"
-                                            disabled={hasLines}
-                                            className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right ${hasLines ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                                        />
                                     </div>
-
                                 </div>
                             </div>
 
                             <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-4 border-t-2 border-gray-300">
+                                {/* INFOS LÉGALES (OPTIONNEL) */}
+                                <div className="mb-4 pb-4 border-b border-gray-200">
+                                    <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Infos Légales (Optionnel)</h3>
+
+                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                                        <div className="col-span-1">
+                                            <label className="block text-[10px] font-medium text-gray-500 mb-1">RCS</label>
+                                            <input
+                                                type="text"
+                                                name="rcs"
+                                                value={header.rcs}
+                                                onChange={handleChangeHeader}
+                                                placeholder="RCS..."
+                                                disabled={hasLines}
+                                                className={`w-full px-2 py-1 text-xs border border-gray-300 rounded-md ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                            />
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-[10px] font-medium text-gray-500 mb-1">NIF</label>
+                                            <input
+                                                type="text"
+                                                name="nif"
+                                                value={header.nif}
+                                                onChange={handleChangeHeader}
+                                                placeholder="NIF..."
+                                                disabled={hasLines}
+                                                className={`w-full px-2 py-1 text-xs border border-gray-300 rounded-md ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                            />
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-[10px] font-medium text-gray-500 mb-1">STAT</label>
+                                            <input
+                                                type="text"
+                                                name="stat"
+                                                value={header.stat}
+                                                onChange={handleChangeHeader}
+                                                placeholder="STAT..."
+                                                disabled={hasLines}
+                                                className={`w-full px-2 py-1 text-xs border border-gray-300 rounded-md ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                            />
+                                        </div>
+
+                                        <div className="col-span-1">
+                                            <label className="block text-[10px] font-medium text-gray-500 mb-1">TVA (%)</label>
+                                            <input
+                                                type="number"
+                                                name="tauxTVA"
+                                                value={header.tauxTVA}
+                                                onChange={handleChangeHeader}
+                                                step="1"
+                                                placeholder="0"
+                                                disabled={hasLines}
+                                                className={`w-full px-2 py-1 text-xs border border-gray-300 rounded-md text-right ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <h2 className="text-base font-semibold text-gray-800 mb-3">
                                     {ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une ligne'}
                                 </h2>
@@ -396,7 +531,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             name="description"
                                             value={nouvelleLigne.description}
                                             onChange={handleChangeLigne}
-                                            className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 border-gray-300`}
+                                            className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.description ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
                                             placeholder="Ex: Développement logiciel - Module X"
                                         />
                                     </div>
@@ -404,12 +539,11 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                     <div className="col-span-6 md:col-span-3 lg:col-span-2">
                                         <label className="block text-xs font-medium text-gray-600 mb-1">Qté</label>
                                         <input
-                                            type="number"
-                                            step="any"
+                                            type="text"
                                             name="quantite"
                                             value={nouvelleLigne.quantite}
                                             onChange={handleChangeLigne}
-                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right"
+                                            className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 text-right ${validationErrors.quantite ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
                                             placeholder="1"
                                         />
                                     </div>
@@ -421,7 +555,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             name="prixUnitaire"
                                             value={nouvelleLigne.prixUnitaire}
                                             onChange={handleChangeLigne}
-                                            className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right"
+                                            className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 text-right ${validationErrors.prixUnitaire ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
                                             placeholder="100000.00"
                                         />
                                     </div>
@@ -429,22 +563,13 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                     <div className="col-span-12 md:col-span-6 lg:col-span-3">
                                         <label className="block text-xs font-medium text-gray-600 mb-1">Total Ligne TTC (Ar)</label>
                                         <p className="w-full px-2 py-1 text-sm border border-gray-200 bg-gray-50 rounded-md text-gray-700 text-right font-bold">
-                                            {formatMontant(nouvelleLigne.quantite * nouvelleLigne.prixUnitaire * (1 + tvaRateDecimal))}
+                                            {formatMontant((parseFloat(removeSpacesFromNumber(nouvelleLigne.quantite)) || 0) * (parseFloat(removeSpacesFromNumber(nouvelleLigne.prixUnitaire)) || 0) * (1 + tvaRateDecimal))}
                                         </p>
                                     </div>
 
                                 </div>
 
-                                <div className="mt-3 pt-3 border-t border-gray-200 flex justify-end gap-3">
-
-                                    <button
-                                        onClick={resetNouvelleLigne}
-                                        className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium text-sm py-1.5 px-4 rounded-lg shadow-sm transition duration-200 flex items-center"
-                                    >
-                                        <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                        {ligneEnModification ? 'Annuler' : 'Vider'}
-                                    </button>
-
+                                <div className="mt-3 pt-3 border-t border-gray-200 flex justify-end">
                                     <button
                                         onClick={ajouterLigne}
                                         className="bg-gray-800 hover:bg-gray-900 text-white font-semibold text-sm py-1.5 px-4 rounded-lg shadow-md transition duration-200 flex items-center"
@@ -455,6 +580,8 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                         {ligneEnModification ? 'Valider modif.' : 'Ajouter ligne'}
                                     </button>
                                 </div>
+
+
                             </div>
 
                         </div>

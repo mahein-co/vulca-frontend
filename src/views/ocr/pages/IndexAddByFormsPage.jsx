@@ -55,63 +55,65 @@ export default function IndexAddByFormsPage({ onOpenForm }) {
     };
 
     return (
-        <div className="p-3 sm:p-4 lg:p-5 w-full max-w-7xl mx-auto space-y-5">
+        <div className="p-4 sm:p-5 lg:p-6 w-full mx-auto space-y-5">
 
-            <div className="text-center mb-4">
-                <h2 className="text-xl font-bold text-gray-900 tracking-tight">Saisie Manuelle</h2>
-                <p className="mt-1 text-xs text-gray-500">Sélectionnez le type de document ou d'état financier à saisir.</p>
+            <div className="text-center mb-5">
+                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Saisie Manuelle</h2>
+                <p className="mt-2 text-sm text-gray-500">Sélectionnez le type de document ou d'état financier à saisir.</p>
             </div>
 
-            {formSections.map((section, sectionIndex) => {
-                const lgGridCols = section.forms.length <= 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-4';
+            {
+                formSections.map((section, sectionIndex) => {
+                    const lgGridCols = section.forms.length <= 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-4';
 
-                return (
-                    <div key={sectionIndex} className="space-y-3">
-                        <div className="flex items-center space-x-2 pb-1.5 border-b border-gray-100">
-                            <div className="h-3 w-1 bg-indigo-500 rounded-full"></div>
-                            <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
-                                {section.title}
-                            </h3>
+                    return (
+                        <div key={sectionIndex} className="space-y-3">
+                            <div className="flex items-center space-x-2 pb-1.5 border-b border-gray-100">
+                                <div className="h-3 w-1 bg-indigo-500 rounded-full"></div>
+                                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                                    {section.title}
+                                </h3>
+                            </div>
+
+                            <div className={`grid grid-cols-1 sm:grid-cols-2 ${lgGridCols} gap-4`}>
+                                {section.forms.map((form) => {
+                                    const colors = colorClasses[form.color];
+                                    const Icon = form.icon;
+
+                                    return (
+                                        <button
+                                            key={form.type}
+                                            onClick={() => handleFormClick(form.type)}
+                                            className={`group relative flex flex-col p-4 rounded-xl border bg-white shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left h-full ${colors.border} ${colors.hoverBorder} ${colors.hoverBg}`}
+                                        >
+                                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-3 transition-colors duration-300 ${colors.bg} ${colors.text}`}>
+                                                <Icon className="w-6 h-6" strokeWidth={1.5} />
+                                            </div>
+
+                                            <h4 className="text-sm font-bold text-gray-900 mb-1 group-hover:text-indigo-900 transition-colors">
+                                                {form.name}
+                                            </h4>
+
+                                            <p className="text-xs text-gray-500 leading-relaxed mb-3 flex-grow">
+                                                {form.description}
+                                            </p>
+
+                                            <div className={`flex items-center text-xs font-semibold ${colors.text} opacity-0 group-hover:opacity-100 transform translate-y-1 group-hover:translate-y-0 transition-all duration-300`}>
+                                                Commencer
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 ml-1 transform group-hover:translate-x-1 transition-transform">
+                                                    <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.47a.75.75 0 011.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.04-1.08l4.158-3.92H3.75A.75.75 0 013 10z" clipRule="evenodd" />
+                                                </svg>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
-
-                        <div className={`grid grid-cols-1 sm:grid-cols-2 ${lgGridCols} gap-3`}>
-                            {section.forms.map((form) => {
-                                const colors = colorClasses[form.color];
-                                const Icon = form.icon;
-
-                                return (
-                                    <button
-                                        key={form.type}
-                                        onClick={() => handleFormClick(form.type)}
-                                        className={`group relative flex flex-col p-2.5 rounded-xl border bg-white shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left h-full ${colors.border} ${colors.hoverBorder} ${colors.hoverBg}`}
-                                    >
-                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-2 transition-colors duration-300 ${colors.bg} ${colors.text}`}>
-                                            <Icon className="w-4 h-4" strokeWidth={1.5} />
-                                        </div>
-
-                                        <h4 className="text-xs font-bold text-gray-900 mb-0.5 group-hover:text-indigo-900 transition-colors">
-                                            {form.name}
-                                        </h4>
-
-                                        <p className="text-[10px] text-gray-500 leading-tight mb-2 flex-grow">
-                                            {form.description}
-                                        </p>
-
-                                        <div className={`flex items-center text-[10px] font-semibold ${colors.text} opacity-0 group-hover:opacity-100 transform translate-y-1 group-hover:translate-y-0 transition-all duration-300`}>
-                                            Commencer
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 ml-1 transform group-hover:translate-x-1 transition-transform">
-                                                <path fillRule="evenodd" d="M3 10a.75.75 0 01.75-.75h10.638L10.23 5.47a.75.75 0 011.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.04-1.08l4.158-3.92H3.75A.75.75 0 013 10z" clipRule="evenodd" />
-                                            </svg>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                );
-            })}
+                    );
+                })
+            }
 
             <div className="h-2"></div>
-        </div>
+        </div >
     );
 }

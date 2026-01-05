@@ -23,7 +23,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
   // États de sélection et pagination
   const [selectedJournal, setSelectedJournal] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const itemsPerPage = 10;
 
   // États pour le détail (modal)
   const [journalEntries, setJournalEntries] = useState([]);

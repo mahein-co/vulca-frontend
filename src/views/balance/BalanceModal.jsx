@@ -22,7 +22,7 @@ const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
 
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const itemsPerPage = 10;
 
   // États de filtrage
   const [searchTerm, setSearchTerm] = useState('');

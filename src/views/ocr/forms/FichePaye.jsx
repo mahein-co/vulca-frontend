@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import toast from "react-hot-toast";
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
+import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
 
 // Helper for currency formatting
 const formatMontant = (montant) => {
@@ -64,25 +65,32 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
         netAPayer: '',
     });
 
+    const [validationErrors, setValidationErrors] = useState({});
     const [dataToGenerateJournal, setDataToGenerateJournal] = useState(null);
 
     // Handlers
     const handleChange = useCallback((e) => {
         const { name, value } = e.target;
-        // For numeric fields, we allow typing but could apply regex if needed
         setFormData(prev => ({ ...prev, [name]: value }));
-    }, []);
+        // Clear error when user types
+        if (validationErrors[name]) {
+            setValidationErrors(prev => ({ ...prev, [name]: false }));
+        }
+    }, [validationErrors]);
 
     const handleChangeAmount = useCallback((e) => {
         const { name, value } = e.target;
-        // Restrict to numbers and dot/comma
-        const cleanValue = value.replace(/[^0-9.,]/g, '');
-        setFormData(prev => ({ ...prev, [name]: cleanValue }));
+        // Format with spaces
+        const cleanValue = removeSpacesFromNumber(value);
+        // Normalize comma/dot
+        const normalizedValue = cleanValue.replace(/,/g, '.');
+        const formattedValue = formatNumberWithSpaces(normalizedValue);
+        setFormData(prev => ({ ...prev, [name]: formattedValue }));
     }, []);
 
     // IRSA Calculation Logic
     useEffect(() => {
-        const brut = parseFloat(formData.salaireBrut.replace(/,/g, '.') || '0');
+        const brut = parseFloat(removeSpacesFromNumber(formData.salaireBrut).replace(/,/g, '.') || '0');
         if (brut > 0) {
             // CNaPS 1%
             const cnaps = brut * 0.01;
@@ -122,12 +130,10 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
 
             setFormData(prev => ({
                 ...prev,
-                cotisationSalariale: cnaps.toFixed(2),
-                cotisationPatronale: (brut * 0.13).toFixed(2), // Estimating 13% for patronal (standard CNaPS) if not specified, or leave blank? User didn't specify. I'll use 13% as placeholder or just 0 if safer. Let's keep existing logic or use 0. Maybe just update Salariale/IRSA/Net.
-                // Actually, preserving whatever was in patronal if manual? No, let's leave Patronal to manual or just 0.
-                // Let's set Salariale (CNaPS) and Retenue (IRSA) and Net.
-                retenueSource: irsa.toFixed(2),
-                netAPayer: net.toFixed(2)
+                cotisationSalariale: formatNumberWithSpaces(cnaps.toFixed(2)),
+                cotisationPatronale: formatNumberWithSpaces((brut * 0.13).toFixed(2)),
+                retenueSource: formatNumberWithSpaces(irsa.toFixed(2)),
+                netAPayer: formatNumberWithSpaces(net.toFixed(2))
             }));
         }
     }, [formData.salaireBrut]);
@@ -138,12 +144,22 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
     // Validation & Save
     const handleSubmit = async () => {
         // Basic validation
-        if (!formData.employe || !formData.numFichePaie || !formData.salaireBrut || !formData.netAPayer) {
-            toast.error('Veuillez remplir les champs obligatoires (Employé, N°, Brut, Net).');
+        const errors = {};
+        if (!formData.employe) errors.employe = true;
+        if (!formData.numFichePaie) errors.numFichePaie = true;
+        if (!formData.periodePaie) errors.periodePaie = true;
+        if (!formData.dateEmission) errors.dateEmission = true;
+        if (!formData.dateEcheance) errors.dateEcheance = true;
+        if (!formData.salaireBrut) errors.salaireBrut = true;
+        if (!formData.netAPayer) errors.netAPayer = true;
+
+        if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            toast.error('Veuillez remplir les champs obligatoires (Employé, N°, Période, Dates, Brut, Net).');
             return;
         }
 
-        const parseAmount = (val) => parseFloat(String(val).replace(/,/g, '.') || '0');
+        const parseAmount = (val) => parseFloat(String(removeSpacesFromNumber(val)).replace(/,/g, '.') || '0');
 
         const data = {
             piece_type: "Fiche de paie",
@@ -234,28 +250,28 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
                                 <div className="grid grid-cols-1 gap-3">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-600 mb-1">Employé</label>
-                                        <input type="text" name="employe" value={formData.employe} onChange={handleChange} placeholder="Nom de l'employé" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                                        <input type="text" name="employe" value={formData.employe} onChange={handleChange} placeholder="Nom de l'employé" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.employe ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-xs font-medium text-gray-600 mb-1">N° Fiche de Paye</label>
-                                            <input type="text" name="numFichePaie" value={formData.numFichePaie} onChange={handleChange} placeholder="ex: PAIE-2025-01" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                                            <input type="text" name="numFichePaie" value={formData.numFichePaie} onChange={handleChange} placeholder="ex: PAIE-2025-01" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.numFichePaie ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-gray-600 mb-1">Période de Paiement</label>
-                                            <input type="text" name="periodePaie" value={formData.periodePaie} onChange={handleChange} placeholder="ex: Janvier 2025" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                                            <input type="text" name="periodePaie" value={formData.periodePaie} onChange={handleChange} placeholder="ex: Janvier 2025" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.periodePaie ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-xs font-medium text-gray-600 mb-1">Date Émission</label>
-                                            <input type="date" name="dateEmission" value={formData.dateEmission} onChange={handleChange} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                                            <input type="date" name="dateEmission" value={formData.dateEmission} onChange={handleChange} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.dateEmission ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-gray-600 mb-1">Date Échéance</label>
-                                            <input type="date" name="dateEcheance" value={formData.dateEcheance} onChange={handleChange} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                                            <input type="date" name="dateEcheance" value={formData.dateEcheance} onChange={handleChange} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.dateEcheance ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                                         </div>
                                     </div>
                                 </div>
@@ -270,7 +286,7 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
                                 <div className="space-y-3">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-900 mb-1 uppercase tracking-wide">Salaire Brut (Ar)</label>
-                                        <input type="text" name="salaireBrut" value={formData.salaireBrut} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-3 py-2 text-base font-semibold border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-900 text-right bg-gray-50" />
+                                        <input type="text" name="salaireBrut" value={formData.salaireBrut} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-base font-semibold rounded-md text-gray-900 text-right bg-gray-50 ${validationErrors.salaireBrut ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4 pt-2">
@@ -291,7 +307,7 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
 
                                     <div className="pt-4 mt-2 border-t border-gray-200">
                                         <label className="block text-sm font-bold text-gray-800 mb-1 uppercase">Net à Payer (Ar)</label>
-                                        <input type="text" name="netAPayer" value={formData.netAPayer} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-3 py-2 text-lg font-bold border border-gray-300 rounded-md focus:ring-emerald-500 focus:border-emerald-500 text-emerald-700 text-right bg-emerald-50" />
+                                        <input type="text" name="netAPayer" value={formData.netAPayer} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-lg font-bold rounded-md text-emerald-700 text-right bg-emerald-50 ${validationErrors.netAPayer ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-emerald-500'}`} />
                                     </div>
                                 </div>
                             </div>

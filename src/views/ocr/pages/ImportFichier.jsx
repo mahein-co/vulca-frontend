@@ -84,7 +84,7 @@ const EMPTY_FORM_DATA = {
     dateEmission: '', dateEcheance: '', ventilation: '', categorie: '', commentaires: ''
 };
 const ACCEPTED_FILE_TYPES = ".pdf,image/*,.xls,.xlsx,.csv";
-const MAX_FILE_UPLOAD = 5;
+const MAX_FILE_UPLOAD = 50;
 
 // --- Utilitaires ---
 

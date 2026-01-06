@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
 import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 
@@ -14,10 +15,7 @@ const formatMontant = (montant) => {
   return roundedMontant.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const getTodayDate = () => {
-  const today = new Date();
-  return today.toISOString().substring(0, 10);
-};
+
 
 const BackToFormsPage = ({ onClick }) => (
   <button
@@ -51,22 +49,22 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
   const [actionGenerateJournal, { isLoading: isLoadingJournal, isSuccess: isSuccessJournal, isError: isErrorJournal, error: errorJournal }] = useGenerateJournalMutation();
 
   // State
-  const [header, setHeader] = useState({
+  const [header, setHeader] = useState(() => ({
     nomTitulaire: '',
     numeroCompte: '',
     nomBanque: '',
     dateDebut: '',
-    dateFin: getTodayDate(),
-  });
+    dateFin: getTodayISO(),
+  }));
 
   const [transactions, setTransactions] = useState([]);
-  const [nouvelleLigne, setNouvelleLigne] = useState({
-    date: getTodayDate(),
+  const [nouvelleLigne, setNouvelleLigne] = useState(() => ({
+    date: getTodayISO(),
     reference: '',
     description: '',
     debit: '',
     credit: '',
-  });
+  }));
   const [ligneEnModification, setLigneEnModification] = useState(null);
   const [dataToGenerateJournal, setDataToGenerateJournal] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
@@ -97,7 +95,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
   }, [validationErrors]);
 
   const resetNouvelleLigne = useCallback(() => {
-    setNouvelleLigne({ date: getTodayDate(), reference: '', description: '', debit: '', credit: '' });
+    setNouvelleLigne({ date: getTodayISO(), reference: '', description: '', debit: '', credit: '' });
     setLigneEnModification(null);
   }, []);
 
@@ -202,8 +200,10 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
   };
 
   const supprimerLigne = (id) => {
-    setTransactions(transactions.filter(t => t.id !== id));
-    if (ligneEnModification === id) resetNouvelleLigne();
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette transaction ?")) {
+      setTransactions(transactions.filter(t => t.id !== id));
+      if (ligneEnModification === id) resetNouvelleLigne();
+    }
   };
 
   // Calculations
@@ -294,7 +294,6 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
     if (isSuccessSave && dataSave) {
       const journalData = {
         ...dataToGenerateJournal,
-        type_document: "BANQUE", // Force strict BANK type for AI logic
         file_source: null,
         form_source: dataSave?.form_source?.id,
       };
@@ -309,7 +308,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
       toast.success("Enregistrement succès");
       setTransactions([]);
       setHeader({
-        nomTitulaire: '', numeroCompte: '', nomBanque: '', dateDebut: '', dateFin: getTodayDate()
+        nomTitulaire: '', numeroCompte: '', nomBanque: '', dateDebut: '', dateFin: getTodayISO()
       });
       if (onSaveComplete) onSaveComplete();
     } else if (isErrorJournal) {

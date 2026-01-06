@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
 import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { getTodayISO } from '../../../utils/dateUtils';
 import { BASE_URL_API } from '../../../constants/globalConstants';
 
 const BackToFormsPage = ({ onClick }) => (
@@ -23,7 +24,7 @@ const LoadingOverlay = ({ message }) => (
 );
 
 const PCG_MAPPING = {
-    '60': { 'libelle': 'Achats de marchandises/MP', 'nature': 'CHARGE' },
+    '60': { 'libelle': 'Achats de marchandises', 'nature': 'CHARGE' },
     '61': { 'libelle': 'Services extérieurs', 'nature': 'CHARGE' },
     '62': { 'libelle': 'Autres services extérieurs', 'nature': 'CHARGE' },
     '63': { 'libelle': 'Impôts et taxes', 'nature': 'CHARGE' },
@@ -43,21 +44,18 @@ const PCG_MAPPING = {
     '78': { 'libelle': 'Reprises sur amortissements et provisions', 'nature': 'PRODUIT' },
 };
 
-const getDateDuJour = () => {
-    const aujourd = new Date();
-    return `${aujourd.getFullYear()}-${String(aujourd.getMonth() + 1).padStart(2, '0')}-${String(aujourd.getDate()).padStart(2, '0')}`;
-};
+
 
 export default function CompteResultatForm({ onSaisieCompleted }) {
     const [lignes, setLignes] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [nouvelleLigne, setNouvelleLigne] = useState({
+    const [nouvelleLigne, setNouvelleLigne] = useState(() => ({
         numeroCompte: '',
         libelle: '',
         montant: '',
-        date: getDateDuJour(),
+        date: getTodayISO(),
         nature: 'CHARGE',
-    });
+    }));
     const [ligneEnModification, setLigneEnModification] = useState(null);
     const [erreurNumeroCompte, setErreurNumeroCompte] = useState(false);
     const [validationErrors, setValidationErrors] = useState({});
@@ -91,7 +89,7 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
             numeroCompte: '',
             libelle: '',
             montant: '',
-            date: keepDate ? prev.date : getDateDuJour(),
+            date: keepDate ? prev.date : getTodayISO(),
             nature: 'CHARGE',
         }));
         setLigneEnModification(null);

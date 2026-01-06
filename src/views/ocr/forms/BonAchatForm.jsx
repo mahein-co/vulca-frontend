@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
 import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 
@@ -32,10 +33,7 @@ const LoadingOverlay = ({ message }) => (
   </div>
 );
 
-const getTodayDate = () => {
-  const today = new Date();
-  return today.toISOString().substring(0, 10);
-};
+
 
 export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
 
@@ -43,18 +41,18 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
   const [actionSaveBonAchat, { isLoading: isLoadingSave, isSuccess: isSuccessSave, isError: isErrorSave, data: dataSave }] = useSavePieceByFormularMutation();
   const [actionGenerateJournal, { isLoading: isLoadingJournal, isSuccess: isSuccessJournal, isError: isErrorJournal, error: errorJournal }] = useGenerateJournalMutation();
 
-  const [header, setHeader] = useState({
+  const [header, setHeader] = useState(() => ({
     fournisseur: '',
     client: '',
     reference: '',
     numeroBon: '',
-    dateBon: getTodayDate(),
+    dateBon: getTodayISO(),
     address: '',
     rcs: '',
     nif: '',
     stat: '',
     tauxTVA: '0', // Bons d'achat often exclude TVA or include it directly, defaulting to 0 but editable
-  });
+  }));
 
   const [lignes, setLignes] = useState([]);
   const [nouvelleLigne, setNouvelleLigne] = useState({
@@ -265,7 +263,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
       toast.success("Enregistrement succès");
       setLignes([]);
       setHeader({
-        fournisseur: '', client: '', reference: '', numeroBon: '', dateBon: getTodayDate(), address: '', rcs: '', nif: '', stat: '', tauxTVA: '0'
+        fournisseur: '', client: '', reference: '', numeroBon: '', dateBon: getTodayISO(), address: '', rcs: '', nif: '', stat: '', tauxTVA: '0'
       });
       if (onSaveComplete) onSaveComplete();
     } else if (isErrorJournal) {

@@ -192,29 +192,29 @@ const Classification = () => {
             <tbody className="divide-y divide-gray-200 bg-white">
               {loading && journals.length === 0
                 ? Array.from({ length: 5 }).map((_, i) => (
-                    <tr key={i} className="animate-pulse">
-                      {Array.from({ length: 6 }).map((_, j) => (
-                        <td key={j} className="px-4 py-3">
-                          <div className="h-4 bg-gray-100 rounded"></div>
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                : journals.map((entry, idx) => (
-                    <tr
-                      key={entry.id}
-                      className={`transition duration-150 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100`}
-                    >
-                      <td className="px-4 py-2 text-sm font-medium text-gray-800">
-                        {new Date(entry.date).toLocaleDateString("fr-FR")}
+                  <tr key={i} className="animate-pulse">
+                    {Array.from({ length: 6 }).map((_, j) => (
+                      <td key={j} className="px-4 py-3">
+                        <div className="h-4 bg-gray-100 rounded"></div>
                       </td>
-                      <td className="px-4 py-2 text-sm font-mono text-gray-900">{entry.numero_compte}</td>
-                      <td className="px-4 py-2 text-sm font-mono text-blue-700 font-semibold">{entry.numero_piece}</td>
-                      <td className="px-4 py-2 text-sm text-gray-800 max-w-[250px] truncate">{entry.libelle}</td>
-                      <td className="px-4 py-2 text-right text-sm text-green-700 font-bold font-mono">{entry.debit_ar > 0 ? formatAr(entry.debit_ar) : "-"}</td>
-                      <td className="px-4 py-2 text-right text-sm text-red-700 font-bold font-mono">{entry.credit_ar > 0 ? formatAr(entry.credit_ar) : "-"}</td>
-                    </tr>
-                  ))}
+                    ))}
+                  </tr>
+                ))
+                : journals.map((entry, idx) => (
+                  <tr
+                    key={entry.id}
+                    className={`transition duration-150 ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"} hover:bg-gray-100`}
+                  >
+                    <td className="px-4 py-2 text-sm font-medium text-gray-800">
+                      {new Date(entry.date).toLocaleDateString("fr-FR")}
+                    </td>
+                    <td className="px-4 py-2 text-sm font-mono text-gray-900">{entry.numero_compte}</td>
+                    <td className="px-4 py-2 text-sm font-mono text-blue-700 font-semibold">{entry.numero_piece}</td>
+                    <td className="px-4 py-2 text-sm text-gray-800 max-w-[250px] truncate">{entry.libelle}</td>
+                    <td className="px-4 py-2 text-right text-sm text-green-700 font-bold font-mono">{entry.debit_ar > 0 ? formatAr(entry.debit_ar) : "-"}</td>
+                    <td className="px-4 py-2 text-right text-sm text-red-700 font-bold font-mono">{entry.credit_ar > 0 ? formatAr(entry.credit_ar) : "-"}</td>
+                  </tr>
+                ))}
             </tbody>
           </table>
 

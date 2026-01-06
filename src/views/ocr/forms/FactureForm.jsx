@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
 import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 
@@ -31,29 +32,31 @@ const LoadingOverlay = ({ message }) => (
     </div>
 );
 
-const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().substring(0, 10);
-};
+
 
 export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
 
     // API Hooks
     const [actionSaveFacture, { isLoading: isLoadingSave, isSuccess: isSuccessSave, isError: isErrorSave, data: dataSave }] = useSavePieceByFormularMutation();
-    const [actionGenerateJournal, { isLoading: isLoadingJournal, isSuccess: isSuccessJournal, isError: isErrorJournal, error: errorJournal }] = useGenerateJournalMutation();
+    const [actionGenerateJournal, { isLoading: isLoadingJournal, isSuccess: isSuccessJournal, isError: isErrorJournal, error: errorJournal, reset }] = useGenerateJournalMutation();
+
+    // Reset mutation state on mount to prevent auto-reset of form if cached
+    useEffect(() => {
+        reset();
+    }, [reset]);
 
     const [typeFacture, setTypeFacture] = useState('vente');
     const [dataToGenerateJournal, setDataToGenerateJournal] = useState(null);
-    const [header, setHeader] = useState({
+    const [header, setHeader] = useState(() => ({
         numeroFacture: '',
-        dateFacture: getTodayDate(),
+        dateFacture: getTodayISO(),
         nomClient: '',
         nomFournisseur: '',
         tauxTVA: TAUX_TVA_DEFAULT.toString(),
         rcs: '',
         nif: '',
         stat: '',
-    });
+    }));
     const [lignes, setLignes] = useState([]);
     const [nouvelleLigne, setNouvelleLigne] = useState({
         description: '',
@@ -314,7 +317,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
             setLignes([]);
             setHeader({
                 numeroFacture: '',
-                dateFacture: getTodayDate(),
+                dateFacture: getTodayISO(),
                 nomClient: '',
                 nomFournisseur: '',
                 tauxTVA: TAUX_TVA_DEFAULT.toString(),

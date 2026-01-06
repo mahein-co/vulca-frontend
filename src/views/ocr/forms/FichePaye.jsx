@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import toast from "react-hot-toast";
+import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
@@ -14,10 +15,7 @@ const formatMontant = (montant) => {
     return montant.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().substring(0, 10);
-};
+
 
 const BackToFormsPage = ({ onClick }) => (
     <button
@@ -51,11 +49,11 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
     const [actionGenerateJournal, { isLoading: isLoadingJournal, isSuccess: isSuccessJournal, isError: isErrorJournal, error: errorJournal }] = useGenerateJournalMutation();
 
     // State
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState(() => ({
         employe: '',
         numFichePaie: '',
         periodePaie: '',
-        dateEmission: getTodayDate(),
+        dateEmission: getTodayISO(),
         dateEcheance: '',
 
         salaireBrut: '',
@@ -63,7 +61,7 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
         cotisationPatronale: '',
         retenueSource: '',
         netAPayer: '',
-    });
+    }));
 
     const [validationErrors, setValidationErrors] = useState({});
     const [dataToGenerateJournal, setDataToGenerateJournal] = useState(null);
@@ -201,7 +199,7 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
         if (isSuccessJournal) {
             toast.success("Enregistrement succès");
             setFormData({
-                employe: '', numFichePaie: '', periodePaie: '', dateEmission: getTodayDate(), dateEcheance: '',
+                employe: '', numFichePaie: '', periodePaie: '', dateEmission: getTodayISO(), dateEcheance: '',
                 salaireBrut: '', cotisationSalariale: '', cotisationPatronale: '', retenueSource: '', netAPayer: ''
             });
             if (onSaveComplete) onSaveComplete();

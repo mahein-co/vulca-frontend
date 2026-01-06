@@ -108,7 +108,7 @@ const COLUMNS = [
     {
         key: 'autres',
         label: 'Autres',
-        types: ['Autres', 'Paiement de salaire', 'Chèque', 'Retrait', 'Dépôt'],
+        types: ['Autres', 'Virement bancaire', 'Paiement de salaire', 'Chèque', 'Retrait', 'Dépôt'],
         badge: 'bg-orange-500'
     },
 ];

@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
 import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { getTodayISO } from '../../../utils/dateUtils';
 import { BASE_URL_API } from '../../../constants/globalConstants';
 
 const BackToFormsPage = ({ onClick }) => (
@@ -73,33 +74,27 @@ const PCG_MAPPING = {
 const categoriesActif = ['Actif non courants', 'Actif courants'];
 const categoriesPassif = ['Capitaux propres', 'Passifs non courants', 'Passifs courants'];
 
-const getTodayDate = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
+
 
 export default function BilanForm({ onSaisieCompleted }) {
 
     const [lignes, setLignes] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [nouvelleLigne, setNouvelleLigne] = useState({
+    const [nouvelleLigne, setNouvelleLigne] = useState(() => ({
         numeroCompte: '',
         libelle: '',
         montant: '',
-        date: getTodayDate(),
+        date: getTodayISO(),
         type: 'Actif',
         categorie: 'Actif non courants'
-    });
+    }));
     const [ligneEnModification, setLigneEnModification] = useState(null);
     const [erreurNumeroCompte, setErreurNumeroCompte] = useState(false);
     const [validationErrors, setValidationErrors] = useState({});
 
     useEffect(() => {
         if (!nouvelleLigne.date) {
-            setNouvelleLigne(prev => ({ ...prev, date: getTodayDate() }));
+            setNouvelleLigne(prev => ({ ...prev, date: getTodayISO() }));
         }
     }, []);
 
@@ -126,7 +121,7 @@ export default function BilanForm({ onSaisieCompleted }) {
             numeroCompte: '',
             libelle: '',
             montant: '',
-            date: keepDate ? prev.date : getTodayDate(),
+            date: keepDate ? prev.date : getTodayISO(),
             type: 'Actif',
             categorie: 'Actif non courants'
         }));

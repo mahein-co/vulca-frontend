@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
+import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 
@@ -13,10 +15,7 @@ const formatMontant = (montant) => {
   return roundedMontant.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 };
 
-const getTodayDate = () => {
-  const today = new Date();
-  return today.toISOString().substring(0, 10);
-};
+
 
 const BackToFormsPage = ({ onClick }) => (
   <button
@@ -50,61 +49,79 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
   const [actionGenerateJournal, { isLoading: isLoadingJournal, isSuccess: isSuccessJournal, isError: isErrorJournal, error: errorJournal }] = useGenerateJournalMutation();
 
   // State
-  const [header, setHeader] = useState({
+  const [header, setHeader] = useState(() => ({
     nomTitulaire: '',
     numeroCompte: '',
     nomBanque: '',
     dateDebut: '',
-    dateFin: getTodayDate(),
-  });
+    dateFin: getTodayISO(),
+  }));
 
   const [transactions, setTransactions] = useState([]);
-  const [nouvelleLigne, setNouvelleLigne] = useState({
-    date: getTodayDate(),
+  const [nouvelleLigne, setNouvelleLigne] = useState(() => ({
+    date: getTodayISO(),
     reference: '',
     description: '',
     debit: '',
     credit: '',
-  });
+  }));
   const [ligneEnModification, setLigneEnModification] = useState(null);
   const [dataToGenerateJournal, setDataToGenerateJournal] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [headerErrors, setHeaderErrors] = useState({});
 
   // Handlers
   const handleChangeHeader = useCallback((e) => {
     const { name, value } = e.target;
     setHeader(prev => ({ ...prev, [name]: value }));
-  }, []);
+    if (headerErrors[name]) {
+      setHeaderErrors(prev => ({ ...prev, [name]: false }));
+    }
+  }, [headerErrors]);
 
   const handleChangeLigne = useCallback((e) => {
     const { name, value } = e.target;
     let newValue = value;
-    // Allow date and description as is, but restrict debit/credit to numbers/dots
+    // Format debit and credit fields with spaces
     if (name === 'debit' || name === 'credit') {
-      newValue = value.replace(/[^0-9.]/g, '');
+      const cleanValue = removeSpacesFromNumber(value);
+      newValue = formatNumberWithSpaces(cleanValue);
     }
     setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
-  }, []);
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({ ...prev, [name]: false }));
+    }
+  }, [validationErrors]);
 
   const resetNouvelleLigne = useCallback(() => {
-    setNouvelleLigne({ date: getTodayDate(), reference: '', description: '', debit: '', credit: '' });
+    setNouvelleLigne({ date: getTodayISO(), reference: '', description: '', debit: '', credit: '' });
     setLigneEnModification(null);
   }, []);
 
   const validateAndGetLigneData = () => {
     const { date, reference, description, debit, credit } = nouvelleLigne;
-    if (!date || !description) {
-      toast.error('La date et la description sont obligatoires.');
+    const errors = {};
+
+    if (!date) errors.date = true;
+    if (!description) errors.description = true;
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      toast.error('Veuillez remplir tous les champs obligatoires de la transaction (Date et Description).', { duration: 2000 });
       return null;
     }
 
-    const debitVal = parseFloat(debit || '0');
-    const creditVal = parseFloat(credit || '0');
+    const debitVal = parseFloat(removeSpacesFromNumber(debit) || '0');
+    const creditVal = parseFloat(removeSpacesFromNumber(credit) || '0');
 
     if (debitVal === 0 && creditVal === 0) {
+      setValidationErrors({ debit: true, credit: true });
       toast.error('Veuillez saisir un montant en Débit ou en Crédit.');
       return null;
     }
 
+    setValidationErrors({});
     return {
       date,
       reference: reference || '',
@@ -118,10 +135,47 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
     if (ligneEnModification) {
       sauvegarderModification(); return;
     }
-    const data = validateAndGetLigneData();
-    if (data === null) return;
 
-    const ligne = { ...data, id: Date.now() };
+    // Validate both account info and transaction fields together
+    const headerErrors = {};
+    const lineErrors = {};
+
+    // Check account info fields
+    if (!header.nomBanque) headerErrors.nomBanque = true;
+    if (!header.numeroCompte) headerErrors.numeroCompte = true;
+    if (!header.nomTitulaire) headerErrors.nomTitulaire = true;
+    if (!header.dateDebut) headerErrors.dateDebut = true;
+    if (!header.dateFin) headerErrors.dateFin = true;
+
+    // Check transaction fields
+    const { date, reference, description, debit, credit } = nouvelleLigne;
+    if (!date) lineErrors.date = true;
+    if (!reference) lineErrors.reference = true;
+    if (!description) lineErrors.description = true;
+
+    // If any errors, show them all at once
+    if (Object.keys(headerErrors).length > 0 || Object.keys(lineErrors).length > 0) {
+      setHeaderErrors(headerErrors);
+      setValidationErrors(lineErrors);
+      toast.error('Veuillez remplir tous les champs obligatoires (Informations Compte et Transaction).', { duration: 2000 });
+      return;
+    }
+
+    // Validate debit/credit
+    // Remove spaces and replace comma with dot for correct parsing
+    const cleanAmount = (val) => val ? parseFloat(val.toString().replace(/\s/g, '').replace(',', '.')) : 0;
+
+    const debitValue = cleanAmount(debit);
+    const creditValue = cleanAmount(credit);
+
+    if (debitValue === 0 && creditValue === 0) {
+      setValidationErrors({ debit: true, credit: true });
+      toast.error('Veuillez saisir un montant en Débit ou en Crédit.');
+      return;
+    }
+
+    setValidationErrors({});
+    const ligne = { date, reference: nouvelleLigne.reference, description, debit: debitValue, credit: creditValue, id: Date.now() };
     setTransactions(prev => [...prev, ligne]);
     // Preserve date for next entry as it might be sequential
     setNouvelleLigne(prev => ({ ...prev, reference: '', description: '', debit: '', credit: '' }));
@@ -164,13 +218,55 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
 
   // Validation & Save
   const handleSubmit = async () => {
-    if (!header.nomBanque || !header.numeroCompte || transactions.length === 0) {
-      toast.error('Veuillez remplir les informations du compte et ajouter au moins une transaction.');
+    const errors = {};
+
+    if (!header.nomBanque) errors.nomBanque = true;
+    if (!header.numeroCompte) errors.numeroCompte = true;
+    if (!header.nomTitulaire) errors.nomTitulaire = true;
+    if (!header.dateDebut) errors.dateDebut = true;
+    if (!header.dateFin) errors.dateFin = true;
+
+    if (Object.keys(errors).length > 0 || transactions.length === 0) {
+      setHeaderErrors(errors);
+      toast.error('Veuillez remplir tous les champs obligatoires des Informations Compte (Banque, N°, Titulaire, Période) et ajouter au moins une transaction.', { duration: 2000 });
       return;
     }
 
+    setHeaderErrors({});
+
+    // Trouver la date de la dernière transaction (la plus récente)
+    const lastTransactionDate = transactions.reduce((latest, t) => {
+      return t.date > latest ? t.date : latest;
+    }, transactions[0].date);
+
+    // Déterminer le type de pièce (Virement, Salaire, Chèque, etc.)
+    let finalPieceType = "Relevé bancaire";
+
+    if (transactions.length === 1) {
+      const t = transactions[0];
+      const ref = (t.reference || '').toUpperCase();
+      const desc = (t.description || '').toUpperCase();
+      const content = ref + ' ' + desc;
+
+      if (ref.includes('SALAIRE') || ref.includes('PAIE') || ref.includes('PAYE') || ref.includes('REMUNERATION') ||
+        desc.includes('SALAIRE') || desc.includes('PAIE') || desc.includes('PAYE') || desc.includes('REMUNERATION')) {
+        finalPieceType = "Paiement de salaire";
+      } else if (ref.includes('VIREMENT') || ref.includes('VIRM') || ref.includes('VIR') ||
+        desc.includes('VIREMENT') || desc.includes('VIRM') || desc.includes('VIR')) {
+        finalPieceType = "Virement bancaire";
+      } else if (ref.includes('CHEQUE') || ref.includes('CHQ') || desc.includes('CHEQUE') || desc.includes('CHQ')) {
+        finalPieceType = "Chèque";
+      } else if (ref.includes('RETRAIT') || ref.includes('DAB') || ref.includes('ATM') ||
+        desc.includes('RETRAIT') || desc.includes('DAB') || desc.includes('ATM')) {
+        finalPieceType = "Retrait";
+      } else if (ref.includes('DEPOT') || ref.includes('VERSEMENT') ||
+        desc.includes('DEPOT') || desc.includes('VERSEMENT')) {
+        finalPieceType = "Dépôt";
+      }
+    }
+
     const data = {
-      piece_type: "Relevé bancaire",
+      piece_type: finalPieceType,
       description_json: {
         name_titulaire: header.nomTitulaire,
         account_number: header.numeroCompte,
@@ -183,7 +279,10 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
         totalCredit: checkTotals.totalCredit,
         soldeFinal: checkTotals.soldeFinal,
       },
-      ref_file: header.numeroCompte,
+      // Si une seule transaction, la référence du fichier DOIT être la référence de la transaction (ex: PAIE-01-2025)
+      // Sinon (Relevé complet), on utilise le numéro de compte
+      ref_file: transactions.length === 1 ? transactions[0].reference : header.numeroCompte,
+      date: lastTransactionDate, // Date de la dernière transaction pour filtrage
     };
 
     setDataToGenerateJournal(data);
@@ -209,7 +308,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
       toast.success("Enregistrement succès");
       setTransactions([]);
       setHeader({
-        nomTitulaire: '', numeroCompte: '', nomBanque: '', dateDebut: '', dateFin: getTodayDate()
+        nomTitulaire: '', numeroCompte: '', nomBanque: '', dateDebut: '', dateFin: getTodayISO()
       });
       if (onSaveComplete) onSaveComplete();
     } else if (isErrorJournal) {
@@ -266,26 +365,26 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                 <div className="grid grid-cols-1 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Banque</label>
-                    <input type="text" name="nomBanque" value={header.nomBanque} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: BNI, BOA..." className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
+                    <input type="text" name="nomBanque" value={header.nomBanque} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: BNI, BOA..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.nomBanque ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">N° Compte (RIB)</label>
-                    <input type="text" name="numeroCompte" value={header.numeroCompte} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: 0000 1234..." className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
+                    <input type="text" name="numeroCompte" value={header.numeroCompte} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: 0000 1234..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.numeroCompte ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Titulaire</label>
-                    <input type="text" name="nomTitulaire" value={header.nomTitulaire} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Nom du titulaire" className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
+                    <input type="text" name="nomTitulaire" value={header.nomTitulaire} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Nom du titulaire" className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.nomTitulaire ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300'}`} />
                   </div>
                   {/* Solde Initial input removed */}
 
                   <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
                     <div>
                       <label className="block text-[10px] font-medium text-gray-500 mb-1">Période Du</label>
-                      <input type="date" name="dateDebut" value={header.dateDebut} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border border-gray-300 rounded-md ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
+                      <input type="date" name="dateDebut" value={header.dateDebut} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border rounded-md ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.dateDebut ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300'}`} />
                     </div>
                     <div>
                       <label className="block text-[10px] font-medium text-gray-500 mb-1">Au</label>
-                      <input type="date" name="dateFin" value={header.dateFin} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border border-gray-300 rounded-md ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
+                      <input type="date" name="dateFin" value={header.dateFin} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border rounded-md ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.dateFin ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300'}`} />
                     </div>
                   </div>
                 </div>
@@ -300,34 +399,36 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
-                    <input type="date" name="date" value={nouvelleLigne.date} onChange={handleChangeLigne} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                    <input type="date" name="date" value={nouvelleLigne.date} onChange={handleChangeLigne} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.date ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Référence</label>
-                    <input type="text" name="reference" value={nouvelleLigne.reference} onChange={handleChangeLigne} placeholder="Ex: VIRM-... " className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Référence <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      name="reference"
+                      value={nouvelleLigne.reference}
+                      onChange={handleChangeLigne}
+                      placeholder="Ex: VIRM-..."
+                      className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.reference ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
+                    />
                   </div>
                   <div className="md:col-span-4">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Description / Libellé</label>
-                    <input type="text" name="description" value={nouvelleLigne.description} onChange={handleChangeLigne} placeholder="Ex: Virement reçu..." className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                    <input type="text" name="description" value={nouvelleLigne.description} onChange={handleChangeLigne} placeholder="Ex: Virement reçu..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.description ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Débit (Ar)</label>
-                    <input type="text" name="debit" value={nouvelleLigne.debit} onChange={handleChangeLigne} placeholder="0" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right" />
+                    <input type="text" name="debit" value={nouvelleLigne.debit} onChange={handleChangeLigne} placeholder="0" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 text-right ${validationErrors.debit ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Crédit (Ar)</label>
-                    <input type="text" name="credit" value={nouvelleLigne.credit} onChange={handleChangeLigne} placeholder="0" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right" />
+                    <input type="text" name="credit" value={nouvelleLigne.credit} onChange={handleChangeLigne} placeholder="0" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 text-right ${validationErrors.credit ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                   </div>
                 </div>
 
-                <div className="mt-4 flex justify-end gap-3 pt-2 border-t border-gray-100">
-                  <button
-                    onClick={resetNouvelleLigne}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium text-sm py-1.5 px-4 rounded-lg shadow-sm transition duration-200 flex items-center"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                    {ligneEnModification ? 'Annuler' : 'Vider'}
-                  </button>
+                <div className="mt-4 flex justify-end pt-2 border-t border-gray-100">
                   <button
                     onClick={ajouterLigne}
                     className="bg-gray-800 hover:bg-gray-900 text-white font-semibold text-sm py-1.5 px-4 rounded-lg shadow-md transition duration-200 flex items-center"

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { formatDateToFrench } from '../../utils/dateFormat';
 import Swal from "sweetalert2";
 import { Database, Loader2, RefreshCw, BarChart3, TrendingUp, TrendingDown, ChevronDown } from "lucide-react";
 
 const API_BASE_URL = process.env.REACT_APP_API_URL;
-const PAGE_SIZE = 3; 
+const PAGE_SIZE = 3;
 
 /**
  * Formate un montant en devise Ar (Ariary) avec 2 décimales.
@@ -43,53 +44,53 @@ const getSoldeLabel = (balance) => {
 // --- Composants Réutilisables (Mis à jour pour le design moderne) ---
 
 const Card = ({ title, value, style, icon: Icon, color }) => {
-    // Classes pour l'icône dans un cercle gris/neutre, sauf pour la couleur du mouvement
-    const iconColor = {
-        green: "text-green-600",
-        red: "text-red-600",
-        blue: "text-blue-600",
-        gray: "text-gray-600",
-    }[color] || "text-gray-600";
-    
-    return (
-        <div className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition duration-300`}> 
-            <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-medium text-gray-500 uppercase">{title}</h3>
-                {/* L'icône utilise une couleur d'accent discrète ou la couleur du mouvement */}
-                <div className={`p-1 rounded-full bg-gray-100`}>
-                    <Icon size={16} className={iconColor} />
-                </div>
-            </div>
-            {/* La valeur principale utilise la couleur du solde (style) */}
-            <div className={`text-xl font-extrabold ${style} font-mono`}>
-                {value}
-            </div>
+  // Classes pour l'icône dans un cercle gris/neutre, sauf pour la couleur du mouvement
+  const iconColor = {
+    green: "text-green-600",
+    red: "text-red-600",
+    blue: "text-blue-600",
+    gray: "text-gray-600",
+  }[color] || "text-gray-600";
+
+  return (
+    <div className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 hover:shadow-md transition duration-300`}>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-xs font-medium text-gray-500 uppercase">{title}</h3>
+        {/* L'icône utilise une couleur d'accent discrète ou la couleur du mouvement */}
+        <div className={`p-1 rounded-full bg-gray-100`}>
+          <Icon size={16} className={iconColor} />
         </div>
-    );
+      </div>
+      {/* La valeur principale utilise la couleur du solde (style) */}
+      <div className={`text-xl font-extrabold ${style} font-mono`}>
+        {value}
+      </div>
+    </div>
+  );
 };
 
 const TableHeader = ({ children, align = 'left' }) => (
-    <th
-        className={`px-4 py-2 text-${align} text-xs font-semibold uppercase tracking-wider`}
-    >
-        {children}
-    </th>
+  <th
+    className={`px-4 py-2 text-${align} text-xs font-semibold uppercase tracking-wider`}
+  >
+    {children}
+  </th>
 );
 
 const TableCell = ({ children, align = 'left', className = '' }) => (
-    <td className={`px-4 py-2 whitespace-nowrap text-${align} text-sm text-gray-800 ${className}`}>
-        {children}
-    </td>
+  <td className={`px-4 py-2 whitespace-nowrap text-${align} text-sm text-gray-800 ${className}`}>
+    {children}
+  </td>
 );
 
 const PaginationButton = ({ children, onClick, disabled }) => (
-    <button
-        onClick={onClick}
-        disabled={disabled}
-        className="px-4 py-2 rounded-lg text-sm font-medium transition bg-white border border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-sm"
-    >
-        {children}
-    </button>
+  <button
+    onClick={onClick}
+    disabled={disabled}
+    className="px-4 py-2 rounded-lg text-sm font-medium transition bg-white border border-gray-300 text-gray-700 hover:bg-blue-50 hover:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-sm"
+  >
+    {children}
+  </button>
 );
 
 
@@ -171,12 +172,12 @@ export default function GrandLivre() {
 
       if (data.firstDate) {
         setFirstDate(data.firstDate);
-        setStartDate(data.firstDate); 
+        setStartDate(data.firstDate);
       }
 
       if (data.today) {
         setToday(data.today);
-        setEndDate(data.today); 
+        setEndDate(data.today);
       }
 
     } catch (error) {
@@ -227,8 +228,8 @@ export default function GrandLivre() {
       {/* --- FILTRES COMPACTS ET ALIGNÉS (Design Moderne) --- */}
       <div className="bg-white p-4 rounded-xl shadow-lg mb-6 border border-gray-100">
         <h2 className="text-base font-bold text-gray-700 mb-3">Critères de Recherche</h2>
-        
-        <div className="flex flex-col lg:flex-row gap-4 lg:items-end"> 
+
+        <div className="flex flex-col lg:flex-row gap-4 lg:items-end">
 
           {/* Sélecteur de Compte */}
           <div className="flex-1 w-full lg:w-2/5">
@@ -294,7 +295,7 @@ export default function GrandLivre() {
             <button
               onClick={handleFilterSubmit}
               // Bouton avec couleur d'accent forte
-              className="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 text-sm h-[40px]" 
+              className="w-full bg-blue-700 hover:bg-blue-800 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center transition duration-200 shadow-md hover:shadow-lg disabled:opacity-50 text-sm h-[40px]"
               disabled={loading || !selectedAccount || !startDate || !endDate}
             >
               {loading ? <Loader2 className="animate-spin mr-2" size={16} /> : <RefreshCw className="mr-2" size={16} />}
@@ -310,7 +311,7 @@ export default function GrandLivre() {
           Compte Analysé : <span className="text-blue-700">{selectedAccount} - {accountLabel || "..."}</span>
         </h2>
         <p className="text-xs text-gray-500">
-          Période : du **{startDate}** au **{endDate}**
+          Période : du **{formatDateToFrench(startDate)}** au **{formatDateToFrench(endDate)}**
         </p>
       </div>
 
@@ -385,14 +386,13 @@ export default function GrandLivre() {
 
                 <tbody className="divide-y divide-gray-100 bg-white">
                   {paginatedEntries.map((e, i) => (
-                    <tr 
-                      key={startIndex + i} 
+                    <tr
+                      key={startIndex + i}
                       // Lignes zébrées très subtiles, hover gris clair
-                      className={`transition duration-150 ${
-                        i % 2 === 0 ? "bg-white" : "bg-gray-50"
-                      } hover:bg-gray-100`}
+                      className={`transition duration-150 ${i % 2 === 0 ? "bg-white" : "bg-gray-50"
+                        } hover:bg-gray-100`}
                     >
-                      <TableCell className="text-sm">{e.date}</TableCell>
+                      <TableCell className="text-sm">{formatDateToFrench(e.date)}</TableCell>
                       <TableCell className="text-sm">{e.journal_source || "OD"}</TableCell>
                       {/* Numéro de pièce accentué avec le bleu pour l'importance */}
                       <TableCell className="text-sm font-semibold text-blue-700">{e.numero_piece}</TableCell>

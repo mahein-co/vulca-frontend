@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { BASE_URL_API } from '../../constants/globalConstants';
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 10;
 
 const API_CONFIG = {
     bilanUrl: `${BASE_URL_API}/bilans/`,
@@ -96,7 +96,7 @@ const PaginationControls = ({ currentPage, totalPages, totalItems, setCurrentPag
     const endItem = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
 
     return (
-        <div className="flex flex-col sm:flex-row justify-between items-center p-3 bg-gray-50 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-between items-center px-3 py-1 bg-white border-t border-gray-200">
             <p className="text-xs text-gray-600 mb-2 sm:mb-0">
                 Lignes <span className="font-semibold">{startItem}</span> à <span className="font-semibold">{endItem}</span> sur <span className="font-semibold">{totalItems}</span> (Page <span className="font-semibold">{currentPage}</span>/<span className="font-semibold">{totalPages || 1}</span>)
             </p>
@@ -385,8 +385,8 @@ const TransactionView = () => {
     const paginatedDetails = useMemo(() => allDetails.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE), [currentPage, allDetails]);
 
     return (
-        <div className="mim-h-screen flex flex-col overflow-hidden">
-            <main className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+            <main className="flex-1 flex flex-col min-h-0 overflow-hidden p-2 gap-2">
                 {/* Période d'exercice */}
                 {/* Période d'exercice */}
                 {/* 1. PÉRIODE D'EXERCICE - Style Dashboard */}
@@ -606,19 +606,19 @@ const TransactionView = () => {
                             </div>
                         </div>
                     )}
-                    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden h-full">
-                        <div className="overflow-x-auto">
+                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col h-auto max-h-[260px] flex-shrink-0">
+                        <div className="overflow-auto min-h-0">
                             <table className="w-full border-collapse text-xs sm:text-sm min-w-[800px] table-fixed">
                                 <thead className="sticky top-0 z-10">
                                     <tr className="bg-gray-800 text-white">
-                                        <th className="w-[15%] px-2 py-1.5 sm:py-2 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Date</th>
-                                        <th className="w-[10%] px-2 py-1.5 sm:py-2 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Compte</th>
-                                        <th className="w-[40%] px-2 py-1.5 sm:py-2 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
+                                        <th className="w-[15%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Date</th>
+                                        <th className="w-[10%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Compte</th>
+                                        <th className="w-[40%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
                                         {selectedSection === 'bilan' ?
-                                            <th className="w-[20%] px-2 py-1.5 sm:py-2 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Catégorie</th>
-                                            : <th className="w-[20%] px-2 py-1.5 sm:py-2 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Nature</th>
+                                            <th className="w-[20%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Catégorie</th>
+                                            : <th className="w-[20%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Nature</th>
                                         }
-                                        <th className="w-[15%] px-2 py-1.5 sm:py-2 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Montant</th>
+                                        <th className="w-[15%] px-2 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Montant</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white">
@@ -631,13 +631,13 @@ const TransactionView = () => {
                                             )}
                                         </tr>
                                     ) : paginatedDetails.map((item, idx) => (
-                                        <tr key={idx} className={`hover:bg-emerald-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                            <td className="border-b border-gray-100 px-2 py-1.5 sm:py-2 text-xs text-gray-700 font-semibold">{formatDate(item.date)}</td>
-                                            <td className="border-b border-gray-100 px-2 py-1.5 sm:py-2 text-xs">
+                                        <tr key={idx} className={`hover:bg-emerald-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                            <td className="w-[15%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-gray-700 font-semibold">{formatDate(item.date)}</td>
+                                            <td className="w-[10%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs">
                                                 <span className="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{item.numero_compte}</span>
                                             </td>
-                                            <td className="border-b border-gray-100 px-2 py-1.5 sm:py-2 text-[10px] sm:text-xs text-gray-800 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
-                                            <td className="border-b border-gray-100 px-2 py-1.5 sm:py-2 hidden md:table-cell">
+                                            <td className="w-[40%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-gray-800 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
+                                            <td className="w-[20%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 hidden md:table-cell">
                                                 <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 inline-flex text-[10px] font-bold rounded-full ${selectedSection === 'bilan'
                                                     ? item.categorie?.toLowerCase().includes('actif')
                                                         ? 'bg-blue-100 text-blue-700'
@@ -651,28 +651,27 @@ const TransactionView = () => {
                                                     {(item.categorie || item.nature || '').replace(/_/g, ' ')}
                                                 </span>
                                             </td>
-                                            <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-right font-bold text-gray-900">{formatCurrency(item.montant_ar)}</td>
+                                            <td className="w-[15%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-right font-bold text-gray-900">{formatCurrency(item.montant_ar)}</td>
                                         </tr>
                                     ))}
                                     {(!loading && paginatedDetails.length < ITEMS_PER_PAGE) && (
                                         Array.from({ length: ITEMS_PER_PAGE - paginatedDetails.length }).map((_, idx) => (
                                             <tr key={`empty-${idx}`} className="bg-white">
-                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
-                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
-                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
-                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none hidden md:table-cell">-</td>
-                                                <td className="border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none text-right">-</td>
+                                                <td className="w-[15%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                                                <td className="w-[10%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                                                <td className="w-[40%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                                                <td className="w-[20%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none hidden md:table-cell">-</td>
+                                                <td className="w-[15%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none text-right">-</td>
                                             </tr>
                                         ))
                                     )}
                                 </tbody>
                             </table>
                         </div>
+                        <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} setCurrentPage={setCurrentPage} />
                     </div>
                 </div>
 
-                {/* Pagination */}
-                <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} setCurrentPage={setCurrentPage} />
             </main>
         </div>
     );

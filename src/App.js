@@ -98,7 +98,7 @@ import GestionPiecesBoard from './views/piece/GestionPiecesBoard';
 import ImportFichier from './views/ocr/pages/ImportFichier';
 import IndexAddByFormsPage from './views/ocr/pages/IndexAddByFormsPage';
 // --- Import composant chatbot
-import ChatWidget from "./components/chatbot/ChatWidget"; 
+import ChatWidget from "./components/chatbot/ChatWidget";
 
 // 🎯 NOUVEL IMPORT : Le formulaire de Bilan
 import BilanForm from './views/ocr/forms/BilanForm'; // <--- ASSUREZ-VOUS QUE LE CHEMIN EST CORRECT
@@ -109,8 +109,8 @@ import BankForm from './views/ocr/forms/BankForm';
 import FichePayeForm from './views/ocr/forms/FichePaye.jsx';
 
 
-// Composant Simple de Modale (Overlay) 
-const SaisieModal = ({ children, onClose }) => (
+// Composant Modal pour les formulaires
+const FormModal = ({ children, onClose }) => (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black bg-opacity-50 flex justify-center items-center p-4">
         <div
             className="absolute inset-0"
@@ -134,84 +134,87 @@ const SaisieModal = ({ children, onClose }) => (
 );
 
 
+
+
 function App() {
 
     const [currentPage, setCurrentPage] = useState('dashboard');
-    const [isSaisieModalOpen, setIsSaisieModalOpen] = useState(false);
-    const [formTypeToOpen, setFormTypeToOpen] = useState(null);
+    const [currentFormType, setCurrentFormType] = useState(null);
+    const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
-    // --- Fonctions de Gestion de la Modale ---
-    const openSaisieModal = (formType) => {
-        setFormTypeToOpen(formType);
-        setIsSaisieModalOpen(true);
-    };
-
-    const closeSaisieModal = () => {
-        setIsSaisieModalOpen(false);
-        setFormTypeToOpen(null);
-        // 🛑 Retourne au dashboard si on était sur l'onglet 'saisie-manuelle'
-        if (currentPage === 'saisie-manuelle') {
-            setCurrentPage('dashboard');
-        }
-    };
-    const handleGoBackToSaisieMenu = () => {
-        // Ramène l'état du contenu de la modale à l'écran du menu de saisie
-        setFormTypeToOpen('SaisieMenu');
-    };
-
-    // 🎯 FONCTION CRÉÉE ET PASSÉE AU HEADER
+    // --- Fonctions de Navigation ---
     const openSaisieMenuFromHeader = () => {
-        openSaisieModal('SaisieMenu'); // Ouvre la modale avec le menu de sélection
+        setCurrentPage('saisie-manuelle');
+        setCurrentFormType(null);
+        setIsFormModalOpen(false);
     };
-    // ------------------------------------------
+
+    const openFormInModal = (formType) => {
+        setCurrentFormType(formType);
+        setIsFormModalOpen(true);
+    };
+
+    const closeFormModal = () => {
+        setIsFormModalOpen(false);
+        setCurrentFormType(null);
+    };
+
+    const handleGoBackToSaisieMenu = () => {
+        setIsFormModalOpen(false);
+        setCurrentFormType(null);
+    };
+
+    const handleSaveComplete = () => {
+        setIsFormModalOpen(false);
+        setCurrentFormType(null);
+    };
+
+
 
     const navigate = (page) => {
         setCurrentPage(page);
-        // Ferme la modale sauf si on clique à nouveau sur 'saisie-manuelle'
-        if (page !== 'saisie-manuelle') {
-            closeSaisieModal();
+        if (page === 'saisie-manuelle') {
+            setCurrentFormType(null);
+            setIsFormModalOpen(false);
         }
     };
 
-    const renderModalForm = () => {
-        switch (formTypeToOpen) {
+    const renderFormInModal = () => {
+        switch (currentFormType) {
             case 'bilan':
-                // 🎯 CHANGEMENT ICI : Intégration de BilanForm avec les callbacks
                 return (
                     <BilanForm
                         onSaisieCompleted={handleGoBackToSaisieMenu}
-                        onSaveComplete={closeSaisieModal}
+                        onSaveComplete={handleSaveComplete}
                     />
                 );
             case 'compteResultat':
                 return <CompteResultatForm
                     onSaisieCompleted={handleGoBackToSaisieMenu}
-                    onSaveComplete={closeSaisieModal}
+                    onSaveComplete={handleSaveComplete}
                 />;
             case 'facture':
                 return <FactureForm
                     onSaisieCompleted={handleGoBackToSaisieMenu}
-                    onSaveComplete={closeSaisieModal}
+                    onSaveComplete={handleSaveComplete}
                 />;
             case 'achat':
                 return <BonAchatForm
                     onSaisieCompleted={handleGoBackToSaisieMenu}
-                    onSaveComplete={closeSaisieModal}
+                    onSaveComplete={handleSaveComplete}
                 />;
             case 'banque':
                 return <BankForm
                     onSaisieCompleted={handleGoBackToSaisieMenu}
-                    onSaveComplete={closeSaisieModal}
+                    onSaveComplete={handleSaveComplete}
                 />;
             case 'ficheDePaie':
                 return <FichePayeForm
                     onSaisieCompleted={handleGoBackToSaisieMenu}
-                    onSaveComplete={closeSaisieModal}
+                    onSaveComplete={handleSaveComplete}
                 />;
-            case 'SaisieMenu':
             default:
-                // Passe openSaisieModal pour que le menu puisse changer le contenu de la modale
-                return <IndexAddByFormsPage onOpenForm={openSaisieModal} />;
+                return null;
         }
     };
 
@@ -233,8 +236,7 @@ function App() {
                 return <ImportFichier type="OCR" isFullScreen={true} onSaisieCompleted={() => navigate('dashboard')} />;
 
             case 'saisie-manuelle':
-                // 🛑 Affiche le Dashboard en arrière-plan lorsque la modale est ouverte
-                return <ContentWrapper><Dashboard /></ContentWrapper>;
+                return <div className="pt-14 p-4 max-w-7xl mx-auto"><IndexAddByFormsPage onOpenForm={openFormInModal} /></div>;
 
             case 'gestion-salaire':
                 return <ContentWrapper><h2 className="text-2xl">Module Gestion Salaires (TODO)</h2></ContentWrapper>;
@@ -262,12 +264,14 @@ function App() {
                 {renderPage()}
             </main>
 
-            {/* Affiche la modale si l'état le permet */}
-            {isSaisieModalOpen && (
-                <SaisieModal onClose={closeSaisieModal}>
-                    {renderModalForm()}
-                </SaisieModal>
+            {/* Modal pour les formulaires */}
+            {isFormModalOpen && currentFormType && (
+                <FormModal onClose={closeFormModal}>
+                    {renderFormInModal()}
+                </FormModal>
             )}
+
+
 
             {/* ... Toaster ... */}
             <Toaster

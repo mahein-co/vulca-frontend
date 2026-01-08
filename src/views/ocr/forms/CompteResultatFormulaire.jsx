@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-
-const BASE_URL_API = 'http://api.exemple.com';
+import toast from "react-hot-toast";
+import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { getTodayISO } from '../../../utils/dateUtils';
+import { BASE_URL_API } from '../../../constants/globalConstants';
 
 const BackToFormsPage = ({ onClick }) => (
     <button onClick={onClick} className="text-indigo-500 hover:text-indigo-700 text-xs font-medium flex items-center transition duration-150" title="Retour au menu de saisie">
@@ -9,8 +11,20 @@ const BackToFormsPage = ({ onClick }) => (
     </button>
 );
 
+const LoadingOverlay = ({ message }) => (
+    <div className="fixed inset-0 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center max-w-sm w-full text-center">
+            <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
+                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">{message}</p>
+        </div>
+    </div>
+);
+
 const PCG_MAPPING = {
-    '60': { 'libelle': 'Achats de marchandises/MP', 'nature': 'CHARGE' },
+    '60': { 'libelle': 'Achats de marchandises', 'nature': 'CHARGE' },
     '61': { 'libelle': 'Services extérieurs', 'nature': 'CHARGE' },
     '62': { 'libelle': 'Autres services extérieurs', 'nature': 'CHARGE' },
     '63': { 'libelle': 'Impôts et taxes', 'nature': 'CHARGE' },
@@ -30,22 +44,21 @@ const PCG_MAPPING = {
     '78': { 'libelle': 'Reprises sur amortissements et provisions', 'nature': 'PRODUIT' },
 };
 
-const getDateDuJour = () => {
-    const aujourd = new Date();
-    return `${aujourd.getFullYear()}-${String(aujourd.getMonth() + 1).padStart(2, '0')}-${String(aujourd.getDate()).padStart(2, '0')}`;
-};
+
 
 export default function CompteResultatForm({ onSaisieCompleted }) {
     const [lignes, setLignes] = useState([]);
-    const [nouvelleLigne, setNouvelleLigne] = useState({
+    const [isLoading, setIsLoading] = useState(false);
+    const [nouvelleLigne, setNouvelleLigne] = useState(() => ({
         numeroCompte: '',
         libelle: '',
         montant: '',
-        date: getDateDuJour(),
+        date: getTodayISO(),
         nature: 'CHARGE',
-    });
+    }));
     const [ligneEnModification, setLigneEnModification] = useState(null);
     const [erreurNumeroCompte, setErreurNumeroCompte] = useState(false);
+    const [validationErrors, setValidationErrors] = useState({});
 
     useEffect(() => {
         document.body.style.overflow = 'hidden';
@@ -53,8 +66,13 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
     }, []);
 
     const formatMontant = useCallback((montant) => {
-        if (typeof montant === 'string') montant = parseFloat(montant.replace(/,/g, '.'));
+        if (typeof montant === 'string') {
+            // Clean spaces and replace comma with dot before parsing
+            montant = parseFloat(removeSpacesFromNumber(montant).replace(/,/g, '.'));
+        }
         if (isNaN(montant)) return '0,00';
+        // Return formatted with spaces for display if needed here, but usually this is used for final table display
+        // Standard toLocaleString handles spaces for fr-FR
         return montant.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }, []);
 
@@ -71,7 +89,7 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
             numeroCompte: '',
             libelle: '',
             montant: '',
-            date: keepDate ? prev.date : getDateDuJour(),
+            date: keepDate ? prev.date : getTodayISO(),
             nature: 'CHARGE',
         }));
         setLigneEnModification(null);
@@ -108,29 +126,48 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
             setErreurNumeroCompte(newErreurNumeroCompte);
             setNouvelleLigne(prev => ({ ...prev, [name]: newValue, libelle: newLibelle, nature: newNature }));
         } else if (name === 'montant') {
-            newValue = value.replace(/[^0-9.]/g, '');
-            const parts = newValue.split('.');
-            if (parts.length > 2) newValue = parts[0] + '.' + parts.slice(1).join('');
-            setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
+            const cleanValue = removeSpacesFromNumber(value);
+            // Replace comma with dot for consistency if user types comma
+            const normalizedValue = cleanValue.replace(/,/g, '.');
+            const formattedValue = formatNumberWithSpaces(normalizedValue);
+            setNouvelleLigne(prev => ({ ...prev, [name]: formattedValue }));
         } else {
             setNouvelleLigne(prev => ({ ...prev, [name]: value }));
         }
-    }, [nouvelleLigne]);
+
+
+        // Clear validation error if exists
+        if (validationErrors[name]) {
+            setValidationErrors(prev => ({ ...prev, [name]: false }));
+        }
+    }, [nouvelleLigne, validationErrors]);
 
     const validateAndGetMontant = () => {
-        if (!nouvelleLigne.numeroCompte || !nouvelleLigne.libelle || !nouvelleLigne.montant || !nouvelleLigne.date) {
-            alert('Veuillez remplir tous les champs obligatoires.');
+        const errors = {};
+        if (!nouvelleLigne.numeroCompte) errors.numeroCompte = true;
+        if (!nouvelleLigne.libelle) errors.libelle = true;
+        if (!nouvelleLigne.montant) errors.montant = true;
+        if (!nouvelleLigne.date) errors.date = true;
+
+        if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            toast.error('Veuillez remplir tous les champs obligatoires.');
             return null;
         }
-        const montantValue = parseFloat(nouvelleLigne.montant);
+
+        const montantValue = parseFloat(removeSpacesFromNumber(nouvelleLigne.montant));
         if (isNaN(montantValue) || montantValue <= 0) {
-            alert('Le montant doit être un nombre positif valide.');
+            setValidationErrors({ ...errors, montant: true });
+            toast.error('Le montant doit être un nombre positif valide.');
             return null;
         }
         if (erreurNumeroCompte || !['6', '7'].includes(nouvelleLigne.numeroCompte[0])) {
-            alert('Numéro de compte invalide. Doit commencer par 6 ou 7 (Comptes de Résultat).');
+            setValidationErrors({ ...errors, numeroCompte: true });
+            toast.error('Numéro de compte invalide. Doit commencer par 6 ou 7 (Comptes de Résultat).');
             return null;
         }
+
+        setValidationErrors({});
         return montantValue;
     };
 
@@ -167,10 +204,8 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
     };
 
     const supprimerLigne = (id) => {
-        if (window.confirm("Êtes-vous sûr de vouloir supprimer cette ligne ?")) {
-            setLignes(lignes.filter(ligne => ligne.id !== id));
-            if (ligneEnModification === id) resetNouvelleLigne(true);
-        }
+        setLignes(lignes.filter(ligne => ligne.id !== id));
+        if (ligneEnModification === id) resetNouvelleLigne(true);
     };
 
     const { resultat } = useMemo(() => {
@@ -181,15 +216,40 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
 
     const enregistrerCompteResultat = async () => {
         if (lignes.length === 0) {
-            alert("Ajoutez au moins une ligne avant d'enregistrer");
+            toast.error("Ajoutez au moins une ligne avant d'enregistrer");
             return;
         }
-        const typeResultat = resultat >= 0 ? 'Bénéfice' : 'Perte';
-        const resultatFormatted = formatMontant(resultat);
-        console.log(`Tentative d'enregistrement de ${lignes.length} lignes vers ${BASE_URL_API}/compte-resultat/`);
-        alert("Enregistrement succès");
-        setLignes([]);
-        if (onSaisieCompleted) onSaisieCompleted();
+
+        setIsLoading(true);
+        try {
+            const promises = lignes.map(ligne => {
+                const payload = {
+                    numero_compte: ligne.numeroCompte,
+                    libelle: ligne.libelle,
+                    montant_ar: ligne.montant,
+                    date: ligne.date,
+                    nature: ligne.nature // CHARGE / PRODUIT
+                };
+
+                return fetch(`${BASE_URL_API}/CompteResultats/manual/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+            });
+
+            await Promise.all(promises);
+            toast.success("Enregistrement succès");
+            setLignes([]);
+            if (onSaisieCompleted) onSaisieCompleted();
+        } catch (error) {
+            console.error('Erreur lors de l\'enregistrement:', error);
+            toast.error('❌ Erreur lors de l\'enregistrement du compte de résultat');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const isCompteMappe = !!(
@@ -200,6 +260,7 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
 
     return (
         <div className="w-full h-full flex flex-col overflow-hidden">
+            {isLoading && <LoadingOverlay message="Validation et enregistrement en cours..." />}
             {/* Header fixe */}
             <div className="flex-shrink-0 bg-white border-b shadow-sm sticky top-0 z-20">
                 <div className="max-w-7xl mx-auto px-3 py-2">
@@ -220,35 +281,31 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 mb-1">N° Compte (6xx-7xx)</label>
-                                <input type="text" name="numeroCompte" value={nouvelleLigne.numeroCompte} onChange={handleChange} className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${erreurNumeroCompte ? 'border-red-500 bg-red-50' : 'border-gray-300'}`} placeholder="Ex: 607" />
+                                <input type="text" name="numeroCompte" value={nouvelleLigne.numeroCompte} onChange={handleChange} className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${erreurNumeroCompte || validationErrors.numeroCompte ? 'border-red-500 bg-red-50' : 'border-gray-300'}`} placeholder="Ex: 607" />
                                 {erreurNumeroCompte && <p className="text-red-600 text-xs mt-1">Doit commencer par 6 ou 7</p>}
                             </div>
                             <div className="md:col-span-2 lg:col-span-2">
                                 <label className="block text-xs font-medium text-gray-600 mb-1">Libellé</label>
-                                <input type="text" name="libelle" value={nouvelleLigne.libelle} onChange={handleChange} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" placeholder="Ex: Achat de fournitures" />
+                                <input type="text" name="libelle" value={nouvelleLigne.libelle} onChange={handleChange} className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${validationErrors.libelle ? 'border-red-500' : 'border-gray-300'}`} placeholder="Ex: Achat de fournitures" />
                                 {isCompteMappe && <p className="text-xs text-green-600 mt-1">✓ Auto-rempli (modifiable)</p>}
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 mb-1">Montant (Ar)</label>
-                                <input type="text" name="montant" value={nouvelleLigne.montant} onChange={handleChange} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right" placeholder="0.00" />
+                                <input type="text" name="montant" value={nouvelleLigne.montant} onChange={handleChange} className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right ${validationErrors.montant ? 'border-red-500' : 'border-gray-300'}`} placeholder="0.00" />
                             </div>
                             <div className="md:col-span-2 lg:col-span-2">
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Nature (Déduit)</label>
-                                <select name="nature" value={nouvelleLigne.nature} onChange={handleChange} className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte ? 'bg-gray-100 cursor-not-allowed border-gray-200' : 'bg-white border-gray-300'}`} disabled={nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte}>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Nature</label>
+                                <select name="nature" value={nouvelleLigne.nature} onChange={handleChange} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 bg-white">
                                     <option value="CHARGE">CHARGE (6xx)</option>
                                     <option value="PRODUIT">PRODUIT (7xx)</option>
                                 </select>
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
-                                <input type="date" name="date" value={nouvelleLigne.date} onChange={handleChange} className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800" />
+                                <input type="date" name="date" value={nouvelleLigne.date} onChange={handleChange} className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${validationErrors.date ? 'border-red-500' : 'border-gray-300'}`} />
                             </div>
                         </div>
-                        <div className="mt-3 flex justify-end gap-3">
-                            <button onClick={() => resetNouvelleLigne(true)} className="bg-gray-400 hover:bg-gray-500 text-white font-medium text-sm py-1 px-4 rounded-lg shadow-sm transition duration-200 flex items-center">
-                                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                {ligneEnModification ? 'Annuler' : 'Vider'}
-                            </button>
+                        <div className="mt-3 flex justify-end">
                             <button onClick={ajouterLigne} disabled={erreurNumeroCompte} className="bg-gray-800 hover:bg-gray-900 text-white font-semibold text-sm py-1 px-4 rounded-lg shadow-md transition duration-200 flex items-center disabled:opacity-50 disabled:cursor-not-allowed">
                                 <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={ligneEnModification ? "M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" : "M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"} /></svg>
                                 {ligneEnModification ? 'Valider modif.' : 'Ajouter ligne'}

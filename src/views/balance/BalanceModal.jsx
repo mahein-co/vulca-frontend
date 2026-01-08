@@ -22,7 +22,7 @@ const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
 
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const itemsPerPage = 10;
 
   // États de filtrage
   const [searchTerm, setSearchTerm] = useState('');
@@ -161,7 +161,7 @@ const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
         </div>
 
         {/* Corps du tableau (Zone Scrollable) */}
-        <div className="flex-grow overflow-y-auto p-2 sm:p-4 min-h-0 bg-white relative">
+        <div className="flex-grow p-2 sm:p-4 min-h-0 bg-white relative flex flex-col">
           {isLoading && (
             <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex justify-center items-center">
               <div className="flex flex-col items-center max-w-sm w-full text-center">
@@ -174,8 +174,8 @@ const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
             </div>
           )}
 
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
+          <div className="border border-gray-200 rounded-lg overflow-hidden flex flex-col flex-grow min-h-0">
+            <div className="overflow-auto min-h-0">
               <table className="w-full border-collapse text-xs sm:text-sm whitespace-nowrap min-w-[640px]">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-gray-800 text-white">

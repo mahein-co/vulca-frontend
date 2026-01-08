@@ -1,6 +1,8 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-
-const BASE_URL_API = 'http://api.exemple.com';
+import toast from "react-hot-toast";
+import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { getTodayISO } from '../../../utils/dateUtils';
+import { BASE_URL_API } from '../../../constants/globalConstants';
 
 const BackToFormsPage = ({ onClick }) => (
     <button
@@ -11,6 +13,18 @@ const BackToFormsPage = ({ onClick }) => (
         <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
         Retour
     </button>
+);
+
+const LoadingOverlay = ({ message }) => (
+    <div className="fixed inset-0 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
+        <div className="flex flex-col items-center max-w-sm w-full text-center">
+            <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
+                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">{message}</p>
+        </div>
+    </div>
 );
 
 const PCG_MAPPING = {
@@ -60,31 +74,27 @@ const PCG_MAPPING = {
 const categoriesActif = ['Actif non courants', 'Actif courants'];
 const categoriesPassif = ['Capitaux propres', 'Passifs non courants', 'Passifs courants'];
 
-const getTodayDate = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-};
+
 
 export default function BilanForm({ onSaisieCompleted }) {
 
     const [lignes, setLignes] = useState([]);
-    const [nouvelleLigne, setNouvelleLigne] = useState({
+    const [isLoading, setIsLoading] = useState(false);
+    const [nouvelleLigne, setNouvelleLigne] = useState(() => ({
         numeroCompte: '',
         libelle: '',
         montant: '',
-        date: getTodayDate(),
+        date: getTodayISO(),
         type: 'Actif',
         categorie: 'Actif non courants'
-    });
+    }));
     const [ligneEnModification, setLigneEnModification] = useState(null);
     const [erreurNumeroCompte, setErreurNumeroCompte] = useState(false);
+    const [validationErrors, setValidationErrors] = useState({});
 
     useEffect(() => {
         if (!nouvelleLigne.date) {
-            setNouvelleLigne(prev => ({ ...prev, date: getTodayDate() }));
+            setNouvelleLigne(prev => ({ ...prev, date: getTodayISO() }));
         }
     }, []);
 
@@ -111,7 +121,7 @@ export default function BilanForm({ onSaisieCompleted }) {
             numeroCompte: '',
             libelle: '',
             montant: '',
-            date: keepDate ? prev.date : getTodayDate(),
+            date: keepDate ? prev.date : getTodayISO(),
             type: 'Actif',
             categorie: 'Actif non courants'
         }));
@@ -202,11 +212,8 @@ export default function BilanForm({ onSaisieCompleted }) {
             }));
 
         } else if (name === 'montant') {
-            newValue = value.replace(/[^0-9.]/g, '');
-            const parts = newValue.split('.');
-            if (parts.length > 2) {
-                newValue = parts[0] + '.' + parts.slice(1).join('');
-            }
+            const cleanValue = removeSpacesFromNumber(value);
+            newValue = formatNumberWithSpaces(cleanValue);
             setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
 
         } else if (name === 'type') {
@@ -247,22 +254,39 @@ export default function BilanForm({ onSaisieCompleted }) {
         } else {
             setNouvelleLigne(prev => ({ ...prev, [name]: value }));
         }
-    }, [nouvelleLigne]);
+
+        // Clear validation error if exists
+        if (validationErrors[name]) {
+            setValidationErrors(prev => ({ ...prev, [name]: false }));
+        }
+    }, [nouvelleLigne, validationErrors]);
 
     const validateAndGetMontant = () => {
-        if (!nouvelleLigne.numeroCompte || !nouvelleLigne.libelle || !nouvelleLigne.montant || !nouvelleLigne.date) {
-            alert('Veuillez remplir tous les champs obligatoires.');
+        const errors = {};
+        if (!nouvelleLigne.numeroCompte) errors.numeroCompte = true;
+        if (!nouvelleLigne.libelle) errors.libelle = true;
+        if (!nouvelleLigne.montant) errors.montant = true;
+        if (!nouvelleLigne.date) errors.date = true;
+
+        if (Object.keys(errors).length > 0) {
+            setValidationErrors(errors);
+            toast.error('Veuillez remplir tous les champs obligatoires.');
             return null;
         }
-        const montantValue = parseFloat(nouvelleLigne.montant);
+
+        const montantValue = parseFloat(removeSpacesFromNumber(nouvelleLigne.montant));
         if (isNaN(montantValue) || montantValue <= 0) {
-            alert('Le montant doit être un nombre positif valide.');
+            setValidationErrors({ ...errors, montant: true });
+            toast.error('Le montant doit être un nombre positif valide.');
             return null;
         }
         if (erreurNumeroCompte || !['1', '2', '3', '4', '5'].includes(nouvelleLigne.numeroCompte[0])) {
-            alert('Numéro de compte invalide. Doit commencer par 1, 2, 3, 4 ou 5.');
+            setValidationErrors({ ...errors, numeroCompte: true });
+            toast.error('Numéro de compte invalide. Doit commencer par 1, 2, 3, 4 ou 5.');
             return null;
         }
+
+        setValidationErrors({});
         return montantValue;
     }
 
@@ -309,10 +333,8 @@ export default function BilanForm({ onSaisieCompleted }) {
     };
 
     const supprimerLigne = (id) => {
-        if (window.confirm("Êtes-vous sûr de vouloir supprimer cette ligne ?")) {
-            setLignes(lignes.filter(ligne => ligne.id !== id));
-            if (ligneEnModification === id) resetNouvelleLigne(true);
-        }
+        setLignes(lignes.filter(ligne => ligne.id !== id));
+        if (ligneEnModification === id) resetNouvelleLigne(true);
     };
 
     const { ecart } = useMemo(() => {
@@ -333,18 +355,40 @@ export default function BilanForm({ onSaisieCompleted }) {
 
         const statut = ecart === 0
             ? 'équilibré'
-            : `non équilibré (Écart: ${formatMontant(ecart)} Ar). Veuillez vous assurer que le compte de Résultat (Compte 12) sera inclus.`;
+            : `non équilibré (Écart: ${formatMontant(ecart)} Ar)`;
 
+        setIsLoading(true);
         try {
-            console.log(`Tentative d'enregistrement de ${lignes.length} lignes vers ${BASE_URL_API}/bilans/`);
-            alert("Enregistrement succès");
+            const promises = lignes.map(ligne => {
+                const payload = {
+                    numero_compte: ligne.numeroCompte,
+                    libelle: ligne.libelle,
+                    montant_ar: ligne.montant,
+                    date: ligne.date,
+                    type_bilan: ligne.type?.toUpperCase(), // ACTIF / PASSIF
+                    categorie: ligne.categorie?.toUpperCase().replace(/ /g, '_') // ACTIF_COURANTS, etc.
+                };
+
+                return fetch(`${BASE_URL_API}/bilans/manual/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+            });
+
+            await Promise.all(promises);
+            toast.success("Enregistrement succès");
             setLignes([]);
             if (onSaisieCompleted) {
                 onSaisieCompleted();
             }
         } catch (error) {
-            console.error('Erreur réseau ou serveur simulée:', error);
-            alert('❌ Erreur lors de l\'enregistrement du bilan');
+            console.error('Erreur lors de l\'enregistrement:', error);
+            toast.error('❌ Erreur lors de l\'enregistrement du bilan');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -356,6 +400,7 @@ export default function BilanForm({ onSaisieCompleted }) {
 
     return (
         <div className="w-full h-full flex flex-col overflow-hidden">
+            {isLoading && <LoadingOverlay message="Validation et enregistrement en cours..." />}
             {/* Header fixe */}
             <div className="flex-shrink-0 bg-white border-b shadow-sm sticky top-0 z-20">
                 <div className="max-w-7xl mx-auto px-3 py-2">
@@ -389,8 +434,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                                     name="numeroCompte"
                                     value={nouvelleLigne.numeroCompte}
                                     onChange={handleChange}
-                                    className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${erreurNumeroCompte ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                                        }`}
+                                    className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${erreurNumeroCompte || validationErrors.numeroCompte ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300'}`}
                                     placeholder="Ex: 4457"
                                 />
                                 {erreurNumeroCompte && (
@@ -405,7 +449,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                                     name="libelle"
                                     value={nouvelleLigne.libelle}
                                     onChange={handleChange}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                                    className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.libelle ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
                                     placeholder="Ex: TVA collectée"
                                 />
                                 {isCompteMappe && (
@@ -420,22 +464,18 @@ export default function BilanForm({ onSaisieCompleted }) {
                                     name="montant"
                                     value={nouvelleLigne.montant}
                                     onChange={handleChange}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right"
+                                    className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 text-right ${validationErrors.montant ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
                                     placeholder="0.00"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Type (Déduit)</label>
+                                <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
                                 <select
                                     name="type"
                                     value={nouvelleLigne.type}
                                     onChange={handleChange}
-                                    className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte && !nouvelleLigne.numeroCompte.startsWith('51')
-                                        ? 'bg-gray-100 cursor-not-allowed border-gray-200'
-                                        : 'bg-white border-gray-300'
-                                        }`}
-                                    disabled={nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte && !nouvelleLigne.numeroCompte.startsWith('51')}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 bg-white"
                                 >
                                     <option value="Actif">Actif</option>
                                     <option value="Passif">Passif</option>
@@ -448,11 +488,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                                     name="categorie"
                                     value={nouvelleLigne.categorie}
                                     onChange={handleChange}
-                                    disabled={nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte}
-                                    className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${nouvelleLigne.numeroCompte.length > 0 && !erreurNumeroCompte
-                                        ? 'bg-gray-100 cursor-not-allowed border-gray-200'
-                                        : 'bg-white border-gray-300'
-                                        }`}
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 bg-white"
                                 >
                                     {(nouvelleLigne.type === 'Actif' ? categoriesActif : categoriesPassif).map(cat => (
                                         <option key={cat} value={cat}>{cat}</option>
@@ -467,21 +503,13 @@ export default function BilanForm({ onSaisieCompleted }) {
                                     name="date"
                                     value={nouvelleLigne.date}
                                     onChange={handleChange}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800"
+                                    className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.date ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
                                 />
                             </div>
 
                         </div>
 
-                        <div className="mt-3 flex justify-end gap-3">
-                            <button
-                                onClick={() => resetNouvelleLigne(true)}
-                                className="bg-gray-400 hover:bg-gray-500 text-white font-medium text-sm py-1 px-4 rounded-lg shadow-sm transition duration-200 flex items-center"
-                            >
-                                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                {ligneEnModification ? 'Annuler' : 'Vider'}
-                            </button>
-
+                        <div className="mt-3 flex justify-end">
                             <button
                                 onClick={ajouterLigne}
                                 disabled={erreurNumeroCompte}

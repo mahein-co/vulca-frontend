@@ -78,6 +78,10 @@ const TYPE_STYLES = {
     'Bon d\'achat': { color: 'border-yellow-500', badge: 'bg-yellow-500', bgCard: 'bg-yellow-50' },
     'Relevé bancaire': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50' },
     'Virement bancaire': { color: 'border-indigo-500', badge: 'bg-indigo-500', bgCard: 'bg-indigo-50' },
+    'Paiement de salaire': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50' },
+    'Chèque': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50' },
+    'Retrait': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50' },
+    'Dépôt': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50' },
     'Fiche de paie': { color: 'border-green-500', badge: 'bg-green-500', bgCard: 'bg-green-50' },
     'Autres': { color: 'border-orange-500', badge: 'bg-orange-500', bgCard: 'bg-orange-50' },
 };
@@ -104,7 +108,7 @@ const COLUMNS = [
     {
         key: 'autres',
         label: 'Autres',
-        types: ['Autres'],
+        types: ['Autres', 'Virement bancaire', 'Paiement de salaire', 'Chèque', 'Retrait', 'Dépôt'],
         badge: 'bg-orange-500'
     },
 ];

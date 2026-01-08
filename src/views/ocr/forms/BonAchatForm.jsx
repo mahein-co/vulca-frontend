@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
+import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 
@@ -31,10 +33,7 @@ const LoadingOverlay = ({ message }) => (
   </div>
 );
 
-const getTodayDate = () => {
-  const today = new Date();
-  return today.toISOString().substring(0, 10);
-};
+
 
 export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
 
@@ -42,18 +41,18 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
   const [actionSaveBonAchat, { isLoading: isLoadingSave, isSuccess: isSuccessSave, isError: isErrorSave, data: dataSave }] = useSavePieceByFormularMutation();
   const [actionGenerateJournal, { isLoading: isLoadingJournal, isSuccess: isSuccessJournal, isError: isErrorJournal, error: errorJournal }] = useGenerateJournalMutation();
 
-  const [header, setHeader] = useState({
+  const [header, setHeader] = useState(() => ({
     fournisseur: '',
     client: '',
     reference: '',
     numeroBon: '',
-    dateBon: getTodayDate(),
+    dateBon: getTodayISO(),
     address: '',
     rcs: '',
     nif: '',
     stat: '',
     tauxTVA: '0', // Bons d'achat often exclude TVA or include it directly, defaulting to 0 but editable
-  });
+  }));
 
   const [lignes, setLignes] = useState([]);
   const [nouvelleLigne, setNouvelleLigne] = useState({
@@ -63,6 +62,8 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
   });
   const [ligneEnModification, setLigneEnModification] = useState(null);
   const [dataToGenerateJournal, setDataToGenerateJournal] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [headerErrors, setHeaderErrors] = useState({});
 
   const hasLines = useMemo(() => lignes.length > 0, [lignes]);
 
@@ -84,16 +85,24 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
   const handleChangeHeader = useCallback((e) => {
     const { name, value } = e.target;
     setHeader(prev => ({ ...prev, [name]: value }));
-  }, []);
+    if (headerErrors[name]) {
+      setHeaderErrors(prev => ({ ...prev, [name]: false }));
+    }
+  }, [headerErrors]);
 
   const handleChangeLigne = useCallback((e) => {
     const { name, value } = e.target;
     let newValue = value;
     if (name === 'quantite' || name === 'prixUnitaire') {
-      newValue = value.replace(/[^0-9.]/g, '');
+      const cleanValue = removeSpacesFromNumber(value);
+      newValue = formatNumberWithSpaces(cleanValue);
     }
     setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
-  }, []);
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({ ...prev, [name]: false }));
+    }
+  }, [validationErrors]);
 
   const tvaRateDecimal = useMemo(() => {
     const tvaPercent = parseFloat(header.tauxTVA);
@@ -111,17 +120,29 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
 
   const validateAndGetLigneData = () => {
     const { description, quantite, prixUnitaire } = nouvelleLigne;
-    if (!description || !quantite || !prixUnitaire) {
-      alert('Veuillez remplir la description, la quantité et le prix unitaire.');
-      return null;
-    }
-    const qteValue = parseFloat(quantite);
-    const puValue = parseFloat(prixUnitaire);
-    if (isNaN(qteValue) || isNaN(puValue) || qteValue <= 0 || puValue <= 0) {
-      alert('La quantité et le prix unitaire doivent être des nombres positifs valides.');
+    const errors = {};
+
+    if (!description) errors.description = true;
+    if (!quantite) errors.quantite = true;
+    if (!prixUnitaire) errors.prixUnitaire = true;
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      toast.error('Veuillez remplir tous les champs obligatoires de la ligne (Désignation, Quantité, Prix unitaire).', { duration: 2000 });
       return null;
     }
 
+    const qteValue = parseFloat(quantite);
+    const puValue = parseFloat(prixUnitaire);
+    if (isNaN(qteValue) || isNaN(puValue) || qteValue <= 0 || puValue <= 0) {
+      if (isNaN(qteValue) || qteValue <= 0) errors.quantite = true;
+      if (isNaN(puValue) || puValue <= 0) errors.prixUnitaire = true;
+      setValidationErrors(errors);
+      toast.error('La quantité et le prix unitaire doivent être des nombres positifs valides.');
+      return null;
+    }
+
+    setValidationErrors({});
     const totalHTLigne = qteValue * puValue;
     const montantTVALigne = totalHTLigne * tvaRateDecimal;
 
@@ -139,8 +160,55 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
     if (ligneEnModification) {
       sauvegarderModification(); return;
     }
-    const data = validateAndGetLigneData();
-    if (data === null) return;
+
+    // Validate both header and line fields together
+    const headerErrors = {};
+    const lineErrors = {};
+
+    // Check header fields
+    if (!header.fournisseur) headerErrors.fournisseur = true;
+    if (!header.client) headerErrors.client = true;
+    if (!header.address) headerErrors.address = true;
+    if (!header.numeroBon) headerErrors.numeroBon = true;
+    if (!header.dateBon) headerErrors.dateBon = true;
+
+    // Check line fields
+    const { description, quantite, prixUnitaire } = nouvelleLigne;
+    if (!description) lineErrors.description = true;
+    if (!quantite) lineErrors.quantite = true;
+    if (!prixUnitaire) lineErrors.prixUnitaire = true;
+
+    // If any errors, show them all at once
+    if (Object.keys(headerErrors).length > 0 || Object.keys(lineErrors).length > 0) {
+      setHeaderErrors(headerErrors);
+      setValidationErrors(lineErrors);
+      toast.error('Veuillez remplir tous les champs obligatoires (Informations Générales et Ligne).', { duration: 2000 });
+      return;
+    }
+
+    // Validate numeric values
+    const qteValue = parseFloat(removeSpacesFromNumber(quantite));
+    const puValue = parseFloat(removeSpacesFromNumber(prixUnitaire));
+    if (isNaN(qteValue) || isNaN(puValue) || qteValue <= 0 || puValue <= 0) {
+      if (isNaN(qteValue) || qteValue <= 0) lineErrors.quantite = true;
+      if (isNaN(puValue) || puValue <= 0) lineErrors.prixUnitaire = true;
+      setValidationErrors(lineErrors);
+      toast.error('La quantité et le prix unitaire doivent être des nombres positifs valides.');
+      return;
+    }
+
+    setValidationErrors({});
+    const totalHTLigne = qteValue * puValue;
+    const montantTVALigne = totalHTLigne * tvaRateDecimal;
+    const data = {
+      description,
+      quantite: qteValue,
+      prixUnitaire: puValue,
+      totalLigneHT: totalHTLigne,
+      montantTVALigne: montantTVALigne,
+      totalLigneTTC: totalHTLigne + montantTVALigne
+    };
+
     const ligne = { ...data, id: Date.now() };
     setLignes(prevLignes => [...prevLignes, ligne]);
     resetNouvelleLigne();
@@ -159,10 +227,8 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
   };
 
   const supprimerLigne = (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette ligne ?")) {
-      setLignes(lignes.filter(ligne => ligne.id !== id));
-      if (ligneEnModification === id) resetNouvelleLigne();
-    }
+    setLignes(lignes.filter(ligne => ligne.id !== id));
+    if (ligneEnModification === id) resetNouvelleLigne();
   };
 
   useEffect(() => {
@@ -197,7 +263,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
       toast.success("Enregistrement succès");
       setLignes([]);
       setHeader({
-        fournisseur: '', client: '', reference: '', numeroBon: '', dateBon: getTodayDate(), address: '', rcs: '', nif: '', stat: '', tauxTVA: '0'
+        fournisseur: '', client: '', reference: '', numeroBon: '', dateBon: getTodayISO(), address: '', rcs: '', nif: '', stat: '', tauxTVA: '0'
       });
       if (onSaveComplete) onSaveComplete();
     } else if (isErrorJournal) {
@@ -207,10 +273,21 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
 
 
   const enregistrerBonAchat = async () => {
-    if (!header.fournisseur || !header.numeroBon || lignes.length === 0) {
-      alert('Veuillez renseigner le fournisseur, le numéro du bon et ajouter au moins une ligne.');
+    const errors = {};
+
+    if (!header.fournisseur) errors.fournisseur = true;
+    if (!header.client) errors.client = true;
+    if (!header.address) errors.address = true;
+    if (!header.numeroBon) errors.numeroBon = true;
+    if (!header.dateBon) errors.dateBon = true;
+
+    if (Object.keys(errors).length > 0 || lignes.length === 0) {
+      setHeaderErrors(errors);
+      toast.error('Veuillez renseigner tous les champs obligatoires des Informations Générales (Fournisseur, Client, Adresse, Numéro, Date) et ajouter au moins une ligne.', { duration: 2000 });
       return;
     }
+
+    setHeaderErrors({});
 
     const data = {
       piece_type: "Bon d'achat",
@@ -288,27 +365,37 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Fournisseur</label>
-                    <input type="text" name="fournisseur" value={header.fournisseur} onChange={handleChangeHeader} disabled={hasLines} placeholder="Nom du fournisseur" className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
+                    <input type="text" name="fournisseur" value={header.fournisseur} onChange={handleChangeHeader} disabled={hasLines} placeholder="Nom du fournisseur" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.fournisseur ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                   </div>
 
                   <div className="col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Client</label>
-                    <input type="text" name="client" value={header.client} onChange={handleChangeHeader} disabled={hasLines} placeholder="Nom du client" className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                      Client
+                    </label>
+                    <input
+                      type="text"
+                      name="client"
+                      value={header.client}
+                      onChange={handleChangeHeader}
+                      disabled={hasLines}
+                      placeholder="Nom du client"
+                      className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.client ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-indigo-500'}`}
+                    />
                   </div>
 
                   <div className="col-span-1">
                     <label className="block text-xs font-medium text-gray-600 mb-1">N° Bon</label>
-                    <input type="text" name="numeroBon" value={header.numeroBon} onChange={handleChangeHeader} disabled={hasLines} placeholder="BA-001" className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
+                    <input type="text" name="numeroBon" value={header.numeroBon} onChange={handleChangeHeader} disabled={hasLines} placeholder="BA-001" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.numeroBon ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
                   </div>
 
                   <div className="col-span-1">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
-                    <input type="date" name="dateBon" value={header.dateBon} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
+                    <input type="date" name="dateBon" value={header.dateBon} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.dateBon ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300'}`} />
                   </div>
 
                   <div className="col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Lieu / Adresse</label>
-                    <input type="text" name="address" value={header.address} onChange={handleChangeHeader} disabled={hasLines} placeholder="Adresse" className={`w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''}`} />
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Lieu / Adresse </label>
+                    <input type="text" name="address" value={header.address} onChange={handleChangeHeader} disabled={hasLines} placeholder="Adresse" className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 text-gray-800 ${hasLines ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.address ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 focus:border-indigo-500'}`} />
                   </div>
                 </div>
 
@@ -351,7 +438,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                       name="description"
                       value={nouvelleLigne.description}
                       onChange={handleChangeLigne}
-                      className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 border-gray-300`}
+                      className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.description ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
                       placeholder="Ex: Marchandises diverses"
                     />
                   </div>
@@ -359,12 +446,11 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                   <div className="col-span-6 md:col-span-3 lg:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Qté</label>
                     <input
-                      type="number"
-                      step="any"
+                      type="text"
                       name="quantite"
                       value={nouvelleLigne.quantite}
                       onChange={handleChangeLigne}
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right"
+                      className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 text-right ${validationErrors.quantite ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
                       placeholder="1"
                     />
                   </div>
@@ -376,7 +462,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                       name="prixUnitaire"
                       value={nouvelleLigne.prixUnitaire}
                       onChange={handleChangeLigne}
-                      className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 text-right"
+                      className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 text-right ${validationErrors.prixUnitaire ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
                       placeholder="0.00"
                     />
                   </div>
@@ -384,21 +470,13 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                   <div className="col-span-12 md:col-span-6 lg:col-span-3">
                     <label className="block text-xs font-medium text-gray-600 mb-1">Total Ligne TTC (Ar)</label>
                     <p className="w-full px-2 py-1 text-sm border border-gray-200 bg-gray-50 rounded-md text-gray-700 text-right font-bold">
-                      {formatMontant(nouvelleLigne.quantite * nouvelleLigne.prixUnitaire * (1 + tvaRateDecimal))}
+                      {formatMontant((parseFloat(removeSpacesFromNumber(nouvelleLigne.quantite)) || 0) * (parseFloat(removeSpacesFromNumber(nouvelleLigne.prixUnitaire)) || 0) * (1 + tvaRateDecimal))}
                     </p>
                   </div>
 
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-gray-200 flex justify-end gap-3">
-                  <button
-                    onClick={resetNouvelleLigne}
-                    className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium text-sm py-1.5 px-4 rounded-lg shadow-sm transition duration-200 flex items-center"
-                  >
-                    <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                    {ligneEnModification ? 'Annuler' : 'Vider'}
-                  </button>
-
+                <div className="mt-3 pt-3 border-t border-gray-200 flex justify-end">
                   <button
                     onClick={ajouterLigne}
                     className="bg-gray-800 hover:bg-gray-900 text-white font-semibold text-sm py-1.5 px-4 rounded-lg shadow-md transition duration-200 flex items-center"

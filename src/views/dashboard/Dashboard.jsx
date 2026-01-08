@@ -18,6 +18,7 @@ import { BASE_URL_API } from '../../constants/globalConstants';
 
 const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
   const [totalFormatted, setTotalFormatted] = useState('0 Ar');
+  const [totalGlobal, setTotalGlobal] = useState(0);
   const [journals, setJournals] = useState([]);
 
   // États de sélection et pagination
@@ -43,6 +44,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
       .then(res => res.json())
       .then(data => {
         setJournals(data.journals || []);
+        setTotalGlobal(data.total_global || 0);
         setTotalFormatted(new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(data.total_global || 0).replace('MGA', 'Ar'));
       })
       .catch(err => console.error("Erreur chargement répartition journaux:", err));
@@ -81,35 +83,56 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
   return (
     <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md border-t-2 border-gray-300">
       <h3 className="text-base sm:text-lg font-semibold text-gray-800 mb-4">Répartition par journal</h3>
-      {journals.map((journal) => (
-        <div key={journal.name} className="mb-3">
-          <div className="flex justify-between items-center text-xs sm:text-sm mb-1">
-            <span className="font-medium text-gray-700">
-              {journal.name}
-              <button
-                onClick={() => handleSelectJournal(journal)}
-                className="inline-flex items-center text-xs text-emerald-600 ml-2 cursor-pointer hover:text-emerald-700 font-medium transition-colors"
-              >
-                <svg className="w-3.5 h-3.5 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-                voir détails
-              </button>
-            </span>
-            <span className="text-gray-800 font-medium">
-              {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(journal.amount).replace('MGA', 'Ar')}
-              <span className="text-gray-500 ml-1">({journal.percentage}%)</span>
-            </span>
+      {journals.map((journal) => {
+        // Mapping des couleurs du backend vers les classes Tailwind
+        const colorMap = {
+          'bg-red-800': { bar: 'bg-red-800', dot: 'bg-red-800' },
+          'bg-emerald-900': { bar: 'bg-emerald-900', dot: 'bg-emerald-900' },
+          'bg-blue-900': { bar: 'bg-blue-900', dot: 'bg-blue-900' },
+          'bg-amber-800': { bar: 'bg-amber-800', dot: 'bg-amber-800' },
+          'bg-gray-600': { bar: 'bg-gray-600', dot: 'bg-gray-600' },
+          'bg-purple-800': { bar: 'bg-purple-800', dot: 'bg-purple-800' }
+        };
+
+        const colors = colorMap[journal.color] || { bar: 'bg-gray-500', dot: 'bg-gray-500' };
+
+        // Calcul du pourcentage (Entier ou < 1%)
+        const rawPercent = totalGlobal > 0 ? (journal.amount / totalGlobal) * 100 : 0;
+        const percentageDisplay = (rawPercent > 0 && rawPercent < 1) ? '< 1' : rawPercent.toFixed(0);
+
+        return (
+          <div key={journal.name} className="mb-3">
+            <div className="flex justify-between items-center text-xs sm:text-sm mb-1">
+              <span className="font-medium text-gray-700 flex items-center">
+                <span className={`inline-block w-3 h-3 rounded-full ${colors.dot} mr-2`}></span>
+                {journal.name}
+                <button
+                  onClick={() => handleSelectJournal(journal)}
+                  className="inline-flex items-center text-xs text-emerald-600 ml-2 cursor-pointer hover:text-emerald-700 font-medium transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  voir détails
+                </button>
+              </span>
+              <span className="text-gray-800 font-medium">
+                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(journal.amount).replace('MGA', 'Ar')}
+                <span className="text-gray-500 ml-1">
+                  ({percentageDisplay}%)
+                </span>
+              </span>
+            </div>
+            <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className={`h-2 ${colors.bar} rounded-full transition-all duration-300`}
+                style={{ width: `${journal.value}%` }}
+              ></div>
+            </div>
           </div>
-          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div
-              className={`h-2 ${journal.color} rounded-full transition-all duration-300`}
-              style={{ width: `${journal.value}%` }}
-            ></div>
-          </div>
-        </div>
-      ))}
+        );
+      })}
       <div className="border-t border-gray-200 mt-4 pt-3 flex justify-between">
         <span className="font-semibold text-gray-700">Total</span>
         <span className="text-lg sm:text-xl font-bold text-gray-900">{totalFormatted}</span>
@@ -179,7 +202,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
             </div>
 
             {/* Corps du tableau (Zone Scrollable) - Style Balance */}
-            <div className="flex-grow overflow-y-auto p-2 sm:p-4 min-h-0 bg-white relative">
+            <div className="flex-grow p-2 sm:p-4 min-h-0 bg-white relative flex flex-col">
               {isLoadingEntries && (
                 <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex justify-center items-center">
                   <div className="flex flex-col items-center max-w-sm w-full text-center">
@@ -191,8 +214,8 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
                   </div>
                 </div>
               )}
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <div className="overflow-x-auto">
+              <div className="border border-gray-200 rounded-lg overflow-hidden flex flex-col flex-grow min-h-0">
+                <div className="overflow-auto min-h-0">
                   <table className="w-full border-collapse text-xs sm:text-sm whitespace-nowrap min-w-[500px]">
                     <thead className="sticky top-0 z-10">
                       <tr className="bg-gray-800 text-white">
@@ -324,7 +347,7 @@ const Dashboard = () => {
   });
 
   const [loadingIndicators, setLoadingIndicators] = useState(true);
-  
+
   // État pour le ROE
   const [roeData, setRoeData] = useState({
     roe: null,
@@ -849,9 +872,8 @@ const Dashboard = () => {
           return (
             <div key={index}>
               <div
-                className={`bg-white border border-gray-200 rounded-lg p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[60px] ${
-                  card.action === 'openBalance' ? 'cursor-pointer hover:border-emerald-400' : ''
-                }`}
+                className={`bg-white border border-gray-200 rounded-lg p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[60px] ${card.action === 'openBalance' ? 'cursor-pointer hover:border-emerald-400' : ''
+                  }`}
                 onClick={card.action === 'openBalance' ? () => handleCardClick(card.action) : null}
               >
                 <div className="flex items-start gap-2 w-full">
@@ -1125,8 +1147,8 @@ const Dashboard = () => {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4 items-stretch mb-4">
-          <TvaBarChart globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
-        </div>
+        <TvaBarChart globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+      </div>
       {/* 5. Trois Camemberts: Produits, Charges, et Comparaison */}
       <ThreePieCharts globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
 

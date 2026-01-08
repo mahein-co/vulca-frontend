@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
+import { formatDateToISO } from '../../../utils/dateUtils';
 
 import { useExtractDataFromFileMutation, useSaveOneFileSourceMutation } from '../../../states/ocr/ocrApiSlice';
 
@@ -84,7 +85,7 @@ const EMPTY_FORM_DATA = {
     dateEmission: '', dateEcheance: '', ventilation: '', categorie: '', commentaires: ''
 };
 const ACCEPTED_FILE_TYPES = ".pdf,image/*,.xls,.xlsx,.csv";
-const MAX_FILE_UPLOAD = 5;
+const MAX_FILE_UPLOAD = 50;
 
 // --- Utilitaires ---
 
@@ -756,18 +757,29 @@ export default function ImportFichier({ onSaisieCompleted }) {
                     const extracted = result.extracted_json || {};
                     const typeDoc = determinePieceType(extracted);
 
+                    // Normalize all date fields to YYYY-MM-DD format
+                    const normalizedExtracted = { ...extracted };
+                    Object.keys(normalizedExtracted).forEach(key => {
+                        if (key.toLowerCase().includes('date') && normalizedExtracted[key]) {
+                            const normalizedDate = formatDateToISO(normalizedExtracted[key]);
+                            if (normalizedDate) {
+                                normalizedExtracted[key] = normalizedDate;
+                            }
+                        }
+                    });
+
                     return {
                         ...doc,
                         isExtracted: true,
                         rawResponse: result,
                         data: {
                             ...doc.data,
-                            extractedJson: extracted,
+                            extractedJson: normalizedExtracted,
                             typeDocument: typeDoc,
-                            montant: extracted.montant_ttc || extracted.total_amount || doc.data.montant,
-                            totalHT: extracted.montant_ht || extracted.net_amount || doc.data.totalHT,
-                            numeroFacture: extracted.numero_facture || extracted.invoice_number || doc.data.numeroFacture,
-                            dateEmission: extracted.date || extracted.date_emission || doc.data.dateEmission,
+                            montant: normalizedExtracted.montant_ttc || normalizedExtracted.total_amount || doc.data.montant,
+                            totalHT: normalizedExtracted.montant_ht || normalizedExtracted.net_amount || doc.data.totalHT,
+                            numeroFacture: normalizedExtracted.numero_facture || normalizedExtracted.invoice_number || doc.data.numeroFacture,
+                            dateEmission: normalizedExtracted.date || normalizedExtracted.date_emission || doc.data.dateEmission,
                             // Simplification: on stocke tout le JSON extrait pour l'affichage dynamique
                         }
                     };

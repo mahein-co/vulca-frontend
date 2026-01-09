@@ -16,13 +16,13 @@ const BackToFormsPage = ({ onClick }) => (
 );
 
 const LoadingOverlay = ({ message }) => (
-    <div className="fixed inset-0 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
+    <div className="fixed inset-0 bg-white/60 dark:bg-black/80 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center max-w-sm w-full text-center">
             <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
                 <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
-            <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">{message}</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 animate-pulse px-4">{message}</p>
         </div>
     </div>
 );
@@ -402,13 +402,13 @@ export default function BilanForm({ onSaisieCompleted }) {
         <div className="w-full h-full flex flex-col overflow-hidden">
             {isLoading && <LoadingOverlay message="Validation et enregistrement en cours..." />}
             {/* Header fixe */}
-            <div className="flex-shrink-0 bg-white border-b shadow-sm sticky top-0 z-20">
+            <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm sticky top-0 z-20">
                 <div className="max-w-7xl mx-auto px-3 py-2">
                     <div className="flex justify-between items-center">
                         <div className="flex-shrink-0">
                             <BackToFormsPage onClick={onSaisieCompleted} />
                         </div>
-                        <h1 className="text-base font-bold text-gray-800 flex-1 text-center px-4">
+                        <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 flex-1 text-center px-4">
                             Saisie Manuelle du Bilan
                         </h1>
                         <div className="flex-shrink-0 w-[88px]"></div>
@@ -420,62 +420,62 @@ export default function BilanForm({ onSaisieCompleted }) {
             <div className="flex-1 overflow-y-auto">
                 <div className="max-w-7xl mx-auto w-full p-3">
 
-                    <div className="bg-white rounded-lg shadow-md p-4 mb-4 border-t-2 border-gray-300">
-                        <h2 className="text-base font-semibold text-gray-700 mb-3">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4 border-t-2 border-gray-300 dark:border-gray-700">
+                        <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-3">
                             {ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une nouvelle ligne'}
                         </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
 
                             <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">N° Compte (1xx-5xx)</label>
+                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">N° Compte (1xx-5xx)</label>
                                 <input
                                     type="text"
                                     name="numeroCompte"
                                     value={nouvelleLigne.numeroCompte}
                                     onChange={handleChange}
-                                    className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${erreurNumeroCompte || validationErrors.numeroCompte ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300'}`}
+                                    className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${erreurNumeroCompte || validationErrors.numeroCompte ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                                     placeholder="Ex: 4457"
                                 />
                                 {erreurNumeroCompte && (
-                                    <p className="text-red-600 text-xs mt-1">Doit commencer par 1, 2, 3, 4 ou 5</p>
+                                    <p className="text-red-600 dark:text-red-400 text-xs mt-1">Doit commencer par 1, 2, 3, 4 ou 5</p>
                                 )}
                             </div>
 
                             <div className="md:col-span-2 lg:col-span-2">
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Libellé</label>
+                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Libellé</label>
                                 <input
                                     type="text"
                                     name="libelle"
                                     value={nouvelleLigne.libelle}
                                     onChange={handleChange}
-                                    className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.libelle ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
+                                    className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.libelle ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
                                     placeholder="Ex: TVA collectée"
                                 />
                                 {isCompteMappe && (
-                                    <p className="text-xs text-green-600 mt-1">✓ Auto-rempli (modifiable)</p>
+                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1">✓ Auto-rempli (modifiable)</p>
                                 )}
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Montant (Ar)</label>
+                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Montant (Ar)</label>
                                 <input
                                     type="text"
                                     name="montant"
                                     value={nouvelleLigne.montant}
                                     onChange={handleChange}
-                                    className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 text-right ${validationErrors.montant ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
+                                    className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.montant ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
                                     placeholder="0.00"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Type</label>
+                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Type</label>
                                 <select
                                     name="type"
                                     value={nouvelleLigne.type}
                                     onChange={handleChange}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 bg-white"
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700"
                                 >
                                     <option value="Actif">Actif</option>
                                     <option value="Passif">Passif</option>
@@ -483,12 +483,12 @@ export default function BilanForm({ onSaisieCompleted }) {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Catégorie</label>
+                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Catégorie</label>
                                 <select
                                     name="categorie"
                                     value={nouvelleLigne.categorie}
                                     onChange={handleChange}
-                                    className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 bg-white"
+                                    className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700"
                                 >
                                     {(nouvelleLigne.type === 'Actif' ? categoriesActif : categoriesPassif).map(cat => (
                                         <option key={cat} value={cat}>{cat}</option>
@@ -497,13 +497,13 @@ export default function BilanForm({ onSaisieCompleted }) {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
+                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date</label>
                                 <input
                                     type="date"
                                     name="date"
                                     value={nouvelleLigne.date}
                                     onChange={handleChange}
-                                    className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.date ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
+                                    className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.date ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
                                 />
                             </div>
 
@@ -513,7 +513,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                             <button
                                 onClick={ajouterLigne}
                                 disabled={erreurNumeroCompte}
-                                className="bg-gray-800 hover:bg-gray-900 text-white font-semibold text-sm py-1 px-4 rounded-lg shadow-md transition duration-200 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 text-white font-semibold text-sm py-1 px-4 rounded-lg shadow-md transition duration-200 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={ligneEnModification ? "M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" : "M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"} />
@@ -524,41 +524,41 @@ export default function BilanForm({ onSaisieCompleted }) {
                     </div>
 
                     {lignes.length > 0 && (
-                        <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-4">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-4">
 
                             <div className="hidden md:block">
-                                <div className="max-h-[60vh] overflow-y-auto">
+                                <div className="max-h-[60vh] overflow-y-auto overflow-x-auto">
                                     <table className="w-full border-collapse">
-                                        <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                                        <thead className="bg-gray-50 dark:bg-gray-700/50 sticky top-0 z-10 shadow-sm">
                                             <tr>
-                                                <th className="border-b-2 border-gray-200 px-2 py-1.5 text-left text-xs font-bold text-gray-700 uppercase w-[10%]">Compte</th>
-                                                <th className="border-b-2 border-gray-200 px-2 py-1.5 text-left text-xs font-bold text-gray-700 uppercase w-[20%]">Libellé</th>
-                                                <th className="border-b-2 border-gray-200 px-2 py-1.5 text-left text-xs font-bold text-gray-700 uppercase w-[10%]">Type</th>
-                                                <th className="border-b-2 border-gray-200 px-2 py-1.5 text-left text-xs font-bold text-gray-700 uppercase w-[20%]">Catégorie</th>
-                                                <th className="border-b-2 border-gray-200 px-2 py-1.5 text-right text-xs font-bold text-gray-700 uppercase w-[15%]">Montant (Ar)</th>
-                                                <th className="border-b-2 border-gray-200 px-2 py-1.5 text-left text-xs font-bold text-gray-700 uppercase w-[10%]">Date</th>
-                                                <th className="border-b-2 border-gray-200 px-2 py-1.5 text-center text-xs font-bold text-gray-700 uppercase w-[10%]">Action</th>
+                                                <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[10%]">Compte</th>
+                                                <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[20%]">Libellé</th>
+                                                <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[10%]">Type</th>
+                                                <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[20%]">Catégorie</th>
+                                                <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[15%]">Montant (Ar)</th>
+                                                <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[10%]">Date</th>
+                                                <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[10%]">Action</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="bg-white divide-y divide-gray-100">
+                                        <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                                             {lignes.map((ligne, index) => (
-                                                <tr key={ligne.id} className={`${index % 2 === 1 ? 'bg-gray-50/50' : ''} hover:bg-indigo-50/30 transition-colors duration-150`}>
-                                                    <td className="px-2 py-1 text-xs font-semibold text-indigo-700">{ligne.numeroCompte}</td>
-                                                    <td className="px-2 py-1 text-xs text-gray-700 font-medium">{ligne.libelle}</td>
+                                                <tr key={ligne.id} className={`${index % 2 === 1 ? 'bg-gray-50/50 dark:bg-gray-700/30' : ''} hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-colors duration-150`}>
+                                                    <td className="px-2 py-1 text-xs font-semibold text-indigo-700 dark:text-indigo-400">{ligne.numeroCompte}</td>
+                                                    <td className="px-2 py-1 text-xs text-gray-700 dark:text-gray-300 font-medium">{ligne.libelle}</td>
                                                     <td className="px-2 py-1 text-xs">
-                                                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${ligne.type === 'Actif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                        <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${ligne.type === 'Actif' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400'
                                                             }`}>
                                                             {ligne.type}
                                                         </span>
                                                     </td>
-                                                    <td className="px-2 py-1 text-xs text-gray-700">{ligne.categorie}</td>
-                                                    <td className="px-2 py-1 text-sm text-right font-bold text-gray-900">{formatMontant(ligne.montant)}</td>
-                                                    <td className="px-2 py-1 text-xs text-gray-600">{formatDate(ligne.date)}</td>
-                                                    <td className="px-2 py-1 whitespace-nowrap text-center">
+                                                    <td className="px-2 py-1 text-xs text-gray-700 dark:text-gray-400">{ligne.categorie}</td>
+                                                    <td className="px-2 py-1 text-sm text-right font-bold text-gray-900 dark:text-gray-100">{formatMontant(ligne.montant)}</td>
+                                                    <td className="px-2 py-1 text-xs text-gray-600 dark:text-gray-400">{formatDate(ligne.date)}</td>
+                                                    <td className="px-2 py-1 whitespace-nowrap text-center text-gray-800 dark:text-gray-200">
                                                         <div className='flex justify-center gap-1'>
                                                             <button
                                                                 onClick={() => modifierLigne(ligne)}
-                                                                className="text-blue-600 hover:text-blue-800 transition disabled:text-gray-400 p-1"
+                                                                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition disabled:text-gray-400 p-1"
                                                                 title="Modifier"
                                                                 disabled={ligneEnModification !== null}
                                                             >
@@ -566,7 +566,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                                                             </button>
                                                             <button
                                                                 onClick={() => supprimerLigne(ligne.id)}
-                                                                className="text-red-600 hover:text-red-800 transition disabled:text-gray-400 p-1"
+                                                                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition disabled:text-gray-400 p-1"
                                                                 title="Supprimer"
                                                                 disabled={ligneEnModification !== null}
                                                             >
@@ -584,28 +584,28 @@ export default function BilanForm({ onSaisieCompleted }) {
                             <div className="md:hidden">
                                 <div className="max-h-[60vh] overflow-y-auto p-3 space-y-3">
                                     {lignes.map((ligne) => (
-                                        <div key={ligne.id} className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+                                        <div key={ligne.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 shadow-sm">
                                             <div className="flex justify-between items-start mb-2">
-                                                <span className="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-md text-xs font-semibold">
+                                                <span className="inline-block px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-400 rounded-md text-xs font-semibold">
                                                     {ligne.numeroCompte}
                                                 </span>
-                                                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${ligne.type === 'Actif' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${ligne.type === 'Actif' ? 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400'
                                                     }`}>
                                                     {ligne.type}
                                                 </span>
                                             </div>
-                                            <div className="font-medium text-gray-900 mb-2 text-sm">{ligne.libelle}</div>
-                                            <div className="text-xs text-gray-600 mb-2">{ligne.categorie}</div>
+                                            <div className="font-medium text-gray-900 dark:text-gray-100 mb-2 text-sm">{ligne.libelle}</div>
+                                            <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">{ligne.categorie}</div>
                                             <div className="flex justify-between items-center mb-2">
-                                                <span className="text-xs text-gray-600">Montant:</span>
-                                                <span className="text-sm font-bold text-gray-900">{formatMontant(ligne.montant)} Ar</span>
+                                                <span className="text-xs text-gray-600 dark:text-gray-400">Montant:</span>
+                                                <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{formatMontant(ligne.montant)} Ar</span>
                                             </div>
                                             <div className="flex justify-between items-center">
-                                                <span className="text-xs text-gray-500">{formatDate(ligne.date)}</span>
+                                                <span className="text-xs text-gray-500 dark:text-gray-400">{formatDate(ligne.date)}</span>
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={() => modifierLigne(ligne)}
-                                                        className="text-blue-600 hover:text-blue-800 transition disabled:text-gray-400 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                                        className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition disabled:text-gray-400 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
                                                         title="Modifier"
                                                         disabled={ligneEnModification !== null}
                                                     >
@@ -613,7 +613,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                                                     </button>
                                                     <button
                                                         onClick={() => supprimerLigne(ligne.id)}
-                                                        className="text-red-600 hover:text-red-800 transition disabled:text-gray-400 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
+                                                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition disabled:text-gray-400 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
                                                         title="Supprimer"
                                                         disabled={ligneEnModification !== null}
                                                     >
@@ -629,11 +629,11 @@ export default function BilanForm({ onSaisieCompleted }) {
                     )}
 
                     {lignes.length > 0 && (
-                        <div className="mt-0 p-4 flex justify-end items-center bg-white border-t rounded-lg shadow-lg">
+                        <div className="mt-0 p-4 flex justify-end items-center bg-white dark:bg-gray-800 border-t dark:border-gray-700 rounded-lg shadow-lg">
                             <button
                                 onClick={enregistrerBilan}
                                 disabled={lignes.length === 0}
-                                className="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
+                                className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
                             >
                                 <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 Valider
@@ -642,9 +642,9 @@ export default function BilanForm({ onSaisieCompleted }) {
                     )}
 
                     {lignes.length === 0 && (
-                        <div className="bg-white rounded-lg shadow-md p-8 text-center text-gray-500 border border-gray-200">
-                            <p className="text-base">Aucune ligne ajoutée pour le moment</p>
-                            <p className="text-sm mt-1">Saisissez les informations de Bilan (Comptes 1 à 5) ci-dessus.</p>
+                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                            <p className="text-base text-gray-800 dark:text-gray-200">Aucune ligne ajoutée pour le moment</p>
+                            <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">Saisissez les informations de Bilan (Comptes 1 à 5) ci-dessus.</p>
                         </div>
                     )}
                 </div>

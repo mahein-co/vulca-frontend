@@ -30,14 +30,14 @@ const BackToFormsPage = ({ onClick }) => (
 
 // Composant Overlay de Chargement
 const LoadingOverlay = ({ message }) => (
-  <div className="fixed inset-0 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
+  <div className="fixed inset-0 bg-white/60 dark:bg-black/80 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
     <div className="flex flex-col items-center max-w-sm w-full text-center">
       {/* Spinner style iOS/moderne */}
       <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-        <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+        <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
         <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
       </div>
-      <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">{message}</p>
+      <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 animate-pulse px-4">{message}</p>
     </div>
   </div>
 );
@@ -328,13 +328,13 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
 
       <div className="w-full h-full flex flex-col overflow-hidden">
         {/* Header fixe */}
-        <div className="flex-shrink-0 bg-white border-b shadow-sm sticky top-0 z-20">
+        <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm sticky top-0 z-20">
           <div className="max-w-7xl mx-auto px-3 py-2">
             <div className="flex justify-between items-center">
               <div className="flex-shrink-0">
                 <BackToFormsPage onClick={onSaisieCompleted} />
               </div>
-              <h1 className="text-base font-bold text-gray-800 flex-1 text-center px-4">
+              <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 flex-1 text-center px-4">
                 Saisie Manuelle de Relevé Bancaire
               </h1>
               <div className="flex-shrink-0 w-[88px] flex justify-end">
@@ -345,64 +345,64 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
         </div>
 
         {/* Contenu scrollable */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto w-full p-3">
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
 
               {/* Card 1: Account Info */}
-              <div className="lg:col-span-1 bg-white rounded-lg shadow-md p-4 border-t-2 border-gray-300">
-                <h2 className="text-base font-semibold text-gray-800 mb-3">
+              <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border-t-2 border-gray-300 dark:border-gray-700">
+                <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-3">
                   Informations Compte
                 </h2>
 
                 {transactions.length > 0 && (
-                  <p className="text-xs text-red-600 bg-red-50 p-1 rounded mb-2 border border-red-200">
+                  <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-1 rounded mb-2 border border-red-200 dark:border-red-800">
                     ⚠️ Les informations de l'en-tête sont bloquées car des lignes ont déjà été ajoutées. Supprimez toutes les lignes pour les modifier.
                   </p>
                 )}
 
                 <div className="grid grid-cols-1 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Banque</label>
-                    <input type="text" name="nomBanque" value={header.nomBanque} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: BNI, BOA..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.nomBanque ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Banque</label>
+                    <input type="text" name="nomBanque" value={header.nomBanque} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: BNI, BOA..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${transactions.length > 0 ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.nomBanque ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">N° Compte (RIB)</label>
-                    <input type="text" name="numeroCompte" value={header.numeroCompte} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: 0000 1234..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.numeroCompte ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">N° Compte (RIB)</label>
+                    <input type="text" name="numeroCompte" value={header.numeroCompte} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: 0000 1234..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${transactions.length > 0 ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.numeroCompte ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Titulaire</label>
-                    <input type="text" name="nomTitulaire" value={header.nomTitulaire} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Nom du titulaire" className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.nomTitulaire ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300'}`} />
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Titulaire</label>
+                    <input type="text" name="nomTitulaire" value={header.nomTitulaire} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Nom du titulaire" className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${transactions.length > 0 ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.nomTitulaire ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
                   </div>
                   {/* Solde Initial input removed */}
 
-                  <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100">
+                  <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                     <div>
-                      <label className="block text-[10px] font-medium text-gray-500 mb-1">Période Du</label>
-                      <input type="date" name="dateDebut" value={header.dateDebut} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border rounded-md ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.dateDebut ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300'}`} />
+                      <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">Période Du</label>
+                      <input type="date" name="dateDebut" value={header.dateDebut} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 ${transactions.length > 0 ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.dateDebut ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-medium text-gray-500 mb-1">Au</label>
-                      <input type="date" name="dateFin" value={header.dateFin} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border rounded-md ${transactions.length > 0 ? 'bg-gray-100 cursor-not-allowed' : ''} ${headerErrors.dateFin ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300'}`} />
+                      <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">Au</label>
+                      <input type="date" name="dateFin" value={header.dateFin} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 ${transactions.length > 0 ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.dateFin ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Card 2: Add Transaction */}
-              <div className="lg:col-span-2 bg-white rounded-lg shadow-md p-4 border-t-2 border-gray-300">
-                <h2 className="text-base font-semibold text-gray-800 mb-3">
+              <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border-t-2 border-gray-300 dark:border-gray-700">
+                <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-3">
                   {ligneEnModification ? '✏️ Modifier transaction' : '➕ Ajouter transaction'}
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Date</label>
-                    <input type="date" name="date" value={nouvelleLigne.date} onChange={handleChangeLigne} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.date ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date</label>
+                    <input type="date" name="date" value={nouvelleLigne.date} onChange={handleChangeLigne} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.date ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                       Référence <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -411,27 +411,27 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                       value={nouvelleLigne.reference}
                       onChange={handleChangeLigne}
                       placeholder="Ex: VIRM-..."
-                      className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.reference ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`}
+                      className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.reference ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
                     />
                   </div>
                   <div className="md:col-span-4">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Description / Libellé</label>
-                    <input type="text" name="description" value={nouvelleLigne.description} onChange={handleChangeLigne} placeholder="Ex: Virement reçu..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.description ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Description / Libellé</label>
+                    <input type="text" name="description" value={nouvelleLigne.description} onChange={handleChangeLigne} placeholder="Ex: Virement reçu..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.description ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Débit (Ar)</label>
-                    <input type="text" name="debit" value={nouvelleLigne.debit} onChange={handleChangeLigne} placeholder="0" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 text-right ${validationErrors.debit ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Débit (Ar)</label>
+                    <input type="text" name="debit" value={nouvelleLigne.debit} onChange={handleChangeLigne} placeholder="0" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.debit ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Crédit (Ar)</label>
-                    <input type="text" name="credit" value={nouvelleLigne.credit} onChange={handleChangeLigne} placeholder="0" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 text-right ${validationErrors.credit ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Crédit (Ar)</label>
+                    <input type="text" name="credit" value={nouvelleLigne.credit} onChange={handleChangeLigne} placeholder="0" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.credit ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                   </div>
                 </div>
 
-                <div className="mt-4 flex justify-end pt-2 border-t border-gray-100">
+                <div className="mt-4 flex justify-end pt-2 border-t border-gray-100 dark:border-gray-700">
                   <button
                     onClick={ajouterLigne}
-                    className="bg-gray-800 hover:bg-gray-900 text-white font-semibold text-sm py-1.5 px-4 rounded-lg shadow-md transition duration-200 flex items-center"
+                    className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 text-white font-semibold text-sm py-1.5 px-4 rounded-lg shadow-md transition duration-200 flex items-center"
                   >
                     <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={ligneEnModification ? "M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" : "M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"} />
@@ -444,49 +444,49 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
 
             {/* Table Summary */}
             {transactions.length > 0 && (
-              <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-4">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-4">
 
                 {/* Stats Mobile/Header */}
-                <div className='p-3 bg-gray-50 border-b border-gray-200 text-sm grid grid-cols-3 gap-4'>
+                <div className='p-3 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 text-sm grid grid-cols-3 gap-4'>
                   <div className='text-center'>
-                    <p className='text-gray-500 text-xs uppercase font-bold'>Total Débit</p>
-                    <p className='text-red-600 font-bold text-base'>{formatMontant(checkTotals.totalDebit)} Ar</p>
+                    <p className='text-gray-500 dark:text-gray-400 text-xs uppercase font-bold'>Total Débit</p>
+                    <p className='text-red-600 dark:text-red-400 font-bold text-base'>{formatNumberWithSpaces(checkTotals.totalDebit)} Ar</p>
                   </div>
-                  <div className='text-center border-l border-r border-gray-200'>
-                    <p className='text-gray-500 text-xs uppercase font-bold'>Total Crédit</p>
-                    <p className='text-emerald-600 font-bold text-base'>{formatMontant(checkTotals.totalCredit)} Ar</p>
+                  <div className='text-center border-l border-r border-gray-200 dark:border-gray-700'>
+                    <p className='text-gray-500 dark:text-gray-400 text-xs uppercase font-bold'>Total Crédit</p>
+                    <p className='text-emerald-600 dark:text-emerald-400 font-bold text-base'>{formatNumberWithSpaces(checkTotals.totalCredit)} Ar</p>
                   </div>
                   <div className='text-center'>
-                    <p className='text-gray-500 text-xs uppercase font-bold'>Solde (Net)</p>
-                    <p className={`font-bold text-base ${checkTotals.soldeFinal < 0 ? 'text-red-700' : 'text-blue-700'}`}>{formatMontant(checkTotals.soldeFinal)} Ar</p>
+                    <p className='text-gray-500 dark:text-gray-400 text-xs uppercase font-bold'>Solde (Net)</p>
+                    <p className={`font-bold text-base ${checkTotals.soldeFinal < 0 ? 'text-red-700 dark:text-red-400' : 'text-blue-700 dark:text-blue-400'}`}>{formatNumberWithSpaces(checkTotals.soldeFinal)} Ar</p>
                   </div>
                 </div>
 
                 <div className="hidden md:block">
-                  <div className="max-h-[60vh] overflow-y-auto">
+                  <div className="max-h-[60vh] overflow-y-auto overflow-x-auto">
                     <table className="w-full border-collapse">
-                      <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
+                      <thead className="bg-gray-50 dark:bg-gray-700/50 sticky top-0 z-10 shadow-sm">
                         <tr>
-                          <th className="border-b-2 border-gray-200 px-3 py-2 text-left text-xs font-bold text-gray-700 uppercase w-[12%]">Date</th>
-                          <th className="border-b-2 border-gray-200 px-3 py-2 text-left text-xs font-bold text-gray-700 uppercase w-[15%]">Référence</th>
-                          <th className="border-b-2 border-gray-200 px-3 py-2 text-left text-xs font-bold text-gray-700 uppercase w-[33%]">Description</th>
-                          <th className="border-b-2 border-gray-200 px-3 py-2 text-right text-xs font-bold text-gray-700 uppercase w-[13%]">Débit</th>
-                          <th className="border-b-2 border-gray-200 px-3 py-2 text-right text-xs font-bold text-gray-700 uppercase w-[13%]">Crédit</th>
-                          <th className="border-b-2 border-gray-200 px-3 py-2 text-center text-xs font-bold text-gray-700 uppercase w-[14%]">Action</th>
+                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[12%]">Date</th>
+                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[15%]">Référence</th>
+                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-3 py-2 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[33%]">Description</th>
+                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-3 py-2 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[13%]">Débit</th>
+                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-3 py-2 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[13%]">Crédit</th>
+                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-3 py-2 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[14%]">Action</th>
                         </tr>
                       </thead>
-                      <tbody className="bg-white divide-y divide-gray-100">
+                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                         {transactions.map((t, index) => (
-                          <tr key={t.id} className={`${index % 2 === 1 ? 'bg-gray-50/50' : ''} hover:bg-indigo-50/30 transition-colors duration-150`}>
-                            <td className="px-3 py-2 text-sm text-gray-600">{t.date}</td>
-                            <td className="px-3 py-2 text-sm text-gray-700 font-medium">{t.reference || '-'}</td>
-                            <td className="px-3 py-2 text-sm text-gray-800 font-medium">{t.description}</td>
-                            <td className="px-3 py-2 text-sm text-right text-red-600 font-medium">{t.debit > 0 ? formatMontant(t.debit) : '-'}</td>
-                            <td className="px-3 py-2 text-sm text-right text-emerald-600 font-medium">{t.credit > 0 ? formatMontant(t.credit) : '-'}</td>
-                            <td className="px-3 py-2 whitespace-nowrap text-center">
+                          <tr key={t.id} className={`${index % 2 === 1 ? 'bg-gray-50/50 dark:bg-gray-700/30' : ''} hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-colors duration-150`}>
+                            <td className="px-3 py-2 text-sm text-gray-600 dark:text-gray-400">{t.date}</td>
+                            <td className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 font-medium">{t.reference || '-'}</td>
+                            <td className="px-3 py-2 text-sm text-gray-800 dark:text-gray-200 font-medium">{t.description}</td>
+                            <td className="px-3 py-2 text-sm text-right text-red-600 dark:text-red-400 font-medium">{t.debit > 0 ? formatMontant(t.debit) : '-'}</td>
+                            <td className="px-3 py-2 text-sm text-right text-emerald-600 dark:text-emerald-400 font-medium">{t.credit > 0 ? formatMontant(t.credit) : '-'}</td>
+                            <td className="px-3 py-2 whitespace-nowrap text-center text-gray-800 dark:text-gray-200">
                               <div className='flex justify-center gap-2'>
-                                <button onClick={() => modifierLigne(t)} className="text-blue-600 hover:text-blue-800" title="Modifier"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-9l7 7m-7-7v7h7" /></svg></button>
-                                <button onClick={() => supprimerLigne(t.id)} className="text-red-600 hover:text-red-800" title="Supprimer"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                                <button onClick={() => modifierLigne(t)} className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300" title="Modifier"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-9l7 7m-7-7v7h7" /></svg></button>
+                                <button onClick={() => supprimerLigne(t.id)} className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300" title="Supprimer"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                               </div>
                             </td>
                           </tr>
@@ -520,11 +520,11 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
             )}
 
             {transactions.length > 0 && (
-              <div className="mt-0 p-4 flex justify-end items-center bg-white border-t rounded-lg shadow-lg">
+              <div className="mt-0 p-4 flex justify-end items-center bg-white dark:bg-gray-800 border-t dark:border-gray-700 rounded-lg shadow-lg">
                 <button
                   onClick={handleSubmit}
                   disabled={isLoadingSave || isLoadingJournal}
-                  className="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto justify-center"
+                  className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto justify-center"
                 >
                   {(isLoadingSave || isLoadingJournal) ? (
                     <>
@@ -542,9 +542,9 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
             )}
 
             {transactions.length === 0 && (
-              <div className="bg-white rounded-lg shadow-md p-8 text-center text-gray-500 border border-gray-200">
-                <p className="text-base">Aucune transaction bancaire ajoutée</p>
-                <p className="text-sm mt-1">Veuillez renseigner les détails et ajouter des transactions ci-dessus.</p>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                <p className="text-base text-gray-800 dark:text-gray-200">Aucune transaction bancaire ajoutée</p>
+                <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">Veuillez renseigner les détails et ajouter des transactions ci-dessus.</p>
               </div>
             )}
           </div>

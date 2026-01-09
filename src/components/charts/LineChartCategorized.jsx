@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTheme } from '../../states/context/ThemeContext';
 import {
   LineChart,
   Line,
@@ -38,6 +39,7 @@ const METRICS_CONFIG = {
 };
 
 export default function LineChartCategorized({ globalDateStart, globalDateEnd }) {
+  const { isDarkMode } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState('Rentabilité');
   const [selectedMetrics, setSelectedMetrics] = useState(['roe', 'roa', 'marge_op']);
   const [evolutionData, setEvolutionData] = useState([]);
@@ -49,13 +51,13 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
   // Charger les données quand la catégorie ou les métriques changent
   useEffect(() => {
     const abortController = new AbortController();
-    
+
     const fetchEvolutionData = async () => {
       setLoading(true);
       try {
         // Récupérer les métriques sélectionnées
         const metricsToFetch = availableMetrics.filter(m => selectedMetrics.includes(m.key));
-        
+
         if (metricsToFetch.length === 0) {
           setEvolutionData([]);
           setLoading(false);
@@ -65,19 +67,19 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
         // Récupérer les données pour chaque métrique en parallèle
         const promises = metricsToFetch.map(metric => {
           let url = `${BASE_URL_API}${metric.endpoint}`;
-          
+
           // Si la métrique utilise les dates globales, les ajouter à l'URL
           if (metric.useGlobalDates && globalDateStart && globalDateEnd) {
             url += `?date_start=${globalDateStart}&date_end=${globalDateEnd}`;
           }
-          
+
           return fetch(url, { signal: abortController.signal })
             .then(res => res.json())
             .then(data => ({ metric, data: data.evolution || [] }));
         });
 
         const results = await Promise.all(promises);
-        
+
         if (!abortController.signal.aborted) {
           // Combiner les datasets
           const combined = results[0].data.map((item, index) => {
@@ -85,16 +87,16 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
               mois: item.mois,
               date: item.date
             };
-            
+
             // Ajouter les valeurs de chaque métrique
             results.forEach(result => {
               const metricValue = result.data[index]?.[result.metric.dataKey];
               dataPoint[result.metric.key] = metricValue;
             });
-            
+
             return dataPoint;
           });
-          
+
           setEvolutionData(combined);
         }
       } catch (error) {
@@ -147,16 +149,16 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
   return (
     <div className="w-full">
       {/* Sélection de catégorie */}
-      <div className="mb-4 flex gap-2 flex-wrap">
+      {/* Sélection de catégorie */}
+      <div className="mb-2 sm:mb-4 flex gap-1 sm:gap-2 flex-wrap justify-center sm:justify-start">
         {Object.keys(METRICS_CONFIG).map(category => (
           <button
             key={category}
             onClick={() => handleCategoryChange(category)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              selectedCategory === category
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
+            className={`px-3 py-1 sm:px-4 sm:py-2 rounded-lg text-[10px] sm:text-sm font-medium transition-all ${selectedCategory === category
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
           >
             {category}
           </button>
@@ -164,20 +166,20 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
       </div>
 
       {/* Sélection de métriques */}
-      <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-        <p className="text-sm font-medium text-gray-700 mb-2">Métriques à afficher :</p>
-        <div className="flex gap-4 flex-wrap">
+      <div className="mb-2 sm:mb-4 p-2 sm:p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+        <p className="text-[10px] sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 sm:mb-2">Métriques :</p>
+        <div className="flex gap-2 sm:gap-4 flex-wrap">
           {availableMetrics.map(metric => (
-            <label key={metric.key} className="flex items-center gap-2 cursor-pointer">
+            <label key={metric.key} className="flex items-center gap-1 sm:gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={selectedMetrics.includes(metric.key)}
                 onChange={() => handleMetricToggle(metric.key)}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 rounded focus:ring-blue-500 bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600"
               />
-              <span className="text-sm text-gray-700 flex items-center gap-1">
+              <span className="text-[10px] sm:text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
                 <span
-                  className="w-3 h-3 rounded-full"
+                  className="w-2 h-2 sm:w-3 sm:h-3 rounded-full"
                   style={{ backgroundColor: metric.color }}
                 ></span>
                 {metric.name}
@@ -188,51 +190,58 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
       </div>
 
       {/* Graphique */}
-      <div className="w-full h-80 md:h-96 relative">
+      <div className="w-full h-64 sm:h-80 md:h-96 relative">
         {loading ? (
           <div className="w-full h-full flex items-center justify-center">
-            <div className="text-gray-500">Chargement des données...</div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs sm:text-base">Chargement des données...</div>
           </div>
         ) : selectedMetrics.length === 0 ? (
           <div className="w-full h-full flex items-center justify-center">
-            <div className="text-gray-500">Sélectionnez au moins une métrique à afficher</div>
+            <div className="text-gray-500 dark:text-gray-400 text-xs sm:text-base text-center px-4">Sélectionnez une métrique</div>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={evolutionData} margin={{ top: 10, right: 30, left: 60, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-              <XAxis 
-                dataKey="mois" 
-                stroke="#4b5563"
-                tick={{ fontSize: 12 }}
+            <LineChart data={evolutionData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? "#374151" : "#f3f4f6"} />
+              <XAxis
+                dataKey="mois"
+                stroke={isDarkMode ? "#4b5563" : "#4b5563"}
+                tick={{ fontSize: 9, fill: isDarkMode ? '#9ca3af' : '#4b5563' }}
                 angle={-15}
                 textAnchor="end"
-                height={60}
+                height={40}
+                interval={0}
               />
-              <YAxis 
-                stroke="#4b5563"
+              <YAxis
+                stroke={isDarkMode ? "#4b5563" : "#4b5563"}
+                tick={{ fontSize: 9, fill: isDarkMode ? '#9ca3af' : '#4b5563' }}
+                width={35}
                 tickFormatter={(value) => {
                   const firstMetric = availableMetrics.find(m => selectedMetrics.includes(m.key));
-                  if (firstMetric?.unit === '%') return `${value.toFixed(1)}%`;
-                  if (firstMetric?.unit === 'Ar') return `${(value / 1000).toFixed(0)}K`;
-                  return value;
+                  if (firstMetric?.unit === '%') return `${value.toFixed(0)}%`;
+                  if (firstMetric?.unit === 'Ar') return `${(value / 1000).toFixed(0)}k`;
+                  return new Intl.NumberFormat('en-US', { notation: "compact", compactDisplay: "short" }).format(value);
                 }}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #d1d5db',
+                  backgroundColor: isDarkMode ? '#1f2937' : '#fff',
+                  border: isDarkMode ? '1px solid #374151' : '1px solid #d1d5db',
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                  padding: '8px',
+                  fontSize: '11px',
+                  color: isDarkMode ? '#f3f4f6' : '#374151'
                 }}
-                labelStyle={{ fontWeight: 'bold', color: '#1f2937' }}
+                itemStyle={{ color: isDarkMode ? '#f3f4f6' : '#374151' }}
+                labelStyle={{ fontWeight: 'bold', color: isDarkMode ? '#f3f4f6' : '#1f2937', marginBottom: '2px' }}
                 formatter={(value, name) => {
                   const metric = availableMetrics.find(m => m.key === name);
                   return [formatValue(value, metric?.unit), metric?.name];
                 }}
               />
-              <Legend wrapperStyle={{ paddingTop: '10px' }} />
-              
+              <Legend wrapperStyle={{ paddingTop: '5px', fontSize: '10px' }} iconSize={8} />
+
               {/* Lignes pour chaque métrique sélectionnée */}
               {availableMetrics
                 .filter(metric => selectedMetrics.includes(metric.key))
@@ -242,10 +251,11 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
                     type="monotone"
                     dataKey={metric.key}
                     stroke={metric.color}
-                    strokeWidth={3}
-                    dot={{ fill: metric.color, r: 5 }}
-                    activeDot={{ r: 7, strokeWidth: 2 }}
+                    strokeWidth={2}
+                    dot={{ fill: metric.color, r: 3 }}
+                    activeDot={{ r: 5, strokeWidth: 2 }}
                     name={metric.name}
+                    connectNulls={true}
                   />
                 ))}
             </LineChart>

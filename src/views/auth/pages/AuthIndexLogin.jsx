@@ -39,6 +39,9 @@ export default function AuthIndexLogin() {
                 // Get current user
                 saveCurrentUserToLS(userInfo);
                 dispatch(actionGetCurrentUser(userInfo));
+
+                // Redirect to dashboard by changing window location
+                window.location.href = '/';
             }, 700);
         }
     }, [dispatch, isSuccess, isLoading, userInfo]);

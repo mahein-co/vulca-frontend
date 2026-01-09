@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../../states/context/ThemeContext';
 import axios from 'axios';
 import { BASE_URL_API } from '../../constants/globalConstants';
 import {
@@ -16,6 +17,7 @@ const COLORS_CHARGES = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d'];
 const COLORS_COMPARISON = ['#3b82f6', '#ef4444']; // Bleu pour Produits, Rouge pour Charges
 
 export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
+  const { isDarkMode } = useTheme();
   const [produitsData, setProduitsData] = useState([]);
   const [chargesData, setChargesData] = useState([]);
   const [comparisonData, setComparisonData] = useState([]);
@@ -111,9 +113,9 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
     if (active && payload && payload.length) {
       const { name, value } = payload[0];
       return (
-        <div className="bg-white p-3 border border-gray-300 rounded shadow-lg z-50">
-          <p className="font-semibold text-gray-900">{name}</p>
-          <p className="text-blue-600">{Number(value).toLocaleString('fr-FR')} Ar</p>
+        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-700 rounded shadow-lg z-50">
+          <p className="font-semibold text-gray-900 dark:text-gray-100">{name}</p>
+          <p className="text-blue-600 dark:text-blue-400">{Number(value).toLocaleString('fr-FR')} Ar</p>
         </div>
       );
     }
@@ -127,14 +129,14 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
     const formatCurrency = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(val).replace('MGA', 'Ar');
 
     return (
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 flex flex-col h-full w-full relative overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col h-full w-full relative overflow-hidden">
         {/* Titre et Total */}
         <div className="mb-4 text-center">
-          <h4 className="font-bold text-gray-700 text-sm sm:text-base mb-1">{title}</h4>
-          <p className="text-xs text-gray-400 font-medium uppercase tracking-wider mb-1">
+          <h4 className="font-bold text-gray-700 dark:text-gray-200 text-sm sm:text-base mb-1">{title}</h4>
+          <p className="text-xs text-gray-400 dark:text-gray-500 font-medium uppercase tracking-wider mb-1">
             Total {type === 'CHARGE' ? 'Charges' : (type === 'PRODUIT' ? 'Produits' : 'Global')}
           </p>
-          <p className={`text-lg font-extrabold ${type === 'PRODUIT' ? 'text-emerald-600' : (type === 'CHARGE' ? 'text-red-600' : 'text-blue-600')}`}>
+          <p className={`text-lg font-extrabold ${type === 'PRODUIT' ? 'text-emerald-600 dark:text-emerald-500' : (type === 'CHARGE' ? 'text-red-600 dark:text-red-500' : 'text-blue-600 dark:text-blue-500')}`}>
             {formatCurrency(total)}
           </p>
         </div>
@@ -157,7 +159,7 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
                 dataKey="value"
               >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke="white" strokeWidth={2} />
+                  <Cell key={`cell-${index}`} fill={colors[index % colors.length]} stroke={isDarkMode ? "#1f2937" : "white"} strokeWidth={2} />
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltip />} />
@@ -165,7 +167,7 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
                 verticalAlign="bottom"
                 iconType="circle"
                 iconSize={8}
-                wrapperStyle={{ paddingTop: '10px', fontSize: '10px', color: '#6b7280' }}
+                wrapperStyle={{ paddingTop: '10px', fontSize: '10px', color: isDarkMode ? '#9ca3af' : '#6b7280' }}
                 layout="horizontal"
                 align="center"
               />
@@ -178,8 +180,8 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
 
   if (loading) {
     return (
-      <div className="bg-white p-5 rounded-lg shadow-md border-t-2 border-gray-300 flex items-center justify-center h-96">
-        <p className="text-gray-500 animate-pulse">Chargement des répartitions...</p>
+      <div className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700 flex items-center justify-center h-96">
+        <p className="text-gray-500 dark:text-gray-400 animate-pulse">Chargement des répartitions...</p>
       </div>
     );
   }
@@ -199,13 +201,13 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
   // Calculer la classe de grille
   let gridClass = "grid-cols-1";
   if (activeCharts.length === 2) gridClass = "grid-cols-1 md:grid-cols-2";
-  if (activeCharts.length >= 3) gridClass = "grid-cols-1 md:grid-cols-3";
+  if (activeCharts.length >= 3) gridClass = "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
 
   return (
-    <div className="bg-white p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300">
+    <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300 dark:border-gray-700">
       <div className="flex items-center mb-6">
         <span className="text-2xl mr-3">📊</span>
-        <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100">
           Répartitions Financières
         </h3>
       </div>

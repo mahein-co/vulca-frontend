@@ -46,20 +46,20 @@ export default function IndexAddByFormsPage({ onOpenForm }) {
     };
 
     const colorClasses = {
-        blue: { text: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100', hoverBorder: 'group-hover:border-blue-300', hoverBg: 'group-hover:bg-blue-50/50' },
-        green: { text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', hoverBorder: 'group-hover:border-emerald-300', hoverBg: 'group-hover:bg-emerald-50/50' },
-        indigo: { text: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100', hoverBorder: 'group-hover:border-indigo-300', hoverBg: 'group-hover:bg-indigo-50/50' },
-        orange: { text: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100', hoverBorder: 'group-hover:border-orange-300', hoverBg: 'group-hover:bg-orange-50/50' },
-        red: { text: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100', hoverBorder: 'group-hover:border-rose-300', hoverBg: 'group-hover:bg-rose-50/50' },
-        purple: { text: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100', hoverBorder: 'group-hover:border-purple-300', hoverBg: 'group-hover:bg-purple-50/50' },
+        blue: { text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800', hoverBorder: 'group-hover:border-blue-300 dark:group-hover:border-blue-600', hoverBg: 'group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10' },
+        green: { text: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-100 dark:border-emerald-800', hoverBorder: 'group-hover:border-emerald-300 dark:group-hover:border-emerald-600', hoverBg: 'group-hover:bg-emerald-50/50 dark:group-hover:bg-emerald-900/10' },
+        indigo: { text: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-100 dark:border-indigo-800', hoverBorder: 'group-hover:border-indigo-300 dark:group-hover:border-indigo-600', hoverBg: 'group-hover:bg-indigo-50/50 dark:group-hover:bg-indigo-900/10' },
+        orange: { text: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-100 dark:border-orange-800', hoverBorder: 'group-hover:border-orange-300 dark:group-hover:border-orange-600', hoverBg: 'group-hover:bg-orange-50/50 dark:group-hover:bg-orange-900/10' },
+        red: { text: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20', border: 'border-rose-100 dark:border-rose-800', hoverBorder: 'group-hover:border-rose-300 dark:group-hover:border-rose-600', hoverBg: 'group-hover:bg-rose-50/50 dark:group-hover:bg-rose-900/10' },
+        purple: { text: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-purple-100 dark:border-purple-800', hoverBorder: 'group-hover:border-purple-300 dark:group-hover:border-purple-600', hoverBg: 'group-hover:bg-purple-50/50 dark:group-hover:bg-purple-900/10' },
     };
 
     return (
         <div className="p-4 sm:p-5 lg:p-6 w-full mx-auto space-y-5">
 
             <div className="text-center mb-5">
-                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Saisie Manuelle</h2>
-                <p className="mt-2 text-sm text-gray-500">Sélectionnez le type de document ou d'état financier à saisir.</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Saisie Manuelle</h2>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Sélectionnez le type de document ou d'état financier à saisir.</p>
             </div>
 
             {
@@ -68,9 +68,9 @@ export default function IndexAddByFormsPage({ onOpenForm }) {
 
                     return (
                         <div key={sectionIndex} className="space-y-3">
-                            <div className="flex items-center space-x-2 pb-1.5 border-b border-gray-100">
+                            <div className="flex items-center space-x-2 pb-1.5 border-b border-gray-100 dark:border-gray-700">
                                 <div className="h-3 w-1 bg-indigo-500 rounded-full"></div>
-                                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">
+                                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wide">
                                     {section.title}
                                 </h3>
                             </div>
@@ -84,17 +84,17 @@ export default function IndexAddByFormsPage({ onOpenForm }) {
                                         <button
                                             key={form.type}
                                             onClick={() => handleFormClick(form.type)}
-                                            className={`group relative flex flex-col p-4 rounded-xl border bg-white shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left h-full ${colors.border} ${colors.hoverBorder} ${colors.hoverBg}`}
+                                            className={`group relative flex flex-col p-4 rounded-xl border bg-white dark:bg-gray-800 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 text-left h-full ${colors.border} ${colors.hoverBorder} ${colors.hoverBg}`}
                                         >
                                             <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-3 transition-colors duration-300 ${colors.bg} ${colors.text}`}>
                                                 <Icon className="w-6 h-6" strokeWidth={1.5} />
                                             </div>
 
-                                            <h4 className="text-sm font-bold text-gray-900 mb-1 group-hover:text-indigo-900 transition-colors">
+                                            <h4 className="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1 group-hover:text-indigo-900 dark:group-hover:text-indigo-300 transition-colors">
                                                 {form.name}
                                             </h4>
 
-                                            <p className="text-xs text-gray-500 leading-relaxed mb-3 flex-grow">
+                                            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed mb-3 flex-grow">
                                                 {form.description}
                                             </p>
 

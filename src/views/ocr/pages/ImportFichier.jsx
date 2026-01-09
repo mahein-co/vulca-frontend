@@ -10,10 +10,10 @@ const LoadingOverlay = ({ message }) => (
         <div className="flex flex-col items-center max-w-sm w-full text-center">
             {/* Spinner style iOS/moderne */}
             <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
                 <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
-            <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">{message}</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 animate-pulse px-4">{message}</p>
         </div>
     </div>
 );
@@ -145,23 +145,23 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
 
         if (file && file.name.match(/\.csv$/i) && excelPreview) {
             return (
-                <div className="w-full bg-white rounded-lg shadow-md p-3 sm:p-4 text-left">
+                <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 sm:p-4 text-left border border-gray-200 dark:border-gray-700">
                     <div className="flex items-center mb-3">
                         {/* Icône Excel/CSV */}
                         <svg className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 mr-2" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18.5,9H13V3.5L18.5,9M8,11H16V13H8V11M8,15H16V17H8V15Z" />
                         </svg>
                         <div>
-                            <p className="font-semibold text-sm sm:text-base text-gray-800">Aperçu CSV</p>
-                            <p className="text-xs text-gray-500 truncate max-w-[200px]">{file.name}</p>
+                            <p className="font-semibold text-sm sm:text-base text-gray-800 dark:text-gray-100">Aperçu CSV</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{file.name}</p>
                         </div>
                     </div>
-                    <div className="border border-gray-200 rounded overflow-auto max-h-64 sm:max-h-96">
-                        <pre className="text-xs p-2 sm:p-3 whitespace-pre-wrap font-mono text-gray-700 bg-gray-50">
+                    <div className="border border-gray-200 dark:border-gray-700 rounded overflow-auto max-h-64 sm:max-h-96">
+                        <pre className="text-xs p-2 sm:p-3 whitespace-pre-wrap font-mono text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-900">
                             {excelPreview.join('\n')}
                         </pre>
                     </div>
-                    <p className="text-xs text-gray-500 mt-2">Affichage des 20 premières lignes</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Affichage des 20 premières lignes</p>
                 </div>
             );
         }
@@ -172,14 +172,11 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
                     <svg className="w-16 h-16 sm:w-20 sm:h-20 mx-auto text-green-600" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18.5,9H13V3.5L18.5,9M8,11H16V13H8V11M8,15H16V17H8V15Z" />
                     </svg>
-                    <p className="mt-3 font-semibold text-base sm:text-lg text-gray-700">Fichier Excel</p>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-2 text-center break-all">{file.name}</p>
-                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-xs sm:text-sm text-blue-800 text-center">
-                            💡 L'aperçu Excel natif n'est pas disponible
-                        </p>
-                        <p className="text-xs text-blue-600 mt-1 text-center">
-                            Le fichier sera traité lors de l'extraction OCR
+                    <p className="mt-3 font-semibold text-base sm:text-lg text-gray-700 dark:text-gray-200">Fichier Excel</p>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-2 text-center break-all">{file.name}</p>
+                    <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                        <p className="text-xs sm:text-sm text-blue-800 dark:text-blue-300 text-center">
+                            💡 L'aperçu Excel natif n'est pas disponible. Le fichier sera traité lors de l'extraction OCR.
                         </p>
                     </div>
                 </div>
@@ -188,15 +185,15 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
 
         // Fichier générique
         let iconPath = "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z";
-        let iconColor = "text-gray-400";
+        let iconColor = "text-gray-400 dark:text-gray-500";
 
         return (
-            <div className="mt-4 sm:mt-8 text-gray-500 flex flex-col items-center px-4">
+            <div className="mt-4 sm:mt-8 text-gray-500 dark:text-gray-400 flex flex-col items-center px-4">
                 <svg className={`w-12 h-12 sm:w-16 sm:h-16 mx-auto ${iconColor}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={iconPath} />
                 </svg>
-                <p className="mt-3 font-semibold text-sm sm:text-base text-gray-700">Fichier document chargé</p>
-                <p className="text-xs sm:text-sm text-gray-500 mt-1 break-all text-center">{file.name}</p>
+                <p className="mt-3 font-semibold text-sm sm:text-base text-gray-700 dark:text-gray-200">Fichier document chargé</p>
+                <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 break-all text-center">{file.name}</p>
             </div>
         );
     };
@@ -206,10 +203,10 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
             htmlFor="file-upload-input"
             className={`relative overflow-hidden border-2 border-dashed rounded-lg flex flex-col items-center p-3 sm:p-4 h-full cursor-pointer transition-all duration-300
                 ${isDragActive
-                    ? 'border-gray-500 bg-gray-50 scale-[1.01] shadow-xl'
+                    ? 'border-gray-500 bg-gray-50 dark:bg-gray-800 scale-[1.01] shadow-xl'
                     : isLoaded
-                        ? 'border-gray-300 bg-white shadow-md hover:shadow-lg'
-                        : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:shadow-md'
+                        ? 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg'
+                        : 'border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-500 hover:shadow-md'
                 }`
             }
             onDrop={onFileDrop}
@@ -221,7 +218,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
                 <button
                     type="button"
                     onClick={(e) => { e.preventDefault(); onRemoveFile(); }}
-                    className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-white shadow text-gray-600 hover:bg-red-500 hover:text-white transition-all duration-200 z-10"
+                    className="absolute top-2 right-2 sm:top-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-white dark:bg-gray-700 shadow text-gray-600 dark:text-gray-300 hover:bg-red-500 dark:hover:bg-red-600 hover:text-white transition-all duration-200 z-10"
                     aria-label="Supprimer le fichier"
                 >
                     <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -232,7 +229,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
 
             {isLoaded ? (
                 <div className="text-center w-full h-full flex flex-col min-h-0">
-                    <p className="text-base sm:text-xl font-bold text-gray-800 mb-2 sm:mb-3 truncate max-w-[85%] sm:max-w-[90%] flex-shrink-0">
+                    <p className="text-base sm:text-xl font-bold text-gray-800 dark:text-gray-100 mb-2 sm:mb-3 truncate max-w-[85%] sm:max-w-[90%] flex-shrink-0">
                         {file.name}
                     </p>
 
@@ -245,17 +242,17 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
             ) : (
                 <div className="text-center flex flex-col items-center justify-center flex-grow">
                     <div className="mb-4">
-                        <svg className="w-16 h-16 sm:w-20 sm:h-20 text-gray-300 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-16 h-16 sm:w-20 sm:h-20 text-gray-300 dark:text-gray-600 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                         </svg>
                     </div>
-                    <p className="text-lg sm:text-xl font-bold text-gray-800 mb-1">
+                    <p className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-200 mb-1">
                         Glissez vos fichiers ici
                     </p>
-                    <p className="text-sm sm:text-md text-gray-500 mt-1 px-2">
-                        ou <span className="text-gray-700 font-bold hover:underline">cliquez pour parcourir</span>
+                    <p className="text-sm sm:text-md text-gray-500 dark:text-gray-400 mt-1 px-2">
+                        ou <span className="text-gray-700 dark:text-gray-300 font-bold hover:underline">cliquez pour parcourir</span>
                     </p>
-                    <p className="text-xs text-gray-400 mt-2">Maximum {MAX_FILE_UPLOAD} fichiers</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">Maximum {MAX_FILE_UPLOAD} fichiers</p>
                 </div>
             )}
             <input
@@ -279,12 +276,12 @@ const OcrValidationForm = ({
 
 
     return (
-        <div className="relative bg-white rounded-lg shadow-md border border-gray-200 p-2 sm:p-3 h-full flex flex-col min-h-0 overflow-hidden text-sm">
+        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-2 sm:p-3 h-full flex flex-col min-h-0 overflow-hidden text-sm">
             {/* Top border instead of gradient */}
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200" />
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700" />
 
             {/* Boutons d'Action OCR */}
-            <div className="mb-2 sm:mb-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-gray-100 pb-2 flex-shrink-0">
+            <div className="mb-2 sm:mb-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-gray-100 dark:border-gray-700 pb-2 flex-shrink-0">
                 <div className="flex gap-2 w-full sm:w-auto">
                     <button
                         type="button"
@@ -292,7 +289,7 @@ const OcrValidationForm = ({
                         disabled={isLoading || documentsCount === 0 || isLotValidatable}
                         className={`flex items-center justify-center space-x-1.5 py-1.5 px-3 rounded text-xs font-medium transition duration-150 flex-1 sm:flex-initial
                             ${isLoading || documentsCount === 0 || isLotValidatable
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                ? 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                                 : 'bg-indigo-600 text-white hover:bg-indigo-700'}`
                         }
                     >
@@ -317,7 +314,7 @@ const OcrValidationForm = ({
                     <button
                         type="button"
                         onClick={onCancelExtraction}
-                        className="py-1.5 px-2 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 w-full sm:w-auto"
+                        className="py-1.5 px-2 border border-gray-300 dark:border-gray-600 rounded text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 w-full sm:w-auto"
                     >
                         Annuler
                     </button>
@@ -326,13 +323,13 @@ const OcrValidationForm = ({
 
             {/* Nom du Fichier Source */}
             <div className="mb-2 flex-shrink-0">
-                <label className="block text-xs font-medium text-gray-700 mb-0.5">Fichier Source</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">Fichier Source</label>
                 <input
                     type="text"
                     name="fileName"
                     value={formData.fileName}
                     disabled={true}
-                    className="block w-full rounded border-gray-300 shadow-sm text-xs bg-gray-50 text-gray-600 cursor-default py-1"
+                    className="block w-full rounded border-gray-300 dark:border-gray-600 shadow-sm text-xs bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 cursor-default py-1"
                     placeholder="Aucun fichier sélectionné"
                 />
             </div>
@@ -341,12 +338,12 @@ const OcrValidationForm = ({
             <div className="flex-grow min-h-0 overflow-y-auto pr-1">
 
                 {isExtracted ? (
-                    <div className="relative bg-amber-50 border-l-2 border-amber-400 p-2 rounded-sm text-xs text-amber-900 mb-2">
+                    <div className="relative bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-400 dark:border-amber-600 p-2 rounded-sm text-xs text-amber-900 dark:text-amber-200 mb-2">
                         <p className="font-bold flex items-center">⚠️ Veuillez vérifier les informations extraites par l’OCR. En cas d’erreur, vous pouvez modifier les champs manuellement </p>
                     </div>
                 ) : (
                     isDocumentLoaded && (
-                        <div className="relative bg-blue-50 border-l-2 border-blue-400 p-2 rounded-sm text-xs text-blue-900 mb-2">
+                        <div className="relative bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-400 dark:border-blue-600 p-2 rounded-sm text-xs text-blue-900 dark:text-blue-200 mb-2">
                             <h4 className="font-bold mb-0.5 mb-1">{isLoading ? 'Extraction en cours...' : 'En attente d\'extraction'}</h4>
                             <p className="leading-tight">
                                 {isLoading ? 'Veuillez patienter pendant l\'analyse de votre document.' : 'Cliquez sur "Extraire les informations" pour remplir le formulaire.'}
@@ -360,13 +357,13 @@ const OcrValidationForm = ({
                         {/* HEADER DU DOCUMENT */}
                         <div className="mb-3 grid grid-cols-2 gap-2">
                             <div className="col-span-2">
-                                <label className="block text-xs font-bold text-gray-700 mb-0.5">Type de Document</label>
+                                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-0.5">Type de Document</label>
                                 <input
                                     type="text"
                                     name="typeDocument"
                                     value={formData.typeDocument || ''}
                                     onChange={(e) => onFormChange('typeDocument', e.target.value)}
-                                    className="block w-full rounded border-indigo-200 shadow-sm text-xs py-1 text-indigo-700 font-bold uppercase bg-indigo-50 placeholder-indigo-300"
+                                    className="block w-full rounded border-indigo-200 dark:border-gray-600 shadow-sm text-xs py-1 text-indigo-700 dark:text-indigo-300 font-bold uppercase bg-indigo-50 dark:bg-indigo-900/20 placeholder-indigo-300"
                                     placeholder="NON DÉTECTÉ"
                                 />
                             </div>
@@ -436,40 +433,40 @@ const OcrValidationForm = ({
 
                                             return (
                                                 <div key={key} className="mb-3">
-                                                    <h5 className="font-bold text-xs text-gray-800 mb-2 capitalize border-b border-gray-100 pb-1">
+                                                    <h5 className="font-bold text-xs text-gray-800 dark:text-gray-200 mb-2 capitalize border-b border-gray-100 dark:border-gray-700 pb-1">
                                                         Articles / Produits
                                                     </h5>
-                                                    <div className="border border-gray-200 rounded overflow-x-auto bg-white shadow-sm">
-                                                        <table className="min-w-full divide-y divide-gray-200 text-xs">
-                                                            <thead className="bg-gray-50">
+                                                    <div className="border border-gray-200 dark:border-gray-700 rounded overflow-x-auto bg-white dark:bg-gray-800 shadow-sm">
+                                                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
+                                                            <thead className="bg-gray-50 dark:bg-gray-900">
                                                                 <tr>
-                                                                    <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-600 uppercase tracking-wider">
+                                                                    <th className="px-3 py-2 text-left text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                                                         Description
                                                                     </th>
-                                                                    <th className="px-3 py-2 text-center text-[10px] font-bold text-gray-600 uppercase tracking-wider">
+                                                                    <th className="px-3 py-2 text-center text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                                                         Quantité
                                                                     </th>
-                                                                    <th className="px-3 py-2 text-right text-[10px] font-bold text-gray-600 uppercase tracking-wider">
+                                                                    <th className="px-3 py-2 text-right text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                                                         Prix Unitaire
                                                                     </th>
-                                                                    <th className="px-3 py-2 text-right text-[10px] font-bold text-gray-600 uppercase tracking-wider">
+                                                                    <th className="px-3 py-2 text-right text-[10px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                                                         Montant
                                                                     </th>
                                                                 </tr>
                                                             </thead>
-                                                            <tbody className="bg-white divide-y divide-gray-100">
+                                                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                                                                 {items.map((item, idx) => (
-                                                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                                                        <td className="px-3 py-2 text-gray-900 font-medium">
+                                                                    <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                                        <td className="px-3 py-2 text-gray-900 dark:text-gray-200 font-medium">
                                                                             {item.description}
                                                                         </td>
-                                                                        <td className="px-3 py-2 text-center text-gray-700">
+                                                                        <td className="px-3 py-2 text-center text-gray-700 dark:text-gray-300">
                                                                             {item.quantite}
                                                                         </td>
-                                                                        <td className="px-3 py-2 text-right text-gray-700">
+                                                                        <td className="px-3 py-2 text-right text-gray-700 dark:text-gray-300">
                                                                             {item.prix_unitaire.toLocaleString()} {devise}
                                                                         </td>
-                                                                        <td className="px-3 py-2 text-right font-semibold text-gray-900">
+                                                                        <td className="px-3 py-2 text-right font-semibold text-gray-900 dark:text-gray-100">
                                                                             {item.montant.toLocaleString()} {devise}
                                                                         </td>
                                                                     </tr>
@@ -493,17 +490,17 @@ const OcrValidationForm = ({
 
                                         return (
                                             <div key={key} className="mb-2">
-                                                <h5 className="font-bold text-xs text-gray-800 mb-1 capitalize border-b border-gray-100 pb-1">
+                                                <h5 className="font-bold text-xs text-gray-800 dark:text-gray-200 mb-1 capitalize border-b border-gray-100 dark:border-gray-700 pb-1">
                                                     {key.replace(/_/g, ' ')}
                                                 </h5>
 
                                                 {/* ✅ VÉRIFICATION : Array de strings ou d'objets ? */}
                                                 {typeof value[0] === 'string' ? (
                                                     // CAS 1 : Array de strings - Liste à puces
-                                                    <div className="border border-gray-200 rounded bg-gray-50 p-3">
+                                                    <div className="border border-gray-200 dark:border-gray-700 rounded bg-gray-50 dark:bg-gray-900 p-3">
                                                         <ul className="list-disc list-inside space-y-1.5">
                                                             {value.map((item, idx) => (
-                                                                <li key={idx} className="text-xs text-gray-900 leading-relaxed">
+                                                                <li key={idx} className="text-xs text-gray-900 dark:text-gray-300 leading-relaxed">
                                                                     {item}
                                                                 </li>
                                                             ))}
@@ -511,22 +508,22 @@ const OcrValidationForm = ({
                                                     </div>
                                                 ) : (
                                                     // CAS 2 : Array d'objets - Tableau HTML
-                                                    <div className="border border-gray-200 rounded overflow-x-auto">
-                                                        <table className="min-w-full divide-y divide-gray-200">
-                                                            <thead className="bg-gray-50">
+                                                    <div className="border border-gray-200 dark:border-gray-700 rounded overflow-x-auto">
+                                                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                                            <thead className="bg-gray-50 dark:bg-gray-900">
                                                                 <tr>
                                                                     {Object.keys(value[0] || {}).map((header) => (
-                                                                        <th key={header} className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 uppercase tracking-wider">
+                                                                        <th key={header} className="px-2 py-1 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                                                                             {header.replace(/_/g, ' ')}
                                                                         </th>
                                                                     ))}
                                                                 </tr>
                                                             </thead>
-                                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                                                                 {value.map((item, idx) => (
                                                                     <tr key={idx}>
                                                                         {Object.values(item).map((val, vIdx) => (
-                                                                            <td key={vIdx} className="px-2 py-1 text-[10px] text-gray-900 whitespace-nowrap">
+                                                                            <td key={vIdx} className="px-2 py-1 text-[10px] text-gray-900 dark:text-gray-200 whitespace-nowrap">
                                                                                 {typeof val === 'object' ? JSON.stringify(val) : String(val)}
                                                                             </td>
                                                                         ))}
@@ -543,14 +540,14 @@ const OcrValidationForm = ({
                                     // Cas objet (nested) : Affichage en sous-formulaire formatté
                                     if (typeof value === 'object' && value !== null) {
                                         return (
-                                            <div key={key} className="mb-3 mt-1 p-2 bg-gray-50 rounded border border-gray-200">
-                                                <h6 className="text-[10px] font-bold text-gray-700 uppercase mb-2 border-b border-gray-200 pb-1">
+                                            <div key={key} className="mb-3 mt-1 p-2 bg-gray-50 dark:bg-gray-900/50 rounded border border-gray-200 dark:border-gray-700">
+                                                <h6 className="text-[10px] font-bold text-gray-700 dark:text-gray-300 uppercase mb-2 border-b border-gray-200 dark:border-gray-700 pb-1">
                                                     {key.replace(/_/g, ' ')}
                                                 </h6>
                                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                     {Object.entries(value).map(([subKey, subValue]) => (
                                                         <div key={subKey}>
-                                                            <label className="block text-[10px] text-gray-500 mb-0.5 capitalize font-medium">
+                                                            <label className="block text-[10px] text-gray-500 dark:text-gray-400 mb-0.5 capitalize font-medium">
                                                                 {subKey.replace(/_/g, ' ')}
                                                             </label>
                                                             <input
@@ -562,7 +559,7 @@ const OcrValidationForm = ({
                                                                     newExtractedJson[key][subKey] = e.target.value;
                                                                     onFormChange('extractedJson', newExtractedJson);
                                                                 }}
-                                                                className="block w-full rounded border-gray-300 shadow-sm text-xs py-1 text-left bg-white"
+                                                                className="block w-full rounded border-gray-300 dark:border-gray-600 shadow-sm text-xs py-1 text-left bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                                             />
                                                         </div>
                                                     ))}
@@ -577,7 +574,7 @@ const OcrValidationForm = ({
 
                                     return (
                                         <div key={key} className="mb-2">
-                                            <label className="block text-[10px] uppercase text-gray-500 mb-0.5 font-bold">
+                                            <label className="block text-[10px] uppercase text-gray-500 dark:text-gray-400 mb-0.5 font-bold">
                                                 {key.replace(/_/g, ' ')}
                                             </label>
                                             <input
@@ -587,7 +584,7 @@ const OcrValidationForm = ({
                                                     const newExtractedJson = { ...formData.extractedJson, [key]: e.target.value };
                                                     onFormChange('extractedJson', newExtractedJson);
                                                 }}
-                                                className={`block w-full rounded border-gray-300 shadow-sm text-xs py-1 text-left`}
+                                                className={`block w-full rounded border-gray-300 dark:border-gray-600 shadow-sm text-xs py-1 text-left bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100`}
                                             />
                                         </div>
                                     );
@@ -599,13 +596,13 @@ const OcrValidationForm = ({
             </div>
 
             {/* Bouton de Validation */}
-            <div className="mt-2 pt-2 border-t border-gray-200 flex justify-end flex-shrink-0">
+            <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700 flex justify-end flex-shrink-0">
                 <button
                     type="submit"
                     onClick={onValider}
                     disabled={!isLotValidatable || isSaving}
                     className={`w-full sm:w-auto py-1.5 px-4 border border-transparent rounded shadow-sm text-xs font-medium text-white transition duration-150 flex items-center justify-center
-                        ${isLotValidatable && !isSaving ? 'bg-gray-800 hover:bg-gray-900 focus:ring-gray-800' : 'bg-gray-300 cursor-not-allowed'}`
+                        ${isLotValidatable && !isSaving ? 'bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 focus:ring-gray-800' : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'}`
                     }
                 >
                     {isSaving ? (
@@ -924,7 +921,7 @@ export default function ImportFichier({ onSaisieCompleted }) {
     };
 
     return (
-        <div className="fixed inset-0 p-2 sm:p-3 bg-gray-50 flex flex-col overflow-hidden pt-24 sm:pt-20">
+        <div className="fixed inset-0 p-2 sm:p-3 bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden pt-24 sm:pt-20">
             <style>{styles}</style>
 
             {/* OVERLAY DE CHARGEMENT */}
@@ -950,9 +947,9 @@ export default function ImportFichier({ onSaisieCompleted }) {
 
             {notification && (
                 <div className={`fixed top-40 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-out animate-[slideIn_0.3s_ease-out]
-                    ${notification.type === 'success' ? 'bg-white border-l-4 border-green-500' :
-                        notification.type === 'warning' ? 'bg-white border-l-4 border-yellow-500' :
-                            'bg-white border-l-4 border-red-500'}`}>
+                    ${notification.type === 'success' ? 'bg-white dark:bg-gray-800 border-l-4 border-green-500' :
+                        notification.type === 'warning' ? 'bg-white dark:bg-gray-800 border-l-4 border-yellow-500' :
+                            'bg-white dark:bg-gray-800 border-l-4 border-red-500'}`}>
                     <div className="p-4 flex items-start">
                         <div className="flex-shrink-0">
                             {notification.type === 'success' && <svg className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
@@ -974,12 +971,12 @@ export default function ImportFichier({ onSaisieCompleted }) {
                 <div className="lg:hidden flex gap-2 mb-2 flex-shrink-0">
                     <button
                         onClick={() => setShowFormOnMobile(false)}
-                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm ${!showFormOnMobile ? 'bg-gray-800 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'}`}>
+                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm ${!showFormOnMobile ? 'bg-gray-800 dark:bg-gray-700 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700'}`}>
                         📄 Document
                     </button>
                     <button
                         onClick={() => setShowFormOnMobile(true)}
-                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm ${showFormOnMobile ? 'bg-gray-800 text-white shadow-md' : 'bg-white text-gray-700 border border-gray-200'}`}>
+                        className={`flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all duration-300 shadow-sm ${showFormOnMobile ? 'bg-gray-800 dark:bg-gray-700 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700'}`}>
                         📝 Formulaire
                     </button>
                 </div>

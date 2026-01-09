@@ -16,7 +16,7 @@ const LoadingOverlay = ({ message }) => (
     </div>
 );
 
-const DeleteConfirmationModal = ({ isOpen, onCancel, onConfirm, userName }) => {
+const DeleteConfirmationModal = ({ isOpen, onCancel, onConfirm, userName, isDeleting }) => {
     if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center z-[10001] p-4 animate-in fade-in duration-200">
@@ -31,15 +31,17 @@ const DeleteConfirmationModal = ({ isOpen, onCancel, onConfirm, userName }) => {
                 <div className="flex gap-3 justify-center">
                     <button
                         onClick={onCancel}
-                        className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-200 dark:border-gray-600"
+                        disabled={isDeleting}
+                        className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors border border-gray-200 dark:border-gray-600 disabled:opacity-50"
                     >
                         Annuler
                     </button>
                     <button
                         onClick={onConfirm}
-                        className="px-6 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-md hover:shadow-lg transition-all"
+                        disabled={isDeleting}
+                        className="px-6 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center min-w-[100px]"
                     >
-                        Supprimer
+                        {isDeleting ? "..." : "Supprimer"}
                     </button>
                 </div>
             </div>
@@ -284,6 +286,7 @@ const GestionUtilisateurs = () => {
                 <DeleteConfirmationModal
                     isOpen={showDeleteModal}
                     userName={userToDelete?.username || userToDelete?.name || ""}
+                    isDeleting={isDeleting}
                     onCancel={() => {
                         setShowDeleteModal(false);
                         setUserToDelete(null);

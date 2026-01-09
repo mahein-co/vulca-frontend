@@ -180,6 +180,13 @@ function App() {
 
         return () => window.removeEventListener('storage', checkAuth);
     }, []);
+
+    // Redirect if authenticated but on auth route (clean URL)
+    useEffect(() => {
+        if (isAuthenticated && window.location.pathname.startsWith('/auth')) {
+            window.history.replaceState(null, '', '/');
+        }
+    }, [isAuthenticated]);
     // ...
     // If not authenticated, show auth routes
     if (!isAuthenticated) {

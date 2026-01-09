@@ -77,7 +77,7 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
                             </h1>
                         </div>
 
-                        <nav className="hidden lg:flex items-center space-x-3 xl:space-x-5">
+                        <nav className="hidden xl:flex items-center space-x-3 xl:space-x-5">
                             {filteredNavItems.map((item) => {
                                 const isActive = displayActiveKey === item.key;
                                 return (
@@ -110,7 +110,7 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
                         </button>
 
                         <button
-                            className="lg:hidden p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition mr-2"
+                            className="xl:hidden p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition mr-2"
                             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                             aria-label="Menu"
                         >
@@ -162,7 +162,7 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
 
             {/* Menu Mobile Dropdown */}
             {mobileMenuOpen && (
-                <div className="lg:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg overflow-hidden animate-in slide-in-from-top duration-200">
+                <div className="xl:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg overflow-hidden animate-in slide-in-from-top duration-200">
                     <nav className="px-3 py-3 space-y-1">
                         {filteredNavItems.map((item) => {
                             const isActive = displayActiveKey === item.key;
@@ -185,20 +185,6 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
 
                         <div className="h-px bg-gray-100 my-2" />
 
-                        <button
-                            onClick={() => {
-                                setMobileMenuOpen(false);
-                                setProfileOpen(true);
-                            }}
-                            className="w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition duration-150"
-                        >
-                            <div className="w-8 h-8 bg-gradient-to-br from-cyan-400 to-blue-500 rounded-full flex items-center justify-center mr-4 shadow-sm">
-                                <span className="text-white text-xs font-bold">
-                                    {getInitials(userInfo?.full_name || userInfo?.name || userInfo?.username)}
-                                </span>
-                            </div>
-                            Mon Profil
-                        </button>
                     </nav>
                 </div>
             )}

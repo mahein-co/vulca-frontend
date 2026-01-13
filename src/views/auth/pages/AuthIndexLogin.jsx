@@ -30,6 +30,14 @@ export default function AuthIndexLogin() {
         actionUserLogin(loginFormData);
     };
 
+    // Redirect if already logged in
+    useEffect(() => {
+        const userInfo = localStorage.getItem('userInfo');
+        if (userInfo) {
+            window.location.href = '/';
+        }
+    }, []);
+
     // USE_EFFECT
     useEffect(() => {
         // Check if login is success
@@ -39,6 +47,9 @@ export default function AuthIndexLogin() {
                 // Get current user
                 saveCurrentUserToLS(userInfo);
                 dispatch(actionGetCurrentUser(userInfo));
+
+                // Redirect to dashboard by changing window location
+                window.location.replace('/');
             }, 700);
         }
     }, [dispatch, isSuccess, isLoading, userInfo]);
@@ -46,7 +57,7 @@ export default function AuthIndexLogin() {
     return (
         <React.Fragment>
             <UtilsPageMeta
-                title={"lexaiq | Login"}
+                title={"Vulca | Login"}
                 description={"Authentication page."}
             />
             <LoginForm

@@ -6,14 +6,16 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useTheme } from '../../states/context/ThemeContext';
 
 const COLORS = ['#3b82f6', '#ef4444']; // Blue for Produits, Red for Charges
 
 export default function PieChartRepartition({ data }) {
+  const { isDarkMode } = useTheme();
   // If no data or empty, show a fallback or empty state
   if (!data || data.length === 0) {
     return (
-      <div className="w-full h-80 md:h-96 flex items-center justify-center text-gray-400">
+      <div className="w-full h-80 md:h-96 flex items-center justify-center text-gray-400 dark:text-gray-500">
         Aucune donnée disponible
       </div>
     );
@@ -33,10 +35,10 @@ export default function PieChartRepartition({ data }) {
       const { name, value } = payload[0];
       const percent = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
       return (
-        <div className="bg-white p-3 border border-gray-300 rounded shadow-lg">
-          <p className="font-semibold text-gray-900">{name}</p>
-          <p className="text-blue-600">{Number(value).toLocaleString('fr-FR')} Ar</p>
-          <p className="text-gray-600 text-sm">{percent}%</p>
+        <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-700 rounded shadow-lg">
+          <p className="font-semibold text-gray-900 dark:text-gray-100">{name}</p>
+          <p className="text-blue-600 dark:text-blue-400">{Number(value).toLocaleString('fr-FR')} Ar</p>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">{percent}%</p>
         </div>
       );
     }
@@ -56,6 +58,7 @@ export default function PieChartRepartition({ data }) {
             outerRadius={120}
             fill="#8884d8"
             dataKey="value"
+            stroke={isDarkMode ? "#1f2937" : "#fff"}
           >
             {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

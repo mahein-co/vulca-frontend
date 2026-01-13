@@ -7,14 +7,18 @@ import { useRegisterUserMutation } from "../../../../states/user/userApiSlice";
 import { actionSetNewUser } from "../../../../states/user/userSlice";
 
 import RegisterErrorMessage from "../../message/RegisterErrorMessage";
-import RegisterSuccessMessage from "../../message/RegisterSuccessMessage";
+// import RegisterSuccessMessage from "../../message/RegisterSuccessMessage";
 import { PATHS } from "../../../../states/constants/constants";
 
 export default function RegisterForm() {
     // STATE USERNAME
     const [username, setUsername] = useState(null);
+    // STATE NAME
+    const [name, setName] = useState(null);
     // STATE EMAIL
     const [email, setEmail] = useState(null);
+    // STATE ROLE
+    const [role, setRole] = useState("user");
     // STATE PASSWORD
     const [password, setPassword] = useState(null);
     // STATE PASSWORD CONFIRMATION
@@ -35,7 +39,7 @@ export default function RegisterForm() {
     const [
         actionRegisterUser,
         {
-            data: newUser,
+            // data: newUser,
             isLoading: isLoadingRegister,
             isSuccess: isSuccessRegister,
             isError: isErrorRegister,
@@ -49,6 +53,8 @@ export default function RegisterForm() {
         const registerData = {
             email: email,
             username: username,
+            name: name,
+            role: role,
             password: password,
             password2: passwordConfirmation,
         };
@@ -77,16 +83,7 @@ export default function RegisterForm() {
         <React.Fragment>
             <div className="flex flex-col flex-1 w-full overflow-y-auto lg:w-1/2 no-scrollbar pb-3 sm:pb-7">
                 <React.Fragment>
-                    <div className="w-full flex items-center max-w-md mx-auto mb-5 sm:pt-10">
-                        <BiChevronLeft />
-                        <Link
-                            to={PATHS.HOME}
-                            className="bg-clip-text font-semibold text-transparent bg-gradient-to-r from-slate-800 to-secondary-dark"
-                        >
-                            Accueil
-                        </Link>
-                    </div>
-                    <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto">
+                    <div className="flex flex-col justify-center flex-1 w-full max-w-md mx-auto px-4 sm:px-0 pt-10">
                         <div>
                             <div className="mb-5 sm:mb-8 text-center">
                                 <h1 className="mb-2 text-3xl font-semibold text-slate-800 text-title-sm sm:text-title-md">
@@ -97,25 +94,13 @@ export default function RegisterForm() {
                                 </p>
                             </div>
                             <div>
-                                <React.Fragment>
-                                    {isErrorRegister && (
-                                        <RegisterErrorMessage
-                                            errorMessage={
-                                                errorRegister?.data.data?.message
-                                                    ? errorRegister?.data.data?.message
-                                                    : errorRegister?.data.message
-                                            }
-                                        />
-                                    )}
-                                </React.Fragment>
-                                <form onSubmit={registerUserHandler}>
-                                    <div className="space-y-5">
-                                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2"></div>
+                                <form onSubmit={registerUserHandler} className="mt-8">
+                                    <div className="space-y-4">
                                         {/* <!-- Username --> */}
                                         <div>
                                             <label
                                                 htmlFor="username"
-                                                className="block uppercase  text-slate-600 text-xs font-bold mb-2"
+                                                className="block uppercase  text-slate-600 text-xs font-bold mb-2 ml-1"
                                             >
                                                 Nom d'utilisateur{" "}
                                                 <span className="text-rose-500">&nbsp;*</span>
@@ -123,55 +108,98 @@ export default function RegisterForm() {
                                             <input
                                                 type="text"
                                                 id="username"
+                                                required
                                                 onChange={(e) => setUsername(e.target.value)}
-                                                className="input-color input-global"
+                                                className="border-0 px-3 py-3 placeholder-slate-300 text-slate-600 bg-white rounded-xl text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                                                 name="username"
                                                 placeholder="Votre nom d'utilisateur"
+                                            />
+                                        </div>
+                                        {/* <!-- Name --> */}
+                                        <div>
+                                            <label
+                                                htmlFor="name"
+                                                className="block uppercase  text-slate-600 text-xs font-bold mb-2 ml-1"
+                                            >
+                                                Nom complet{" "}
+                                                <span className="text-rose-500">&nbsp;*</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                id="name"
+                                                required
+                                                onChange={(e) => setName(e.target.value)}
+                                                className="border-0 px-3 py-3 placeholder-slate-300 text-slate-600 bg-white rounded-xl text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                                                name="name"
+                                                placeholder="Votre nom complet"
                                             />
                                         </div>
                                         {/* <!-- Email --> */}
                                         <div>
                                             <label
                                                 htmlFor="email"
-                                                className="block uppercase  text-slate-600 text-xs font-bold mb-2"
+                                                className="block uppercase  text-slate-600 text-xs font-bold mb-2 ml-1"
                                             >
                                                 Email <span className="text-rose-500">&nbsp;*</span>
                                             </label>
                                             <input
                                                 type="email"
                                                 id="email"
-                                                className="input-color input-global"
+                                                required
+                                                className="border-0 px-3 py-3 placeholder-slate-300 text-slate-600 bg-white rounded-xl text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150 valid:ring-green-500 invalid:ring-rose-500 focus:invalid:ring-rose-500"
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 name="email"
                                                 placeholder="Votre email"
                                             />
                                         </div>
-                                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                        {/* <!-- Role --> */}
+                                        <div>
+                                            <label
+                                                htmlFor="role"
+                                                className="block uppercase  text-slate-600 text-xs font-bold mb-2 ml-1"
+                                            >
+                                                Rôle <span className="text-rose-500">&nbsp;*</span>
+                                            </label>
+                                            <select
+                                                id="role"
+                                                required
+                                                onChange={(e) => setRole(e.target.value)}
+                                                className="border-0 px-3 py-3 placeholder-slate-300 text-slate-600 bg-white rounded-xl text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                                                name="role"
+                                                value={role}
+                                            >
+                                                <option value="user">Utilisateur</option>
+                                                <option value="admin">Administrateur</option>
+                                                <option value="assistant">Assistant</option>
+                                            </select>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             {/* <!-- Password --> */}
                                             <div className="sm:col-span-1">
                                                 <label
                                                     htmlFor="Password"
-                                                    className="block uppercase  text-slate-600 text-xs font-bold mb-2"
+                                                    className="block uppercase  text-slate-600 text-xs font-bold mb-2 ml-1"
                                                 >
                                                     Mot de passe{" "}
                                                     <span className="text-rose-500">&nbsp;*</span>
                                                 </label>
                                                 <div className="relative">
                                                     <input
-                                                        className="input-color input-global"
+                                                        className="border-0 px-3 py-3 placeholder-slate-300 text-slate-600 bg-white rounded-xl text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                                                         onChange={(e) => setPassword(e.target.value)}
                                                         name="password"
-                                                        placeholder="Votre mot de passe"
+                                                        required
+                                                        placeholder="Mot de passe"
                                                         type={showPassword ? "text" : "password"}
                                                     />
                                                     <span
                                                         onClick={() => setShowPassword(!showPassword)}
-                                                        className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+                                                        className="absolute z-30 cursor-pointer right-3 top-3 text-slate-500"
                                                     >
                                                         {showPassword ? (
-                                                            <FaRegEyeSlash className="fill-gray-500 dark:fill-gray-400 size-5" />
+                                                            <FaRegEyeSlash size={18} />
                                                         ) : (
-                                                            <FaEye className="fill-gray-500 dark:fill-gray-400 size-5" />
+                                                            <FaEye size={18} />
                                                         )}
                                                     </span>
                                                 </div>
@@ -180,18 +208,19 @@ export default function RegisterForm() {
                                             <div className="sm:col-span-1">
                                                 <label
                                                     htmlFor="ConfirmPassword"
-                                                    className="block uppercase  text-slate-600 text-xs font-bold mb-2"
+                                                    className="block uppercase  text-slate-600 text-xs font-bold mb-2 ml-1"
                                                 >
                                                     Confirmation
                                                     <span className="text-rose-500">&nbsp;*</span>
                                                 </label>
                                                 <div className="relative">
                                                     <input
-                                                        className="input-color input-global"
+                                                        className="border-0 px-3 py-3 placeholder-slate-300 text-slate-600 bg-white rounded-xl text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                                                         onChange={(e) =>
                                                             setPasswordConfirmation(e.target.value)
                                                         }
                                                         name="password2"
+                                                        required
                                                         placeholder="Confirmer"
                                                         type={
                                                             showConfirmationPassword ? "text" : "password"
@@ -203,37 +232,49 @@ export default function RegisterForm() {
                                                                 !showConfirmationPassword
                                                             )
                                                         }
-                                                        className="absolute z-30 -translate-y-1/2 cursor-pointer right-4 top-1/2"
+                                                        className="absolute z-30 cursor-pointer right-3 top-3 text-slate-500"
                                                     >
                                                         {showConfirmationPassword ? (
-                                                            <FaRegEyeSlash className="fill-gray-500 dark:fill-gray-400 size-5" />
+                                                            <FaRegEyeSlash size={18} />
                                                         ) : (
-                                                            <FaEye className="fill-gray-500 dark:fill-gray-400 size-5" />
+                                                            <FaEye size={18} />
                                                         )}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
                                         {/* <!-- Button --> */}
-                                        <div>
+                                        <div className="pt-4">
                                             <button
                                                 disabled={isLoadingRegister}
-                                                className={`${isLoadingRegister ? "bg-slate-800" : ""
-                                                    } bg-slate-800 rounded-xl text-slate-100 text-sm font-bold uppercase px-6 py-3  hover:shadow-sm outline-none focus:outline-none mr-1 mb-1 w-full ease-linear transition-all duration-150`}
+                                                className={`${isLoadingRegister ? "bg-slate-700" : "bg-slate-800 hover:bg-slate-900"} 
+                                                    text-slate-100 text-sm font-bold uppercase px-6 py-4 rounded-xl shadow hover:shadow-lg outline-none focus:outline-none w-full ease-linear transition-all duration-150`}
                                                 type="submit"
                                             >
                                                 {isLoadingRegister ? "inscription ..." : "S'inscrire"}
                                             </button>
                                         </div>
                                     </div>
+
+                                    <React.Fragment>
+                                        {isErrorRegister && (
+                                            <RegisterErrorMessage
+                                                errorMessage={
+                                                    errorRegister?.data.data?.message
+                                                        ? errorRegister?.data.data?.message
+                                                        : errorRegister?.data.message
+                                                }
+                                            />
+                                        )}
+                                    </React.Fragment>
                                 </form>
 
-                                <div className="mt-3">
-                                    <p className="text-sm font-normal text-center text-gray-700 sm:text-start">
-                                        Avez-vous déjà un compte?
+                                <div className="mt-8 text-center">
+                                    <p className="text-sm font-normal text-slate-500">
+                                        Vous avez déjà un compte ?
                                         <Link
                                             to={PATHS.LOGIN}
-                                            className="text-slate-700 ml-1 underline hover:text-purple-800"
+                                            className="text-slate-800 font-bold ml-1 underline hover:text-slate-900"
                                         >
                                             Se connecter
                                         </Link>

@@ -68,9 +68,9 @@ const MetricCard = ({ title, value, icon: Icon, change, changeLabel, isRatio, de
     }
 
     return (
-        <div className="bg-white rounded-lg shadow-md border-t-2 border-gray-300 p-1 flex flex-col justify-between hover:shadow-lg transition-all duration-300 hover:scale-[1.02] min-w-[120px] w-full h-[80px]">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-600 p-1 flex flex-col justify-between hover:shadow-lg transition-all duration-300 hover:scale-[1.02] min-w-[120px] w-full h-[80px]">
             <div className="flex items-start justify-between mb-0.5">
-                <div className={`p-1 rounded-lg ${iconBg} ${iconColor} shadow-sm`}>
+                <div className={`p-1 rounded-lg ${iconBg} ${iconColor} shadow-sm dark:brightness-90`}>
                     <Icon size={10} />
                 </div>
                 {change !== undefined && change !== null && (
@@ -81,9 +81,9 @@ const MetricCard = ({ title, value, icon: Icon, change, changeLabel, isRatio, de
             </div>
 
             <div className="mt-0.5">
-                <p className="text-[9px] sm:text-[10px] font-semibold text-gray-500 uppercase tracking-wide truncate">{title}</p>
-                <p className="text-xs sm:text-sm font-bold text-gray-900 truncate">{value}</p>
-                <p className="text-[8px] text-gray-400 truncate">{description}</p>
+                <p className="text-[9px] sm:text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide truncate">{title}</p>
+                <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 truncate">{value}</p>
+                <p className="text-[8px] text-gray-400 dark:text-gray-500 truncate">{description}</p>
             </div>
         </div>
     );
@@ -96,15 +96,15 @@ const PaginationControls = ({ currentPage, totalPages, totalItems, setCurrentPag
     const endItem = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
 
     return (
-        <div className="flex flex-col sm:flex-row justify-between items-center px-3 py-1 bg-white border-t border-gray-200">
-            <p className="text-xs text-gray-600 mb-2 sm:mb-0">
+        <div className="flex flex-col sm:flex-row justify-between items-center px-3 py-1 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 sm:mb-0">
                 Lignes <span className="font-semibold">{startItem}</span> à <span className="font-semibold">{endItem}</span> sur <span className="font-semibold">{totalItems}</span> (Page <span className="font-semibold">{currentPage}</span>/<span className="font-semibold">{totalPages || 1}</span>)
             </p>
             <div className="flex justify-center space-x-2">
                 <button
                     onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                     disabled={isPrevDisabled}
-                    className="px-2 py-1 rounded-lg text-xs font-medium transition bg-white border border-gray-300 text-gray-700 hover:bg-indigo-50 hover:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-sm"
+                    className="px-2 py-1 rounded-lg text-xs font-medium transition bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-600 hover:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-sm"
                 >
                     <ChevronLeft size={14} className="mr-1" />
                     Préc.
@@ -112,7 +112,7 @@ const PaginationControls = ({ currentPage, totalPages, totalItems, setCurrentPag
                 <button
                     onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                     disabled={isNextDisabled}
-                    className="px-2 py-1 rounded-lg text-xs font-medium transition bg-white border border-gray-300 text-gray-700 hover:bg-indigo-50 hover:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-sm"
+                    className="px-2 py-1 rounded-lg text-xs font-medium transition bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-indigo-50 dark:hover:bg-gray-600 hover:border-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center shadow-sm"
                 >
                     Suiv.
                     <ChevronRight size={14} className="ml-1" />
@@ -135,6 +135,8 @@ const TransactionView = () => {
     const [bilanKpisData, setBilanKpisData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [totalItems, setTotalItems] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
 
     // NOUVELLE LOGIQUE DE PÉRIODE
     const [availableYears, setAvailableYears] = useState([]);
@@ -224,8 +226,61 @@ const TransactionView = () => {
         if (!res.ok) throw new Error("Erreur lors du chargement des données");
 
         const json = await res.json();
-        const data = Array.isArray(json) ? json : (json.results || []);
-        setter(normalizer(data));
+
+        // Support PAGINATION DRF (StandardPagination)
+        // json = { count: 100, next: "...", previous: "...", results: [...] }
+        if (json.results && Array.isArray(json.results)) {
+            setter(normalizer(json.results));
+            // On pourrait aussi setter le total count ici si on avait un state pour ça
+            // Mais pour l'instant on garde la logique existante où la pagination est "visuelle"
+            // ATTENTION: La pagination actuelle du composant est client-side.
+            // Si on passe en server-side, il faut modifier toute la logique de pagination du composant.
+
+            // Pour cette étape, on va adapter le composant pour qu'il soit Hybride ou Full Server-side.
+            // Vu que le composant gère "currentPage", on va l'envoyer au backend.
+            return { results: json.results, count: json.count };
+        } else {
+            // Fallback ancien format (array direct)
+            const data = Array.isArray(json) ? json : (json.results || []);
+            setter(normalizer(data));
+            return { results: data, count: data.length };
+        }
+    };
+
+    const fetchData = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            // Paramètres communs
+            const commonParams = {
+                date_start: dateDebut,
+                date_end: dateFin,
+                // AJOUT PAGINATION SERVEUR
+                page: currentPage,
+                // page_size: itemsPerPage // Optionnel si on veut forcer différent du défaut serveur (20)
+            };
+
+            if (recherche) commonParams.search = recherche;
+
+            if (selectedSection === 'bilan') {
+                const { results, count } = await fetchWithParams(`${BASE_URL_API}/bilans/`, commonParams, normalizeBilanData, setBilanData);
+                setTotalItems(count);
+                // Si le serveur renvoie count, on calcule nb pages
+                // Note: itemsPerPage doit être aligné avec le serveur (20 par défaut dans StandardPagination)
+                // Ou on récupère pageSize du serveur si possible (pas standard DRF).
+                // On va supposer 20 pour le moment ou ajuster itemsPerPage coté front.
+                setTotalPages(Math.ceil(count / ITEMS_PER_PAGE));
+            } else {
+                const { results, count } = await fetchWithParams(`${BASE_URL_API}/CompteResultats/`, commonParams, normalizeCompteResultatData, setCompteResultatData);
+                setTotalItems(count);
+                setTotalPages(Math.ceil(count / ITEMS_PER_PAGE));
+            }
+        } catch (err) {
+            console.error(err);
+            setError("Impossible de charger les données. Vérifiez votre connexion.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const fetchKPIs = async () => {
@@ -293,6 +348,7 @@ const TransactionView = () => {
         if (dateDebut && dateFin) {
             filtered = filtered.filter(item => {
                 // Robust String Comparison (YYYY-MM-DD)
+                const itemsPerPage = 20; // Aligné avec StandardPagination backend
                 const itemDate = (item.date || '').substring(0, 10);
                 const start = (dateDebut || '').substring(0, 10);
                 const end = (dateFin || '').substring(0, 10);
@@ -379,118 +435,103 @@ const TransactionView = () => {
         ['Ratio Endettement', calculations.endettementRatio, calculations.endettementChange, true, FileText, 'Dettes/CP']
     ];
 
-    const allDetails = useMemo(() => selectedSection === 'bilan' ? filterData(bilanData, true) : filterData(compteResultatData, false), [selectedSection, bilanData, compteResultatData, recherche, selectedYear, dateDebut, dateFin]);
-    const totalPages = Math.ceil(allDetails.length / ITEMS_PER_PAGE);
-    const totalItems = allDetails.length;
-    const paginatedDetails = useMemo(() => allDetails.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE), [currentPage, allDetails]);
+    // AVEC PAGINATION SERVEUR :
+    // allDetails contient déjà uniquement les résultats de la page courante renvoyés par l'API
+    const allDetails = useMemo(() => selectedSection === 'bilan' ? bilanData : compteResultatData, [selectedSection, bilanData, compteResultatData]);
+
+    // On ne fait plus de slice ici, on prend tout ce que l'API nous a donné pour cette page
+    const paginatedDetails = allDetails;
+
+    // Note: totalItems est mis à jour dans fetchData via le 'count' de l'API
+    // totalPages aussi est mis à jour dans fetchData
+    // On ignore le calcul local basé sur allDetails.length qui ne serait que de 20 max.
 
     return (
-        <div className="h-screen flex flex-col overflow-hidden bg-gray-50">
+        <div className="fixed inset-0 pt-14 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
             <main className="flex-1 flex flex-col min-h-0 overflow-hidden p-2 gap-2">
                 {/* Période d'exercice */}
                 {/* Période d'exercice */}
-                {/* 1. PÉRIODE D'EXERCICE - Style Dashboard */}
-                <div className="bg-white p-3 rounded-xl shadow-sm border border-gray-100 mb-2 transition-all hover:shadow-md">
-                    <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-
-                        {/* HEADER MOBILE/TABLET */}
-                        <div className="flex-shrink-0">
-                            <h2 className="text-lg font-bold text-gray-800 tracking-tight flex items-center">
-                                <span className="bg-indigo-100 text-indigo-600 p-1.5 rounded-lg mr-2">
-                                    <Calendar size={10} />
-                                </span>
-                                Période d'exercice
-
-
-                            </h2>
-                            <p className="text-xs text-gray-500 font-medium ml-9">Sélectionnez la période à analyser</p>
-                        </div>
-
-                        {/* CONTROLS CONTAINER */}
-                        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto items-start sm:items-center flex-wrap">
-
-                            {/* 1. ANNEE */}
-                            <div className="relative group w-full sm:w-auto">
-                                <select
-                                    value={selectedYear}
-                                    onChange={(e) => setSelectedYear(e.target.value)}
-                                    className="w-full sm:w-auto appearance-none bg-indigo-50 hover:bg-indigo-100 transition-colors border-0 text-indigo-700 text-sm font-bold rounded-lg py-2.5 pl-4 pr-10 cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm"
-                                >
-                                    {availableYears.map(year => (
-                                        <option key={year} value={year}>{year}</option>
-                                    ))}
-                                </select>
-                                <ChevronRight className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-indigo-500 rotate-90" />
-                            </div>
-
-                            {/* 2. MODE SELECTOR */}
-                            <div className="flex bg-gray-100 p-1 rounded-lg overflow-x-auto max-w-full no-scrollbar w-full sm:w-auto">
-                                {[
-                                    { id: 'ANNUAL', label: 'Annuel' },
-                                    { id: 'QUARTERLY', label: 'Trimestriel' },
-                                    { id: 'MONTHLY', label: 'Mensuel' },
-                                ].map(mode => (
-                                    <button
-                                        key={mode.id}
-                                        onClick={() => {
-                                            setPeriodMode(mode.id);
-                                            setSelectedSubPeriod(null);
-                                        }}
-                                        className={`flex-1 sm:flex-none px-4 py-2 text-sm font-medium rounded-md whitespace-nowrap transition-all duration-200 ${periodMode === mode.id
-                                            ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-black/5'
-                                            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-200'
-                                            }`}
-                                    >
-                                        {mode.label}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* 3. SUB-PERIOD SELECTOR (Animated) */}
-                            {periodMode !== 'ANNUAL' && (
-                                <div className="animate-fadeIn w-full sm:w-auto contents sm:block">
-                                    <select
-                                        value={selectedSubPeriod || ''}
-                                        onChange={(e) => setSelectedSubPeriod(e.target.value)}
-                                        className="w-full sm:w-40 bg-white border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-2.5 font-medium shadow-sm transition-all hover:border-indigo-300"
-                                    >
-                                        <option value="">Choisir...</option>
-                                        {periodMode === 'QUARTERLY' ? (
-                                            <>
-                                                <option value="T1">T1 (Jan-Mar)</option>
-                                                <option value="T2">T2 (Avr-Jun)</option>
-                                                <option value="T3">T3 (Juil-Sep)</option>
-                                                <option value="T4">T4 (Oct-Déc)</option>
-                                            </>
-                                        ) : (
-                                            Array.from({ length: 12 }, (_, i) => {
-                                                const m = i + 1;
-                                                const date = new Date(2000, i, 1);
-                                                const monthName = date.toLocaleString('fr-FR', { month: 'long' });
-                                                return <option key={`M${m}`} value={`M${m}`}>{monthName.charAt(0).toUpperCase() + monthName.slice(1)}</option>;
-                                            })
-                                        )}
-                                    </select>
-                                </div>
-                            )}
-
-                        </div>
-
-                        {/* DATE RANGE DISPLAY (Desktop: Right aligned) */}
-                        <div className="hidden lg:flex items-center text-xs font-mono text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 whitespace-nowrap ml-auto">
-                            <Calendar size={12} className="mr-2 text-gray-400" />
-                            {dateDebut} <span className="mx-2 text-gray-300">|</span> {dateFin}
-                        </div>
+                {/* 1. PÉRIODE D'EXERCICE - Style GestionPiecesBoard */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700">
+                    <div className="mb-2 sm:mb-0">
+                        <p className="font-semibold text-gray-800 dark:text-gray-100 flex items-center">
+                            Période d'exercice
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Sélectionnez la période à analyser</p>
                     </div>
-                    {/* DATE RANGE DISPLAY (Mobile/Tablet only: Bottom full width) */}
-                    <div className="lg:hidden mt-4 flex items-center justify-center text-xs font-mono text-gray-500 bg-gray-50 py-2 rounded-lg border-t border-gray-100 w-full">
-                        <Calendar size={12} className="mr-2" />
-                        {dateDebut} <span className="mx-2">→</span> {dateFin}
+
+                    <div className="flex flex-wrap gap-2 sm:space-x-3 items-center text-sm">
+
+                        {/* 1. ANNEE */}
+                        <div className="relative group w-full sm:w-auto">
+                            <select
+                                value={selectedYear}
+                                onChange={(e) => setSelectedYear(e.target.value)}
+                                className="w-full sm:w-auto appearance-none bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors border-0 text-indigo-700 dark:text-indigo-300 text-sm font-bold rounded-lg py-1.5 pl-3 pr-8 cursor-pointer focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-sm"
+                            >
+                                {availableYears.map(year => (
+                                    <option key={year} value={year}>{year}</option>
+                                ))}
+                            </select>
+                            <ChevronRight className="pointer-events-none absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-indigo-500 rotate-90" />
+                        </div>
+
+                        {/* 2. MODE SELECTOR */}
+                        <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg overflow-x-auto max-w-full no-scrollbar w-full sm:w-auto">
+                            {[
+                                { id: 'ANNUAL', label: 'Annuel' },
+                                { id: 'QUARTERLY', label: 'Trimestriel' },
+                                { id: 'MONTHLY', label: 'Mensuel' },
+                            ].map(mode => (
+                                <button
+                                    key={mode.id}
+                                    onClick={() => {
+                                        setPeriodMode(mode.id);
+                                        setSelectedSubPeriod(null);
+                                    }}
+                                    className={`flex-1 sm:flex-none px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md whitespace-nowrap transition-all duration-200 ${periodMode === mode.id
+                                        ? 'bg-white dark:bg-gray-600 text-indigo-600 dark:text-indigo-300 shadow-sm ring-1 ring-black/5 dark:ring-white/10'
+                                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                        }`}
+                                >
+                                    {mode.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* 3. SUB-PERIOD SELECTOR (Animated) */}
+                        {periodMode !== 'ANNUAL' && (
+                            <div className="animate-fadeIn w-full sm:w-auto contents sm:block">
+                                <select
+                                    value={selectedSubPeriod || ''}
+                                    onChange={(e) => setSelectedSubPeriod(e.target.value)}
+                                    className="w-full sm:w-32 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-xs sm:text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-1.5 font-medium shadow-sm transition-all hover:border-indigo-300 dark:hover:border-indigo-500"
+                                >
+                                    <option value="">Choisir...</option>
+                                    {periodMode === 'QUARTERLY' ? (
+                                        <>
+                                            <option value="T1">T1 (Jan-Mar)</option>
+                                            <option value="T2">T2 (Avr-Jun)</option>
+                                            <option value="T3">T3 (Juil-Sep)</option>
+                                            <option value="T4">T4 (Oct-Déc)</option>
+                                        </>
+                                    ) : (
+                                        Array.from({ length: 12 }, (_, i) => {
+                                            const m = i + 1;
+                                            const date = new Date(2000, i, 1);
+                                            const monthName = date.toLocaleString('fr-FR', { month: 'long' });
+                                            return <option key={`M${m}`} value={`M${m}`}>{monthName.charAt(0).toUpperCase() + monthName.slice(1)}</option>;
+                                        })
+                                    )}
+                                </select>
+                            </div>
+                        )}
+
                     </div>
                 </div>
 
                 {/* 2. BARRE DE RECHERCHE */}
-                <div className="bg-white p-1.5 rounded-xl shadow-lg border border-gray-100 mb-2">
+                <div className="bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 mb-2">
                     <div className="flex items-center space-x-2">
                         <div className="pl-2">
                             <Search className="h-4 w-4 text-gray-400" />
@@ -500,7 +541,7 @@ const TransactionView = () => {
                             placeholder="Rechercher par compte, libellé..."
                             value={recherche}
                             onChange={(e) => setRecherche(e.target.value)}
-                            className="w-full p-1.5 border-0 focus:ring-0 text-xs placeholder-gray-400"
+                            className="w-full p-1.5 border-0 focus:ring-0 text-xs placeholder-gray-400 dark:placeholder-gray-500 bg-transparent dark:text-gray-100"
                         />
                     </div>
                 </div>
@@ -508,8 +549,8 @@ const TransactionView = () => {
                 {error && <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-md flex items-start">
                     <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={24} />
                     <div className="ml-3 flex-1">
-                        <h3 className="text-base font-bold text-red-800 mb-1">Erreur de chargement</h3>
-                        <p className="text-sm text-red-700">{error}</p>
+                        <h3 className="text-base font-bold text-red-800 dark:text-red-300 mb-1">Erreur de chargement</h3>
+                        <p className="text-sm text-red-700 dark:text-red-200">{error}</p>
                     </div>
                     <button onClick={() => window.location.reload()} className="ml-4 px-3 py-1 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition">Réessayer</button>
                 </div>}
@@ -561,34 +602,34 @@ const TransactionView = () => {
                 {/* Bilan & Compte Résultat */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-2 px-2">
                     <div onClick={() => { setSelectedSection('bilan'); setCurrentPage(1); }}
-                        className={`p-2.5 bg-white rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'bilan' ? 'border-t-4 border-indigo-500 scale-[1.005]' : 'border-t-2 border-gray-300 hover:border-indigo-300'}`}>
+                        className={`p-2.5 bg-white dark:bg-gray-800 rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'bilan' ? 'border-t-4 border-indigo-500 scale-[1.005]' : 'border-t-2 border-gray-300 dark:border-gray-600 hover:border-indigo-300 dark:hover:border-indigo-500'}`}>
                         <div className="flex items-center space-x-2 mb-1.5">
                             <div className="p-1 rounded-lg bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600">
                                 <Scale size={10} />
                             </div>
-                            <h3 className="text-xs font-bold text-gray-800">Bilan</h3>
+                            <h3 className="text-xs font-bold text-gray-800 dark:text-gray-100">Bilan</h3>
                             {calculations.bilanEquilibre ? <CheckCircle size={12} className="text-emerald-500 ml-auto" /> : <XCircle size={12} className="text-red-500 ml-auto" />}
                         </div>
-                        <p className="text-[9px] text-gray-500 mb-1.5 ml-1 leading-tight">Situation financière à une date donnée (Actifs = Passifs + Capitaux Propres).</p>
-                        <div className='text-[9px] sm:text-[10px] space-y-0.5 text-gray-700 px-1'>
-                            <p className="flex justify-between"><span>Total Actif :</span> <span className="font-bold text-indigo-700">{formatCurrency(calculations.totalActif)}</span></p>
-                            <p className="flex justify-between"><span>Total Passif (Dettes + CP) :</span> <span className="font-bold text-indigo-700">{formatCurrency(calculations.totalPassif)}</span></p>
+                        <p className="text-[9px] text-gray-500 dark:text-gray-400 mb-1.5 ml-1 leading-tight">Situation financière à une date donnée (Actifs = Passifs + Capitaux Propres).</p>
+                        <div className='text-[9px] sm:text-[10px] space-y-0.5 text-gray-700 dark:text-gray-300 px-1'>
+                            <p className="flex justify-between"><span>Total Actif :</span> <span className="font-bold text-indigo-700 dark:text-indigo-400">{formatCurrency(calculations.totalActif)}</span></p>
+                            <p className="flex justify-between"><span>Total Passif (Dettes + CP) :</span> <span className="font-bold text-indigo-700 dark:text-indigo-400">{formatCurrency(calculations.totalPassif)}</span></p>
                         </div>
                     </div>
                     <div onClick={() => { setSelectedSection('compteResultat'); setCurrentPage(1); }}
-                        className={`p-2.5 bg-white rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'compteResultat' ? 'border-t-4 border-emerald-500 scale-[1.005]' : 'border-t-2 border-gray-300 hover:border-emerald-300'}`}>
+                        className={`p-2.5 bg-white dark:bg-gray-800 rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'compteResultat' ? 'border-t-4 border-emerald-500 scale-[1.005]' : 'border-t-2 border-gray-300 dark:border-gray-600 hover:border-emerald-300 dark:hover:border-emerald-500'}`}>
                         <div className="flex items-center space-x-2 mb-2">
                             <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600">
                                 <DollarSign size={10} />
                             </div>
-                            <h3 className="text-sm font-bold text-gray-800">Compte de Résultat</h3>
+                            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Compte de Résultat</h3>
                             <CheckCircle size={14} className="text-emerald-500 ml-auto" />
                         </div>
-                        <p className="text-[10px] text-gray-500 mb-2 ml-1 leading-tight">Synthèse des produits et charges pour calculer le résultat net.</p>
-                        <div className='text-[10px] sm:text-xs space-y-1 text-gray-700 px-1'>
-                            <p className="flex justify-between"><span>Produits :</span> <span className="font-bold text-emerald-700">{formatCurrency(calculations.produits)}</span></p>
-                            <p className="flex justify-between"><span>Charges :</span> <span className="font-bold text-emerald-700">{formatCurrency(calculations.charges)}</span></p>
-                            <p className="flex justify-between border-t border-gray-100 pt-1"><span>Résultat Net :</span> <span className={`font-bold ${calculations.resultatNet >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{formatCurrency(calculations.resultatNet)}</span></p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-2 ml-1 leading-tight">Synthèse des produits et charges pour calculer le résultat net.</p>
+                        <div className='text-[10px] sm:text-xs space-y-1 text-gray-700 dark:text-gray-300 px-1'>
+                            <p className="flex justify-between"><span>Produits :</span> <span className="font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(calculations.produits)}</span></p>
+                            <p className="flex justify-between"><span>Charges :</span> <span className="font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(calculations.charges)}</span></p>
+                            <p className="flex justify-between border-t border-gray-100 dark:border-gray-700 pt-1"><span>Résultat Net :</span> <span className={`font-bold ${calculations.resultatNet >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>{formatCurrency(calculations.resultatNet)}</span></p>
                         </div>
                     </div>
                 </div>
@@ -596,7 +637,7 @@ const TransactionView = () => {
                 {/* Table des détails */}
                 <div className="px-2 flex-1 min-h-0 relative">
                     {loading && (
-                        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-20 flex justify-center items-center rounded-xl">
+                        <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm z-20 flex justify-center items-center rounded-xl">
                             <div className="flex flex-col items-center max-w-sm w-full text-center">
                                 <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
                                     <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
@@ -606,11 +647,11 @@ const TransactionView = () => {
                             </div>
                         </div>
                     )}
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex flex-col h-auto max-h-[260px] flex-shrink-0">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-full">
                         <div className="overflow-auto min-h-0">
                             <table className="w-full border-collapse text-xs sm:text-sm min-w-[800px] table-fixed">
                                 <thead className="sticky top-0 z-10">
-                                    <tr className="bg-gray-800 text-white">
+                                    <tr className="bg-gray-800 dark:bg-gray-950 text-white">
                                         <th className="w-[15%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Date</th>
                                         <th className="w-[10%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Compte</th>
                                         <th className="w-[40%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
@@ -621,47 +662,47 @@ const TransactionView = () => {
                                         <th className="w-[15%] px-2 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Montant</th>
                                     </tr>
                                 </thead>
-                                <tbody className="bg-white">
+                                <tbody className="bg-white dark:bg-gray-800">
                                     {loading ? [...Array(ITEMS_PER_PAGE)].map((_, i) =>
                                         <tr key={i} className="animate-pulse">
                                             {[...Array(5)].map((_, j) =>
-                                                <td key={j} className="border-b border-gray-100 px-3 py-2.5">
-                                                    <div className="h-4 bg-gray-200 rounded"></div>
+                                                <td key={j} className="border-b border-gray-100 dark:border-gray-700 px-3 py-2.5">
+                                                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
                                                 </td>
                                             )}
                                         </tr>
                                     ) : paginatedDetails.map((item, idx) => (
-                                        <tr key={idx} className={`hover:bg-emerald-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                            <td className="w-[15%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-gray-700 font-semibold">{formatDate(item.date)}</td>
-                                            <td className="w-[10%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs">
-                                                <span className="bg-gray-200 text-gray-700 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{item.numero_compte}</span>
+                                        <tr key={idx} className={`hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'}`}>
+                                            <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-gray-700 dark:text-gray-300 font-semibold">{formatDate(item.date)}</td>
+                                            <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs">
+                                                <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{item.numero_compte}</span>
                                             </td>
-                                            <td className="w-[40%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-gray-800 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
-                                            <td className="w-[20%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 hidden md:table-cell">
+                                            <td className="w-[40%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-gray-800 dark:text-gray-200 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
+                                            <td className="w-[20%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 hidden md:table-cell">
                                                 <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 inline-flex text-[10px] font-bold rounded-full ${selectedSection === 'bilan'
                                                     ? item.categorie?.toLowerCase().includes('actif')
-                                                        ? 'bg-blue-100 text-blue-700'
+                                                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                                                         : item.categorie?.toLowerCase().includes('passif') || item.categorie?.toLowerCase().includes('capitaux')
-                                                            ? 'bg-orange-100 text-orange-700'
-                                                            : 'bg-gray-100 text-gray-700'
+                                                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                                                     : item.nature?.toLowerCase().includes('produit')
-                                                        ? 'bg-emerald-100 text-emerald-700'
-                                                        : 'bg-orange-100 text-orange-700'
+                                                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                                                        : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
                                                     }`}>
                                                     {(item.categorie || item.nature || '').replace(/_/g, ' ')}
                                                 </span>
                                             </td>
-                                            <td className="w-[15%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-right font-bold text-gray-900">{formatCurrency(item.montant_ar)}</td>
+                                            <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-right font-bold text-gray-900 dark:text-gray-100">{formatCurrency(item.montant_ar)}</td>
                                         </tr>
                                     ))}
                                     {(!loading && paginatedDetails.length < ITEMS_PER_PAGE) && (
                                         Array.from({ length: ITEMS_PER_PAGE - paginatedDetails.length }).map((_, idx) => (
-                                            <tr key={`empty-${idx}`} className="bg-white">
-                                                <td className="w-[15%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
-                                                <td className="w-[10%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
-                                                <td className="w-[40%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
-                                                <td className="w-[20%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none hidden md:table-cell">-</td>
-                                                <td className="w-[15%] border-b border-gray-100 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none text-right">-</td>
+                                            <tr key={`empty-${idx}`} className="bg-white dark:bg-gray-800">
+                                                <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                                                <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                                                <td className="w-[40%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
+                                                <td className="w-[20%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none hidden md:table-cell">-</td>
+                                                <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none text-right">-</td>
                                             </tr>
                                         ))
                                     )}

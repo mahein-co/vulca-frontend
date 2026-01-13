@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
+import { useTheme } from '../../states/context/ThemeContext';
 import axios from 'axios';
 import { BASE_URL_API } from '../../constants/globalConstants';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
 } from 'recharts';
 
 export default function BarCharts({ globalDateStart, globalDateEnd }) {
+  const { isDarkMode } = useTheme();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -44,82 +46,91 @@ export default function BarCharts({ globalDateStart, globalDateEnd }) {
       });
   }, [globalDateStart, globalDateEnd]);
 
+  // Formater la période globale pour le sous-titre
+  const startDateStr = globalDateStart ? new Date(globalDateStart).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : '';
+  const endDateStr = globalDateEnd ? new Date(globalDateEnd).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : '';
+  const dateRangeStr = startDateStr && endDateStr ? `${startDateStr} - ${endDateStr}` : 'Période sélectionnée';
+
   if (loading) {
     return (
-      <div className="bg-white p-5 sm:p-8 rounded-xl h-full border border-gray-100 flex items-center justify-center">
-        <p className="text-gray-500">Chargement des données...</p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 h-full border-t-2 border-gray-300 dark:border-gray-700 flex items-center justify-center">
+        <div className="text-gray-500 dark:text-gray-400">Chargement des données...</div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white p-5 sm:p-8 rounded-xl h-full border border-gray-100 transition duration-300 hover:shadow-3xl">
-      
-      {/* 🚀 En-tête Amélioré */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 border-b pb-4">
-        <h3 className="text-xl font-extrabold text-gray-900 tracking-tight">
-          📈 Top 10 des comptes les plus mouvementés
-        </h3>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 h-full border-t-2 border-gray-300 dark:border-gray-700 relative">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2">
+        <div>
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100">
+            Top 10 des comptes les plus mouvementés
+          </h3>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {dateRangeStr}
+          </p>
+        </div>
       </div>
 
-      <div className="w-full h-96 lg:h-[520px]">
+      <div className="w-full h-80 sm:h-96">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 10, right: 30, left: 60, bottom: 100 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis 
-              dataKey="label" 
+          <BarChart data={data} margin={{ top: 20, right: 10, left: 0, bottom: 50 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDarkMode ? "#374151" : "#f3f4f6"} />
+            <XAxis
+              dataKey="label"
               angle={-45}
               textAnchor="end"
-              height={100}
-              tick={{ fontSize: 12 }}
-              stroke="#4b5563"
+              height={60}
+              tick={{ fontSize: 11, fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
+              axisLine={false}
+              tickLine={false}
+              dy={10}
+              stroke={isDarkMode ? "#4b5563" : "#9ca3af"}
             />
-            <YAxis 
-              stroke="#4b5563" 
+            <YAxis
+              stroke={isDarkMode ? "#4b5563" : "#9ca3af"}
               width={60}
-              tickFormatter={(value) => `${(value / 1000000).toFixed(0)}M`}
-              tick={{ fill: '#4b5563', fontSize: 12 }}
+              tickFormatter={(value) => (value / 1000000).toFixed(0) + 'M'}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 10, fill: isDarkMode ? '#9ca3af' : '#6b7280' }}
             />
-            
-            {/* 💡 Tooltip (Info-bulle) Stylisé */}
+
             <Tooltip
-              cursor={{ fill: '#f3f4f6', opacity: 0.8 }} // Ajout d'un curseur
+              cursor={{ fill: isDarkMode ? '#374151' : '#f9fafb' }}
               contentStyle={{
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
-                padding: '10px',
+                backgroundColor: isDarkMode ? '#1f2937' : '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                padding: '12px',
+                color: isDarkMode ? '#f3f4f6' : '#374151'
               }}
-              labelStyle={{ fontWeight: 'bold', color: '#1f2937', marginBottom: '5px' }}
+              itemStyle={{ color: isDarkMode ? '#f3f4f6' : '#374151' }}
               formatter={(value, name) => {
-                if (name === 'Montant Mouvementé') {
-                  // Formatage monétaire pour l'Afrique Francophone (ou France)
-                  return [value.toLocaleString('fr-FR', { minimumFractionDigits: 0 }) + ' Ar', name];
-                }
-                return value;
+                const amount = Number(value).toLocaleString('fr-FR', { minimumFractionDigits: 0 });
+                return [amount + ' Ar', 'Mouvement'];
               }}
               labelFormatter={(label) => {
-                const item = data.find(d => d.label === label); // Recherche par 'label'
+                const item = data.find(d => d.label === label);
                 return item ? `Compte ${item.account} : ${item.label}` : label;
               }}
             />
 
-            {/* Légende en bas et centrée */}
-            <Legend 
-                wrapperStyle={{ paddingTop: '20px' }} 
-                verticalAlign="bottom" 
-                align="center"
+            <Legend
+              wrapperStyle={{ paddingTop: '0px', top: -30 }}
+              verticalAlign="top"
+              align="center"
+              iconType="circle"
+              iconSize={8}
             />
-            
-            {/* 📊 Barres Stylisées */}
+
             <Bar
               dataKey="movement"
               fill={barColor}
               name="Montant Mouvementé"
-              radius={[10, 10, 0, 0]} // Coins supérieurs plus arrondis
-              // Ajout d'une légère ombre portée pour un effet 3D subtil
-              style={{ filter: 'drop-shadow(0 4px 3px rgba(0, 0, 0, 0.1))' }} 
+              radius={[2, 2, 0, 0]}
+              maxBarSize={40}
             />
           </BarChart>
         </ResponsiveContainer>

@@ -30,14 +30,14 @@ const BackToFormsPage = ({ onClick }) => (
 
 // Composant Overlay de Chargement
 const LoadingOverlay = ({ message }) => (
-    <div className="fixed inset-0 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
+    <div className="fixed inset-0 bg-white/60 dark:bg-black/80 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center max-w-sm w-full text-center">
             {/* Spinner style iOS/moderne */}
             <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-                <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
+                <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
                 <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
-            <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">{message}</p>
+            <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 animate-pulse px-4">{message}</p>
         </div>
     </div>
 );
@@ -220,13 +220,13 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
 
             <div className="w-full h-full flex flex-col overflow-hidden">
                 {/* Header fixe */}
-                <div className="flex-shrink-0 bg-white border-b shadow-sm sticky top-0 z-20">
+                <div className="flex-shrink-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm sticky top-0 z-20">
                     <div className="max-w-7xl mx-auto px-3 py-2">
                         <div className="flex justify-between items-center">
                             <div className="flex-shrink-0">
                                 <BackToFormsPage onClick={onSaisieCompleted} />
                             </div>
-                            <h1 className="text-base font-bold text-gray-800 flex-1 text-center px-4">
+                            <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 flex-1 text-center px-4">
                                 Saisie Manuelle de Fiche de Paie
                             </h1>
                             <div className="flex-shrink-0 w-[88px]"></div>
@@ -235,91 +235,91 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
                 </div>
 
                 {/* Contenu scrollable */}
-                <div className="flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-gray-900">
                     <div className="max-w-7xl mx-auto w-full p-3">
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
 
                             {/* Card 1: Informations Générales */}
-                            <div className="bg-white rounded-lg shadow-md p-4 border-t-2 border-gray-300">
-                                <h2 className="text-base font-semibold text-gray-800 mb-3">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border-t-2 border-gray-300 dark:border-gray-700">
+                                <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">
                                     Informations Employé & Paiement
                                 </h2>
                                 <div className="grid grid-cols-1 gap-3">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Employé</label>
-                                        <input type="text" name="employe" value={formData.employe} onChange={handleChange} placeholder="Nom de l'employé" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.employe ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Employé</label>
+                                        <input type="text" name="employe" value={formData.employe} onChange={handleChange} placeholder="Nom de l'employé" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.employe ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">N° Fiche de Paye</label>
-                                            <input type="text" name="numFichePaie" value={formData.numFichePaie} onChange={handleChange} placeholder="ex: PAIE-2025-01" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.numFichePaie ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">N° Fiche de Paye</label>
+                                            <input type="text" name="numFichePaie" value={formData.numFichePaie} onChange={handleChange} placeholder="ex: PAIE-2025-01" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.numFichePaie ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">Période de Paiement</label>
-                                            <input type="text" name="periodePaie" value={formData.periodePaie} onChange={handleChange} placeholder="ex: Janvier 2025" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.periodePaie ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Période de Paiement</label>
+                                            <input type="text" name="periodePaie" value={formData.periodePaie} onChange={handleChange} placeholder="ex: Janvier 2025" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.periodePaie ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">Date Émission</label>
-                                            <input type="date" name="dateEmission" value={formData.dateEmission} onChange={handleChange} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.dateEmission ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date Émission</label>
+                                            <input type="date" name="dateEmission" value={formData.dateEmission} onChange={handleChange} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.dateEmission ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">Date Échéance</label>
-                                            <input type="date" name="dateEcheance" value={formData.dateEcheance} onChange={handleChange} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 ${validationErrors.dateEcheance ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date Échéance</label>
+                                            <input type="date" name="dateEcheance" value={formData.dateEcheance} onChange={handleChange} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.dateEcheance ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* Card 2: Détails Financiers */}
-                            <div className="bg-white rounded-lg shadow-md p-4 border-t-2 border-gray-300">
-                                <h2 className="text-base font-semibold text-gray-800 mb-3">
+                            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border-t-2 border-gray-300 dark:border-gray-700">
+                                <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">
                                     Détails du Salaire
                                 </h2>
 
                                 <div className="space-y-3">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-900 mb-1 uppercase tracking-wide">Salaire Brut (Ar)</label>
-                                        <input type="text" name="salaireBrut" value={formData.salaireBrut} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-base font-semibold rounded-md text-gray-900 text-right bg-gray-50 ${validationErrors.salaireBrut ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-indigo-500'}`} />
+                                        <label className="block text-xs font-medium text-gray-900 dark:text-gray-100 mb-1 uppercase tracking-wide">Salaire Brut (Ar)</label>
+                                        <input type="text" name="salaireBrut" value={formData.salaireBrut} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-base font-semibold rounded-md text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${validationErrors.salaireBrut ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4 pt-2">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">Cotisation Salariale</label>
-                                            <input type="text" name="cotisationSalariale" value={formData.cotisationSalariale} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 text-right" />
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cotisation Salariale</label>
+                                            <input type="text" name="cotisationSalariale" value={formData.cotisationSalariale} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 text-right" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 mb-1">Cotisation Patronale</label>
-                                            <input type="text" name="cotisationPatronale" value={formData.cotisationPatronale} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 text-right" />
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cotisation Patronale</label>
+                                            <input type="text" name="cotisationPatronale" value={formData.cotisationPatronale} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 text-right" />
                                         </div>
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-600 mb-1">Retenue à la source (IRSA)</label>
-                                        <input type="text" name="retenueSource" value={formData.retenueSource} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 text-right" />
+                                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Retenue à la source (IRSA)</label>
+                                        <input type="text" name="retenueSource" value={formData.retenueSource} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 text-right" />
                                     </div>
 
-                                    <div className="pt-4 mt-2 border-t border-gray-200">
-                                        <label className="block text-sm font-bold text-gray-800 mb-1 uppercase">Net à Payer (Ar)</label>
-                                        <input type="text" name="netAPayer" value={formData.netAPayer} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-lg font-bold rounded-md text-emerald-700 text-right bg-emerald-50 ${validationErrors.netAPayer ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 focus:border-emerald-500'}`} />
+                                    <div className="pt-4 mt-2 border-t border-gray-200 dark:border-gray-700">
+                                        <label className="block text-sm font-bold text-gray-800 dark:text-gray-100 mb-1 uppercase">Net à Payer (Ar)</label>
+                                        <input type="text" name="netAPayer" value={formData.netAPayer} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-lg font-bold rounded-md text-emerald-700 dark:text-emerald-400 text-right bg-emerald-50 dark:bg-emerald-900/20 ${validationErrors.netAPayer ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-emerald-500'}`} />
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="mt-2 p-4 flex flex-col md:flex-row justify-between items-center bg-white border-t rounded-lg shadow-lg">
-                            <div className="mb-3 md:mb-0 px-3 py-1 rounded-md font-bold text-base bg-gray-100 text-gray-800 border border-gray-200">
+                        <div className="mt-2 p-4 flex flex-col md:flex-row justify-between items-center bg-white dark:bg-gray-800 border-t dark:border-gray-700 rounded-lg shadow-lg">
+                            <div className="mb-3 md:mb-0 px-3 py-1 rounded-md font-bold text-base bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-600">
                                 Net à Payer : {formData.netAPayer ? formatMontant(formData.netAPayer) : '0,00'} Ar
                             </div>
                             <button
                                 onClick={handleSubmit}
                                 disabled={isLoadingSave || isLoadingJournal}
-                                className="bg-gray-800 hover:bg-gray-900 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto justify-center"
+                                className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto justify-center"
                             >
                                 {(isLoadingSave || isLoadingJournal) ? (
                                     <>

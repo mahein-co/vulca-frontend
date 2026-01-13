@@ -6,17 +6,36 @@ LoginErrorMessage.propTypes = {
 };
 
 export default function LoginErrorMessage({ error }) {
-    const errorMessage =
-        Object.keys(error.data)[0] === "detail"
-            ? Object.values(error.data)[0].split("with")[0]
-            : Object.keys(error.data)[0] + ": " + Object.values(error.data)[0];
+    // Extract error message from DRF response
+    const getErrorMessage = () => {
+        if (!error || !error.data) return "Une erreur est survenue lors de la connexion.";
+
+        const data = error.data;
+
+        // Handle "detail" key (common in DRF)
+        if (data.detail) return data.detail;
+
+        // Handle field-level errors (e.g. { "email": ["..."], "password": ["..."] })
+        const keys = Object.keys(data);
+        if (keys.length > 0) {
+            const firstKey = keys[0];
+            const val = data[firstKey];
+            if (Array.isArray(val)) return `${firstKey}: ${val[0]}`;
+            if (typeof val === 'string') return `${firstKey}: ${val}`;
+            return `${JSON.stringify(val)}`;
+        }
+
+        return "Erreur inconnue.";
+    };
+
+    const errorMessage = getErrorMessage();
 
     return (
-        <React.Fragment>
-            <div className="mb-3 p-3 text-center uppercase rounded-xl text-xs text-slate-100 flex bg-rose-500 items-center self-center font-bold">
-                <span>{errorMessage}</span>
-            </div>
-        </React.Fragment>
+        <div className="mt-4 text-center">
+            <p className="text-red-600 text-sm font-bold">
+                {errorMessage}
+            </p>
+        </div>
     );
 }
 

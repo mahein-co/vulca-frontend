@@ -35,7 +35,7 @@ export default function OTPVerification() {
     const [
         actionUserLogin,
         { data: currentUser, isLoading: isLoadingLogin, isSuccess: isSuccessLogin },
-    ] = useUserLoginMutation() || [];
+    ] = useUserLoginMutation();
     // GLOBAL-FUNCTION: verify email by OTP code --------------
     const [
         actionVerifyOTP,
@@ -45,7 +45,7 @@ export default function OTPVerification() {
             isSuccess: isSuccessVerifyOTP,
             isError: isErrorVerify,
         },
-    ] = useVerifyOTPMutation() || [];
+    ] = useVerifyOTPMutation();
     // GLOBAL-FUNCTION: resend OTP code ---------------------
     const [
         actionResendOTP,
@@ -54,7 +54,7 @@ export default function OTPVerification() {
             isSuccess: isSuccessResendOTP,
             // error: errorResendOTP,
         },
-    ] = useResendCodeMutation() || {};
+    ] = useResendCodeMutation();
 
     // LOCAL-FUNCTION: login user  ---------------------------
     const userLoginHandler = useCallback(() => {

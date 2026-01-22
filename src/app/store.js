@@ -8,6 +8,8 @@ import { journalApiSlice } from "../states/journal/journalApiSlice";
 import { comptaApiSlice } from "../states/compta/comptaApiSlice";
 import { userApiSlice } from "../states/user/userApiSlice";
 
+import { chatbotApiSlice } from "../states/chat/chatbotApiSlice";
+
 export const store = configureStore({
   reducer: {
     orcFiles: ocrReducer,
@@ -18,11 +20,13 @@ export const store = configureStore({
     [journalApiSlice.reducerPath]: journalApiSlice.reducer,
     [comptaApiSlice.reducerPath]: comptaApiSlice.reducer,
     [userApiSlice.reducerPath]: userApiSlice.reducer,
+    [chatbotApiSlice.reducerPath]: chatbotApiSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
       .concat(journalApiSlice.middleware)
       .concat(ocrApiSlice.middleware)
       .concat(comptaApiSlice.middleware)
-      .concat(userApiSlice.middleware),
+      .concat(userApiSlice.middleware)
+      .concat(chatbotApiSlice.middleware),
 });

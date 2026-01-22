@@ -39,7 +39,14 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
       axios.get(`${BASE_URL_API}/CompteResultats/${params}`),
     ])
       .then(([res]) => {
-        const data = res.data;
+        let rawData = res.data;
+        // Gérer la pagination si nécessaire
+        const data = Array.isArray(rawData) ? rawData : (rawData && rawData.results ? rawData.results : []);
+
+        if (data.length === 0) {
+          setLoading(false);
+          return;
+        }
 
         // Filtrer Produits (classe 7)
         const produits = data

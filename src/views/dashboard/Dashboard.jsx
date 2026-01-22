@@ -923,6 +923,24 @@ const Dashboard = () => {
                       )}
                     </td>
                   </tr>
+
+                  {/* LEVERAGE BRUT (Dette / EBE) */}
+                  <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Leverage Brut</td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
+                      {indicators.ratios && indicators.ratios.leverage ? Number(indicators.ratios.leverage.value).toFixed(2) : "--"}
+                    </td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
+                      &lt; 3.5
+                    </td>
+                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
+                      {indicators.ratios && indicators.ratios.leverage && indicators.ratios.leverage.alerte ? (
+                        <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
+                      ) : (
+                        <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
+                      )}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>

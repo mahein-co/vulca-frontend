@@ -36,24 +36,8 @@ export default function DashboardLayout() {
             <Outlet />
           </div>
 
-          {/* OPEN CHATBOT BUTTON */}
-          <div className="z-30">
-            <button
-              onClick={handleOpenChat}
-              className="fixed right-3 bottom-7 hover:bg-blue-700 bg-blue-600 text-white p-3 rounded-2xl"
-            >
-              <FaRobot />
-            </button>
-          </div>
-          {/* END_OPEN CHATBOT BUTTON */}
         </div>
       </div>
-
-      {/* CHATBOT COMPONENT */}
-      <React.Fragment>
-        {isChatModalOpen ? <IndexChatbotPage close={handleCloseChat} /> : null}
-      </React.Fragment>
-      {/* END_CHATBOT COMPONENT */}
     </React.Fragment>
   );
 }

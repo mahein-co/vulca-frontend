@@ -98,7 +98,10 @@ import GestionPiecesBoard from './views/piece/GestionPiecesBoard';
 import ImportFichier from './views/ocr/pages/ImportFichier';
 import IndexAddByFormsPage from './views/ocr/pages/IndexAddByFormsPage';
 // --- Import composant chatbot
-import ChatWidget from "./components/chatbot/ChatWidget";
+import IndexChatbotPage from "./views/chat/IndexChatbotPage";
+import { useDispatch, useSelector } from "react-redux";
+import { actionCloseChat, actionOpenChat } from "./states/chat/chatSlice";
+import { FaRobot } from "react-icons/fa";
 
 // 🎯 Import Login Page
 // import LoginPage from './LoginPage';
@@ -154,6 +157,9 @@ function App() {
         const userInfo = localStorage.getItem('userInfo');
         return !!userInfo;
     });
+
+    const dispatch = useDispatch();
+    const isChatModalOpen = useSelector((state) => state.chatbot.isChatModalOpen);
 
     const [currentPage, setCurrentPage] = useState(() => {
         return localStorage.getItem('vulca_current_page') || 'dashboard';
@@ -316,6 +322,10 @@ function App() {
         }
     };
 
+
+    const handleOpenChat = () => dispatch(actionOpenChat());
+    const handleCloseChat = () => dispatch(actionCloseChat());
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
             {/* CORRECTION : Passer la fonction openSaisieMenuFromHeader au Header */}
@@ -336,8 +346,6 @@ function App() {
                 </FormModal>
             )}
 
-
-
             {/* ... Toaster ... */}
             <Toaster
                 position="top-right"
@@ -349,8 +357,25 @@ function App() {
                 }}
             />
 
-            {/*CHATBOT*/}
-            <ChatWidget />
+            {/* CHATBOT BUTTON */}
+            <div className="z-[100]">
+                <button
+                    onClick={handleOpenChat}
+                    className="fixed right-6 bottom-8 bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center group"
+                    aria-label="Ouvrir l'assistant"
+                >
+                    <FaRobot size={24} className="group-hover:rotate-12 transition-transform" />
+                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                    </span>
+                </button>
+            </div>
+
+            {/* CHATBOT MODAL */}
+            {isChatModalOpen && (
+                <IndexChatbotPage close={handleCloseChat} />
+            )}
         </div>
     );
 }

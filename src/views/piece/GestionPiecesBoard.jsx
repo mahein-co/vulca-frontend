@@ -74,41 +74,46 @@ const DetailsModal = ({ isOpen, document, onClose }) => {
 };
 
 const TYPE_STYLES = {
+    // Types principaux (utilisés par l'OCR et le backend)
+    'VENTE': { color: 'border-blue-500', badge: 'bg-blue-500', bgCard: 'bg-white dark:bg-gray-700 dark:text-white' },
+    'ACHAT': { color: 'border-yellow-500', badge: 'bg-yellow-500', bgCard: 'bg-yellow-50 dark:bg-yellow-900/20' },
+    'BANQUE': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50 dark:bg-purple-900/20' },
+    'PAIE': { color: 'border-green-500', badge: 'bg-green-500', bgCard: 'bg-green-50 dark:bg-green-900/20' },
+    'OD': { color: 'border-orange-500', badge: 'bg-orange-500', bgCard: 'bg-orange-50 dark:bg-orange-900/20' },
+    'CAISSE': { color: 'border-pink-500', badge: 'bg-pink-500', bgCard: 'bg-pink-50 dark:bg-pink-900/20' },
+
+    // Fallbacks pour les libellés de piece_type (utilisés dans DocumentCard)
     'Facture': { color: 'border-blue-500', badge: 'bg-blue-500', bgCard: 'bg-white dark:bg-gray-700 dark:text-white' },
     'Bon d\'achat': { color: 'border-yellow-500', badge: 'bg-yellow-500', bgCard: 'bg-yellow-50 dark:bg-yellow-900/20' },
     'Relevé bancaire': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50 dark:bg-purple-900/20' },
-    'Virement bancaire': { color: 'border-indigo-500', badge: 'bg-indigo-500', bgCard: 'bg-indigo-50 dark:bg-indigo-900/20' },
-    'Paiement de salaire': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50 dark:bg-purple-900/20' },
-    'Chèque': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50 dark:bg-purple-900/20' },
-    'Retrait': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50 dark:bg-purple-900/20' },
-    'Dépôt': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50 dark:bg-purple-900/20' },
+    'Virement bancaire': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50 dark:bg-purple-900/20' },
     'Fiche de paie': { color: 'border-green-500', badge: 'bg-green-500', bgCard: 'bg-green-50 dark:bg-green-900/20' },
-    'Autres': { color: 'border-orange-500', badge: 'bg-orange-500', bgCard: 'bg-orange-50 dark:bg-orange-900/20' },
+    'Autres': { color: 'border-gray-500', badge: 'bg-gray-500', bgCard: 'bg-gray-50 dark:bg-gray-800' },
 };
 
 const COLUMNS = [
     {
         key: 'compta',
         label: 'Factures & Achats',
-        types: ['Facture', 'Bon d\'achat'],
+        types: ['VENTE', 'ACHAT', 'Facture', 'Bon d\'achat'],
         badge: 'bg-blue-600'
     },
     {
         key: 'banque',
         label: 'Banque',
-        types: ['Relevé bancaire', 'Virement bancaire'],
+        types: ['BANQUE', 'Relevé bancaire', 'Virement bancaire'],
         badge: 'bg-purple-600'
     },
     {
         key: 'rh',
         label: 'Fiches de paie',
-        types: ['Fiche de paie'],
+        types: ['PAIE', 'Fiche de paie'],
         badge: 'bg-green-500'
     },
     {
         key: 'autres',
         label: 'Autres',
-        types: ['Autres', 'Virement bancaire', 'Paiement de salaire', 'Chèque', 'Retrait', 'Dépôt'],
+        types: ['OD', 'CAISSE', 'Autres', 'Chèque', 'Retrait', 'Dépôt'],
         badge: 'bg-orange-500'
     },
 ];

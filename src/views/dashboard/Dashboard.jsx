@@ -417,179 +417,57 @@ const Dashboard = () => {
   const [margeNetteDataVar, setMargeNetteDataVar] = useState({ marge_nette: null, variation: null });
   const [tresorerieDataVar, setTresorerieDataVar] = useState({ tresorerie: 0, variation: null });
 
-  // CHARGEMENT OPTIMISÉ (Tous les indicateurs en parallèle)
+  // CHARGEMENT OPTIMISÉ (APPEL UNIQUE AU BACKEND)
   useEffect(() => {
     setLoadingIndicators(true);
 
-    const fetchIndicator = (endpoint) => {
-      let url = `${BASE_URL_API}/${endpoint}/?`;
-      if (globalDateStart) url += `date_start=${globalDateStart}&`;
-      if (globalDateEnd) url += `date_end=${globalDateEnd}`;
-      return fetch(url).then(res => res.json()).catch(err => {
-        console.error(`Erreur chargement ${endpoint}:`, err);
-        return {}; // Retourner objet vide en cas d'erreur pour ne pas casser Promise.all
-      });
-    };
+    let url = `${BASE_URL_API}/dashboard/indicators/?`;
+    if (globalDateStart) url += `date_start=${globalDateStart}&`;
+    if (globalDateEnd) url += `date_end=${globalDateEnd}`;
 
-    Promise.all([
-      fetchIndicator('dashboard/indicators'), // 0
-      fetchIndicator('roe'), // 1
-      fetchIndicator('roa'), // 2
-      fetchIndicator('current-ratio'), // 3
-      fetchIndicator('quick-ratio'), // 4
-      fetchIndicator('gearing'), // 5
-      fetchIndicator('rotation-stock'), // 6
-      fetchIndicator('marge-operationnelle'), // 7
-      fetchIndicator('chiffre-affaire'), // 8
-      fetchIndicator('caf'), // 9
-      fetchIndicator('ebe'), // 10
-      fetchIndicator('leverage-brut'), // 11
-      fetchIndicator('bfr'), // 12
-      fetchIndicator('marge-brute'), // 13
-      fetchIndicator('marge-nette'), // 14
-      fetchIndicator('tresorerie'), // 15
-    ]).then(([
-      indicatorsData,
-      roe,
-      roa,
-      currentRatio,
-      quickRatio,
-      gearing,
-      rotationStock,
-      margeOp,
-      ca,
-      caf,
-      ebe,
-      leverage,
-      bfr,
-      margeBrute,
-      margeNette,
-      tresorerie
-    ]) => {
-      // 1. Mise à jour Indicators Global
-      setIndicators({
-        ca: indicatorsData.ca || 0,
-        ebe: indicatorsData.ebe || 0,
-        resultatNet: indicatorsData.resultat_net || 0,
-        caf: indicatorsData.caf || 0,
-        bfr: indicatorsData.bfr || 0,
-        leverage: indicatorsData.leverage || 0,
-        totalBalance: indicatorsData.total_balance || 0,
-        ratios: indicatorsData.ratios || {}
-      });
+    fetch(url)
+      .then(res => res.json())
+      .then(allData => {
+        // 1. Mise à jour Indicators Global
+        setIndicators({
+          ca: allData.ca || 0,
+          ebe: allData.ebe || 0,
+          resultatNet: allData.resultat_net || 0,
+          caf: allData.caf || 0,
+          bfr: allData.bfr || 0,
+          leverage: allData.leverage || 0,
+          totalBalance: allData.total_balance || 0,
+          ratios: allData.ratios || {}
+        });
 
-      // 2. Mise à jour ROE
-      setRoeData({
-        roe: roe.roe,
-        resultat_net: roe.resultat_net || 0,
-        fonds_propres: roe.fonds_propres || 0,
-        variation: roe.variation
-      });
+        // 2. Mise à jour des données détaillées (via les objets pré-calculés par le backend)
+        setRoeData(allData.roe_data || { roe: 0, variation: null });
+        setRoaData(allData.roa_data || { roa: 0, variation: null });
+        setCurrentRatioData(allData.current_ratio_data || { current_ratio: 0, variation: null });
+        setQuickRatioData(allData.quick_ratio_data || { quick_ratio: 0, variation: null });
+        setGearingData(allData.gearing_data || { gearing: 0, variation: null });
+        setRotationStockData(allData.rotation_stock_data || { rotation_stock: 0, variation: null });
+        setMargeOperationnelleData(allData.marge_operationnelle_data || { marge_operationnelle: 0, variation: null });
 
-      // 3. Mise à jour ROA
-      setRoaData({
-        roa: roa.roa,
-        resultat_net: roa.resultat_net || 0,
-        total_actif: roa.total_actif || 0,
-        variation: roa.variation
-      });
+        // 3. Mise à jour des variations simples
+        const vars = allData.variations || {};
+        setCaData({ ca: allData.ca || 0, variation: vars.ca });
+        setCafDataVar({ caf: allData.caf || 0, variation: vars.caf });
+        setEbeDataVar({ ebe: allData.ebe || 0, variation: vars.ebe });
+        setLeverageDataVar({ leverage: allData.leverage || 0, variation: vars.leverage });
+        setBfrDataVar({ bfr: allData.bfr || 0, variation: vars.bfr });
+        setMargeBruteDataVar({ marge_brute: allData.marge_brute || 0, variation: vars.marge_brute });
+        setMargeNetteDataVar({ marge_nette: allData.marge_nette || 0, variation: vars.marge_nette });
+        setTresorerieDataVar({ tresorerie: allData.tresorerie || 0, variation: vars.tresorerie });
 
-      // 4. Mise à jour Current Ratio
-      setCurrentRatioData({
-        current_ratio: currentRatio.current_ratio,
-        actifs_courants: currentRatio.actifs_courants || 0,
-        passifs_courants: currentRatio.passifs_courants || 0,
-        variation: currentRatio.variation
+      })
+      .catch(err => console.error("Erreur chargement dashboard:", err))
+      .finally(() => {
+        setLoadingIndicators(false);
       });
-
-      // 5. Mise à jour Quick Ratio
-      setQuickRatioData({
-        quick_ratio: quickRatio.quick_ratio,
-        actifs_courants: quickRatio.actifs_courants || 0,
-        stocks: quickRatio.stocks || 0,
-        passifs_courants: quickRatio.passifs_courants || 0,
-        variation: quickRatio.variation
-      });
-
-      // 6. Mise à jour Gearing
-      setGearingData({
-        gearing: gearing.gearing,
-        dettes_financieres: gearing.dettes_financieres || 0,
-        fonds_propres: gearing.fonds_propres || 0,
-        variation: gearing.variation
-      });
-
-      // 7. Mise à jour Rotation Stock
-      setRotationStockData({
-        rotation_stock: rotationStock.rotation_stock,
-        duree_stock_jours: rotationStock.duree_stock_jours,
-        cout_ventes: rotationStock.cout_ventes || 0,
-        stocks: rotationStock.stocks || 0,
-        variation: rotationStock.variation
-      });
-
-      // 8. Mise à jour Marge Opérationnelle
-      setMargeOperationnelleData({
-        marge_operationnelle: margeOp.marge_operationnelle,
-        chiffre_affaire: margeOp.chiffre_affaire || 0,
-        charges_exploitation: margeOp.charges_exploitation || 0,
-        resultat_operationnel: margeOp.resultat_operationnel || 0,
-        variation: margeOp.variation
-      });
-
-      // 9. Mise à jour CA Variation
-      setCaData({
-        ca: ca.chiffre_affaire || 0,
-        variation: ca.variation
-      });
-
-      // 10. Mise à jour CAF Variation
-      setCafDataVar({
-        caf: caf.caf || 0,
-        variation: caf.variation
-      });
-
-      // 11. Mise à jour EBE Variation
-      setEbeDataVar({
-        ebe: ebe.ebe || 0,
-        variation: ebe.variation
-      });
-
-      // 12. Mise à jour Leverage Variation
-      setLeverageDataVar({
-        leverage: leverage.leverage_brut || 0,
-        variation: leverage.variation
-      });
-
-      // 13. Mise à jour BFR Variation
-      setBfrDataVar({
-        bfr: bfr.bfr || 0,
-        variation: bfr.variation
-      });
-
-      // 14. Mise à jour Marge Brute Variation
-      setMargeBruteDataVar({
-        marge_brute: margeBrute.marge_brute || 0,
-        variation: margeBrute.variation
-      });
-
-      // 15. Mise à jour Marge Nette Variation
-      setMargeNetteDataVar({
-        marge_nette: margeNette.marge_nette,
-        variation: margeNette.variation
-      });
-
-      // 16. Mise à jour Trésorerie Variation
-      setTresorerieDataVar({
-        tresorerie: tresorerie.tresorerie || 0,
-        variation: tresorerie.variation
-      });
-
-    }).finally(() => {
-      setLoadingIndicators(false);
-    });
 
   }, [globalDateStart, globalDateEnd]);
+
 
 
 

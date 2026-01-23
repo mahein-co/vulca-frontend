@@ -379,10 +379,9 @@ const OcrValidationForm = ({
                                     // 2. Ignorer 'objet_description' (demande utilisateur)
                                     if (key === 'objet_description' || key.toLowerCase() === 'objet description') return null;
 
-                                    // 3. Ignorer les valeurs nulles, undefined, vide ou 0
-                                    // Vérification stricte pour 0, '0', '0.00' et valeurs vides
-                                    if (value === null || value === undefined || value === '') return null;
-                                    if (value === 0 || value === '0' || value === '0.00') return null;
+                                    // 3. Ignorer les valeurs nulles, undefined (mais garder les chaînes vides pour permettre l'édition)
+                                    // On garde aussi les 0 pour permettre la correction manuelle
+                                    if (value === null || value === undefined) return null;
 
                                     // 4. Eviter doublon Reference si identique au Numéro Facture
                                     if (key === 'reference') {
@@ -403,7 +402,7 @@ const OcrValidationForm = ({
                                     // Ignorer les champs qui étaient null/undefined dès l'extraction initiale (code existant, conservé pour sécurité)
                                     const initialValue = currentDocument?.rawResponse?.extracted_json?.[key];
                                     if (initialValue === null || initialValue === undefined) {
-                                        if (value === null || value === '' || value === undefined) return null;
+                                        if (value === null || value === undefined) return null;
                                     }
 
                                     // ✅ CAS TABLEAU : Affichage différencié selon le type de contenu
@@ -570,7 +569,20 @@ const OcrValidationForm = ({
 
                                     // Cas standard : champ texte
                                     let isDate = key.toLowerCase().includes('date');
-                                    const displayValue = isDate && typeof value === 'string' ? value.slice(0, 10) : value;
+
+                                    // Pour les dates, s'assurer que la valeur est au format YYYY-MM-DD
+                                    let inputValue = formData.extractedJson?.[key] !== undefined ? formData.extractedJson[key] : value;
+
+                                    if (isDate && inputValue) {
+                                        // Extraire seulement la partie date (YYYY-MM-DD) si c'est un datetime
+                                        if (typeof inputValue === 'string' && inputValue.length > 10) {
+                                            inputValue = inputValue.slice(0, 10);
+                                        }
+                                        // Vérifier que c'est un format valide YYYY-MM-DD
+                                        if (!/^\d{4}-\d{2}-\d{2}$/.test(inputValue)) {
+                                            inputValue = ''; // Si format invalide, vider le champ
+                                        }
+                                    }
 
                                     return (
                                         <div key={key} className="mb-2">
@@ -579,7 +591,7 @@ const OcrValidationForm = ({
                                             </label>
                                             <input
                                                 type={isDate ? "date" : "text"}
-                                                value={formData.extractedJson?.[key] !== undefined ? (isDate && typeof formData.extractedJson[key] === 'string' ? formData.extractedJson[key].slice(0, 10) : formData.extractedJson[key]) : displayValue}
+                                                value={inputValue || ''}
                                                 onChange={(e) => {
                                                     const newExtractedJson = { ...formData.extractedJson, [key]: e.target.value };
                                                     onFormChange('extractedJson', newExtractedJson);

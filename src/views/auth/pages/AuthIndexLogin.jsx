@@ -33,9 +33,9 @@ export default function AuthIndexLogin() {
     // Redirect if already logged in
     useEffect(() => {
         const userInfo = localStorage.getItem('userInfo');
-        const selectedProjectId = localStorage.getItem('selectedProjectId');
         if (userInfo) {
-            window.location.href = selectedProjectId ? '/' : '/projects';
+            // Always redirect to project selection page to let user choose/confirm project
+            window.location.href = '/projects';
         }
     }, []);
 

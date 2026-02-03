@@ -419,12 +419,12 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     const paginatedDetails = allDetails;
 
     return (
-        <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 min-h-screen">
-            <main className="flex flex-col p-2 sm:p-4 gap-4">
+        <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 min-h-screen no-scrollbar">
+            <main className="flex flex-col p-1 sm:p-2 gap-2">
                 {/* Période d'exercice */}
                 {/* Période d'exercice */}
                 {/* 1. PÉRIODE D'EXERCICE - Style GestionPiecesBoard */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 bg-white dark:bg-gray-800 p-2 sm:p-3 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700">
                     <div className="mb-2 sm:mb-0">
                         <p className="font-semibold text-gray-800 dark:text-gray-100 flex items-center">
                             Période d'exercice
@@ -503,7 +503,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                 </div>
 
                 {/* 2. BARRE DE RECHERCHE */}
-                <div className="bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 mb-2">
+                <div className="bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 mb-1">
                     <div className="flex items-center space-x-2">
                         <div className="pl-2">
                             <Search className="h-4 w-4 text-gray-400" />
@@ -528,7 +528,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                 </div>}
 
                 {/* KPI Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1.5 mb-2 px-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1.5 mb-1 px-1">
                     {loading ? [...Array(7)].map((_, i) => <div key={i} className="min-w-[150px] h-[100px] bg-gray-200 rounded-xl animate-pulse"></div>) :
                         cards.map(([title, value, change, isRatio, Icon, description], idx) => {
                             // Calcul du pourcentage d'évolution pour les montants (si non ratio)
@@ -607,10 +607,10 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                 </div>
 
                 {/* Table des détails */}
-                <div className="px-2 flex-1 min-h-0 relative">
+                <div className="px-2 relative">
                     {loading && <LoadingOverlay message="Chargement des données..." fullScreen={false} />}
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-full">
-                        <div className="overflow-auto min-h-0">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+                        <div className="overflow-auto min-h-0 no-scrollbar">
                             <table className="w-full border-collapse text-xs sm:text-sm min-w-[800px] table-fixed">
                                 <thead className="sticky top-0 z-10">
                                     <tr className="bg-gray-800 dark:bg-gray-950 text-white">
@@ -657,17 +657,6 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                             <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-right font-bold text-gray-900 dark:text-gray-100">{formatCurrency(item.montant_ar)}</td>
                                         </tr>
                                     ))}
-                                    {(!loading && paginatedDetails.length < ITEMS_PER_PAGE) && (
-                                        Array.from({ length: ITEMS_PER_PAGE - paginatedDetails.length }).map((_, idx) => (
-                                            <tr key={`empty-${idx}`} className="bg-white dark:bg-gray-800">
-                                                <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
-                                                <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
-                                                <td className="w-[40%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none">-</td>
-                                                <td className="w-[20%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none hidden md:table-cell">-</td>
-                                                <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-transparent select-none text-right">-</td>
-                                            </tr>
-                                        ))
-                                    )}
                                 </tbody>
                             </table>
                         </div>

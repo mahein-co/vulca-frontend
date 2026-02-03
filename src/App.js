@@ -181,6 +181,9 @@ function App() {
         // Listen for storage changes (e.g., login in another tab)
         window.addEventListener('storage', checkAuth);
 
+        // Hide scrollbar globally
+        document.body.classList.add('no-scrollbar');
+
         return () => window.removeEventListener('storage', checkAuth);
     }, []);
 
@@ -308,7 +311,7 @@ function App() {
     const renderPage = () => {
         // Wrapper par défaut avec padding pour les vues internes qui ne gèrent pas le Header fixe
         const ContentWrapper = ({ children }) => (
-            <div className="pt-14 p-4 max-w-full mx-auto">{children}</div>
+            <div className="pt-14 p-1 max-w-full mx-auto">{children}</div>
         );
 
         switch (currentPage) {

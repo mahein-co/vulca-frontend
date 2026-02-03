@@ -17,7 +17,9 @@ const baseQuery = fetchBaseQuery({
 
 // Base query for root endpoints (auth/users)
 const baseQueryUsersRoot = fetchBaseQuery({
-    baseUrl: BASE_URL_API.replace('/api', ''),
+    baseUrl: BASE_URL_API.endsWith('/')
+        ? BASE_URL_API.slice(0, -5) // remove '/api/'
+        : BASE_URL_API.replace('/api', ''),
     credentials: "include",
     prepareHeaders: (headers) => {
         const projectId = localStorage.getItem("selectedProjectId");

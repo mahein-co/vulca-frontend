@@ -199,15 +199,9 @@ function App() {
                 return;
             }
 
-            // If on auth pages, redirect appropriately
-            if (location.pathname.startsWith('/auth')) {
-                const targetPath = selectedProjectId ? '/' : '/projects';
-                window.location.replace(targetPath);
-                return;
-            }
-
-            // If no project selected and not on selection page, redirect to selection
-            if (!selectedProjectId && !isSelectProjectPage) {
+            // If no project selected and not on selection page or auth pages, redirect to selection
+            // Don't redirect if on auth pages - let auth components handle their own redirects
+            if (!selectedProjectId && !isSelectProjectPage && !location.pathname.startsWith('/auth')) {
                 window.location.replace('/projects');
             }
         }

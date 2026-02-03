@@ -131,6 +131,7 @@ export default function ProjectSelection() {
     const [modalMode, setModalMode] = useState('create'); // 'create' or 'edit'
     const [selectedProject, setSelectedProject] = useState(null); // For edit
     const [formData, setFormData] = useState({ name: '', description: '' });
+    const [requestingProjectId, setRequestingProjectId] = useState(null); // Track which project is being requested
 
     // Delete states
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -236,11 +237,14 @@ export default function ProjectSelection() {
 
     const handleRequestAccess = async (projectId) => {
         try {
+            setRequestingProjectId(projectId);
             await requestAccess({ project_id: projectId }).unwrap();
             toast.success('Demande d\'accès envoyée!');
             refetch();
         } catch (error) {
             toast.error(error.data?.error || 'Erreur lors de la demande');
+        } finally {
+            setRequestingProjectId(null);
         }
     };
 
@@ -351,10 +355,10 @@ export default function ProjectSelection() {
                                     {(status === 'none' || !status) && !isGlobalAdmin && (
                                         <button
                                             onClick={(e) => { e.stopPropagation(); handleRequestAccess(project.id); }}
-                                            disabled={isRequesting}
+                                            disabled={isRequesting && requestingProjectId === project.id}
                                             className="px-5 py-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-300 dark:hover:border-gray-500 transition-all shadow-sm w-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                                         >
-                                            {isRequesting ? (
+                                            {isRequesting && requestingProjectId === project.id ? (
                                                 <LoadingSpinner />
                                             ) : (
                                                 "Demander l'accès"

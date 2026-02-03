@@ -1,6 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import LoadingOverlay from '../../components/layout/LoadingOverlay';
 import { Eye, X, FileText } from 'lucide-react';
 import { BASE_URL_API } from '../../constants/globalConstants';
+import { getApiHeaders } from '../../utils/apiUtils';
+import { useProjectId } from '../../hooks/useProjectId';
 
 // --- 0. COMPOSANT : Modale de Détails ---
 const DetailsModal = ({ isOpen, document, onClose }) => {
@@ -74,7 +77,7 @@ const DetailsModal = ({ isOpen, document, onClose }) => {
 };
 
 const TYPE_STYLES = {
-    // Types principaux (utilisés par l'OCR et le backend)
+    // Types principaux (utilisés par le backend)
     'VENTE': { color: 'border-blue-500', badge: 'bg-blue-500', bgCard: 'bg-white dark:bg-gray-700 dark:text-white' },
     'ACHAT': { color: 'border-yellow-500', badge: 'bg-yellow-500', bgCard: 'bg-yellow-50 dark:bg-yellow-900/20' },
     'BANQUE': { color: 'border-purple-500', badge: 'bg-purple-500', bgCard: 'bg-purple-50 dark:bg-purple-900/20' },
@@ -178,6 +181,7 @@ const DocumentCard = ({ piece, onClick, onViewDetails }) => {
 export default function GestionPiecesBoard() {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const projectId = useProjectId();
     const [recherche, setRecherche] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState(null);
@@ -200,7 +204,10 @@ export default function GestionPiecesBoard() {
 
                 console.log(`Fetching pieces params: ${params.toString()}`);
 
-                const response = await fetch(`${BASE_URL_API}/pieceslist/?${params.toString()}`);
+                const response = await fetch(`${BASE_URL_API}/pieceslist/?${params.toString()}`, {
+                    headers: getApiHeaders(),
+                    credentials: 'include'
+                });
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                 const data = await response.json();
@@ -218,7 +225,7 @@ export default function GestionPiecesBoard() {
         };
 
         fetchPieces();
-    }, [dateDebut, dateFin]);
+    }, [dateDebut, dateFin, projectId]);
 
     const handleDocumentClick = (piece) => {
         setSelectedDocument(piece);
@@ -279,17 +286,7 @@ export default function GestionPiecesBoard() {
 
     return (
         <div className="relative pt-14 pb-6 h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden flex flex-col transition-colors duration-200">
-            {loading && (
-                <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm z-50 flex justify-center items-center">
-                    <div className="flex flex-col items-center max-w-sm w-full text-center">
-                        <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-                            <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
-                            <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-                        </div>
-                        <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 animate-pulse px-4">Chargement des pièces...</p>
-                    </div>
-                </div>
-            )}
+            {loading && <LoadingOverlay message="Chargement des pièces..." fullScreen={false} />}
 
             <div className="px-6 space-y-4 flex-shrink-0">
 

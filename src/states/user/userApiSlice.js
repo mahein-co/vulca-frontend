@@ -1,12 +1,9 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { BASE_URL } from "../constants/constants";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryUsers } from "../apiConfig";
 
 export const userApiSlice = createApi({
     reducerPath: "userApi",
-    baseQuery: fetchBaseQuery({
-        baseUrl: BASE_URL,
-        credentials: "include",
-    }),
+    baseQuery: baseQueryUsers,
     tagTypes: ["users", "currentUser"],
     endpoints: (builder) => ({
         // GET ALL USERS
@@ -19,6 +16,25 @@ export const userApiSlice = createApi({
             transformResponse: (response) => {
                 return response.users;
             },
+        }),
+
+        // GET ADMIN COUNT
+        getAdminCount: builder.query({
+            query: () => ({
+                url: "/users/admin-count/",
+                method: "GET",
+            }),
+            providesTags: ["users"],
+        }),
+
+        // CREATE USER BY ADMIN (auto-activated, no OTP)
+        createUserByAdmin: builder.mutation({
+            query: (data) => ({
+                url: "/users/create/",
+                method: "POST",
+                body: data,
+            }),
+            invalidatesTags: ["users"],
         }),
 
         // USER LOGIN
@@ -134,6 +150,8 @@ export const userApiSlice = createApi({
 
 export const {
     useGetUsersQuery,
+    useGetAdminCountQuery,
+    useCreateUserByAdminMutation,
     useUserLoginMutation,
     useRegisterUserMutation,
     useVerifyOTPMutation,

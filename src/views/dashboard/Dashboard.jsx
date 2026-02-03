@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import BalanceModal from '../balance/BalanceModal';
+import LoadingOverlay from '../../components/layout/LoadingOverlay';
 
 import BarCharts from '../../components/charts/BarCharts';
 import TvaBarChart from '../../components/charts/TvaBarChart';
@@ -7,7 +8,8 @@ import PieChartRepartition from '../../components/charts/PieChartRepartition';
 import LineChartCAEvolution from '../../components/charts/LineChartCAEvolution';
 import LineChartCategorized from '../../components/charts/LineChartCategorized';
 import ThreePieCharts from '../../components/charts/ThreePieCharts';
-import { BASE_URL_API } from '../../constants/globalConstants';
+import { fetchWithReauth } from '../../utils/apiUtils';
+import { useProjectId } from '../../hooks/useProjectId';
 
 
 
@@ -20,6 +22,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
   const [totalFormatted, setTotalFormatted] = useState('0 Ar');
   const [totalGlobal, setTotalGlobal] = useState(0);
   const [journals, setJournals] = useState([]);
+  const projectId = useProjectId();
 
   // États de sélection et pagination
   const [selectedJournal, setSelectedJournal] = useState(null);
@@ -36,11 +39,11 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
 
   // 1. Charger la RÉPARTITION (barres de progression)
   useEffect(() => {
-    let url = `${BASE_URL_API}/journals/repartition/?`;
+    let url = `/journals/repartition/?`;
     if (globalStartDate) url += `date_start=${globalStartDate}&`;
     if (globalEndDate) url += `date_end=${globalEndDate}`;
 
-    fetch(url)
+    fetchWithReauth(url)
       .then(res => res.json())
       .then(data => {
         setJournals(data.journals || []);
@@ -48,20 +51,19 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
         setTotalFormatted(new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(data.total_global || 0).replace('MGA', 'Ar'));
       })
       .catch(err => console.error("Erreur chargement répartition journaux:", err));
-  }, [globalStartDate, globalEndDate]);
+  }, [globalStartDate, globalEndDate, projectId]);
 
   // 2. Charger le DÉTAIL quand un journal est sélectionné (avec pagination, date et recherche)
   useEffect(() => {
     if (!selectedJournal) return;
-
     setIsLoadingEntries(true);
-    let url = `${BASE_URL_API}/journals/?type=${selectedJournal.code}&page=${currentPage}&page_size=${itemsPerPage}`;
+    let url = `/journals/?type=${selectedJournal.code}&page=${currentPage}&page_size=${itemsPerPage}`;
 
     if (globalStartDate) url += `&date_start=${globalStartDate}`;
     if (globalEndDate) url += `&date_end=${globalEndDate}`;
     if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
 
-    fetch(url)
+    fetchWithReauth(url)
       .then(res => res.json())
       .then(data => {
         setJournalEntries(data.results || []);
@@ -69,7 +71,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
       })
       .catch(err => console.error("Erreur chargement détail journal:", err))
       .finally(() => setIsLoadingEntries(false));
-  }, [selectedJournal, currentPage, globalStartDate, globalEndDate, searchTerm]);
+  }, [selectedJournal, currentPage, globalStartDate, globalEndDate, searchTerm, projectId]);
 
 
   const handleSelectJournal = (journal) => {
@@ -204,15 +206,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
             {/* Corps du tableau (Zone Scrollable) - Style Balance */}
             <div className="flex-grow p-2 sm:p-4 min-h-0 bg-white dark:bg-gray-800 relative flex flex-col">
               {isLoadingEntries && (
-                <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm z-20 flex justify-center items-center">
-                  <div className="flex flex-col items-center max-w-sm w-full text-center">
-                    <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-                      <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
-                      <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-                    </div>
-                    <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 animate-pulse px-4">Chargement du journal...</p>
-                  </div>
-                </div>
+                <LoadingOverlay message="Chargement du journal..." fullScreen={false} />
               )}
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden flex flex-col flex-grow min-h-0">
                 <div className="overflow-auto min-h-0">
@@ -314,18 +308,19 @@ const Dashboard = () => {
 
   // États globaux de date pour le filtrage
   const [globalDateStart, setGlobalDateStart] = useState('2019-01-01');
-  const [globalDateEnd, setGlobalDateEnd] = useState('2025-12-31');
+  const [globalDateEnd, setGlobalDateEnd] = useState(new Date().toISOString().split('T')[0]);
+  const projectId = useProjectId();
 
   // Chargement automatique de la plage de dates disponible (Min/Max des journaux)
   useEffect(() => {
-    fetch(`${BASE_URL_API}/journals/date-range/`)
+    fetchWithReauth(`/journals/date-range/`)
       .then(res => res.json())
       .then(data => {
         if (data.min_date) setGlobalDateStart(data.min_date);
         if (data.max_date) setGlobalDateEnd(data.max_date);
       })
-      .catch(err => console.error("Erreur chargement date range:", err));
-  }, []);
+      .catch(err => console.error("Erreur chargement date range global:", err));
+  }, [projectId]);
 
   // États Indicateurs Financiers (Chargés en une seule fois)
   const [indicators, setIndicators] = useState({
@@ -421,11 +416,11 @@ const Dashboard = () => {
   useEffect(() => {
     setLoadingIndicators(true);
 
-    let url = `${BASE_URL_API}/dashboard/indicators/?`;
+    let url = `/dashboard/indicators/?`;
     if (globalDateStart) url += `date_start=${globalDateStart}&`;
     if (globalDateEnd) url += `date_end=${globalDateEnd}`;
 
-    fetch(url)
+    fetchWithReauth(url)
       .then(res => res.json())
       .then(allData => {
         // 1. Mise à jour Indicators Global
@@ -461,12 +456,11 @@ const Dashboard = () => {
         setTresorerieDataVar({ tresorerie: allData.tresorerie || 0, variation: vars.tresorerie });
 
       })
-      .catch(err => console.error("Erreur chargement dashboard:", err))
-      .finally(() => {
-        setLoadingIndicators(false);
-      });
-
-  }, [globalDateStart, globalDateEnd]);
+      .catch(err => {
+        console.error("Erreur chargement indicateurs dashboard:", err);
+      })
+      .finally(() => setLoadingIndicators(false));
+  }, [globalDateStart, globalDateEnd, projectId]);
 
 
 

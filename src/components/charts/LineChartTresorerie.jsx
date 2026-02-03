@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { BASE_URL_API } from '../../constants/globalConstants';
+import { fetchWithReauth } from '../../utils/apiUtils';
 
 export default function LineChartTresorerie({ globalDateStart, globalDateEnd }) {
   const [evolutionData, setEvolutionData] = useState([]);
@@ -17,18 +18,18 @@ export default function LineChartTresorerie({ globalDateStart, globalDateEnd }) 
 
   useEffect(() => {
     const abortController = new AbortController();
-    
+
     const fetchEvolutionData = async () => {
       setLoading(true);
       try {
         // Ne pas envoyer de paramètres de dates pour utiliser les 6 derniers mois par défaut
-        let url = `${BASE_URL_API}/evolution-tresorerie/`;
-        
-        const response = await fetch(url, {
+        let url = `/evolution-tresorerie/`;
+
+        const response = await fetchWithReauth(url, {
           signal: abortController.signal
         });
         const data = await response.json();
-        
+
         if (!abortController.signal.aborted) {
           setEvolutionData(data.evolution || []);
         }
@@ -60,16 +61,16 @@ export default function LineChartTresorerie({ globalDateStart, globalDateEnd }) 
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={evolutionData} margin={{ top: 10, right: 30, left: 60, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis 
-              dataKey="mois" 
+            <XAxis
+              dataKey="mois"
               stroke="#4b5563"
               tick={{ fontSize: 12 }}
               angle={-15}
               textAnchor="end"
               height={60}
             />
-            <YAxis 
-              stroke="#4b5563" 
+            <YAxis
+              stroke="#4b5563"
               width={80}
               tickFormatter={(value) => `${(value / 1000).toFixed(0)}K Ar`}
             />
@@ -84,7 +85,7 @@ export default function LineChartTresorerie({ globalDateStart, globalDateEnd }) 
               formatter={(value) => value.toLocaleString('fr-FR') + ' Ar'}
             />
             <Legend wrapperStyle={{ paddingTop: '10px' }} />
-            
+
             {/* Trésorerie - Bleu cyan */}
             <Line
               type="monotone"

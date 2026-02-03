@@ -6,6 +6,10 @@ import { EditProfileModal, ChangePasswordModal } from './ProfileModals';
 import { useGetProfileQuery } from '../../states/user/userApiSlice';
 import { URL_IMAGE } from '../../states/constants/constants';
 
+import AccessManagementModal from '../project/AccessManagementModal';
+import { useGetPendingRequestsQuery } from '../../states/project/projectApiSlice';
+import { useCurrentProjectName } from '../../hooks/useProjectId';
+
 const navItems = [
     { name: 'Pièces comptables', key: 'gestion-pieces', icon: '📝' },
     { name: 'Importer des fichiers', key: 'import-ocr', icon: '📎' },
@@ -15,9 +19,10 @@ const navItems = [
     { name: 'Tableau de bord', key: 'dashboard', icon: '📊' },
 ];
 
-const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
+const Header = ({ currentPage, onNavigate, onOpenSaisieMenu, hideNavigation }) => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
+    const projectName = useCurrentProjectName();
 
     const [modalOpen, setModalOpen] = useState(null); // 'profile' or 'security'
     const { theme, toggleTheme } = useTheme();
@@ -61,6 +66,16 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
         return `${URL_IMAGE}${path}`;
     };
 
+    const [accessModalOpen, setAccessModalOpen] = useState(false);
+
+    // Fetch pending requests for admin notification
+    const { data: pendingRequests } = useGetPendingRequestsQuery(undefined, {
+        skip: !isAdmin,
+        pollingInterval: 5000 // Poll every 5s for near-real-time updates
+    });
+
+    const pendingCount = pendingRequests?.length || 0;
+
     return (
         <header className="bg-white dark:bg-gray-800 shadow-md border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 w-full z-30">
             <div className="max-w-full mx-auto px-3 sm:px-4 lg:px-8">
@@ -70,37 +85,63 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
                     <div className="flex items-center">
                         <div className="flex items-center flex-shrink-0 mr-4 lg:mr-6">
                             <h1
-                                className="text-sm font-bold text-gray-900 dark:text-gray-100 cursor-pointer not-italic tracking-tight"
-                                onClick={() => handleNavClick('dashboard')}
+                                className="text-sm font-bold text-gray-900 dark:text-indigo-400 cursor-pointer not-italic tracking-tight flex items-center"
+                                onClick={() => !hideNavigation && handleNavClick('dashboard')}
                             >
-                                Assistant Comptable
+                                {hideNavigation ? (
+                                    <span className="text-lg">Assistant Comptable</span>
+                                ) : (
+                                    <>
+                                        {projectName}
+                                    </>
+                                )}
                             </h1>
                         </div>
 
-                        <nav className="hidden xl:flex items-center space-x-3 xl:space-x-5">
-                            {filteredNavItems.map((item) => {
-                                const isActive = displayActiveKey === item.key;
-                                return (
-                                    <button
-                                        key={item.key}
-                                        onClick={() => handleNavClick(item.key)}
-                                        className={`flex items-center text-xs font-medium pb-0.5 transition duration-150 whitespace-nowrap not-italic
-                                            ${isActive
-                                                ? 'text-gray-900 dark:text-gray-100 border-b-2 border-gray-800 dark:border-gray-100 font-semibold'
-                                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
-                                            }
-                                        `}
-                                    >
-                                        <span className="text-sm xl:text-base mr-1">{item.icon}</span>
-                                        {item.name}
-                                    </button>
-                                );
-                            })}
-                        </nav>
+                        {!hideNavigation && (
+                            <nav className="hidden xl:flex items-center space-x-3 xl:space-x-5">
+                                {filteredNavItems.map((item) => {
+                                    const isActive = displayActiveKey === item.key;
+                                    return (
+                                        <button
+                                            key={item.key}
+                                            onClick={() => handleNavClick(item.key)}
+                                            className={`flex items-center text-xs font-medium pb-0.5 transition duration-150 whitespace-nowrap not-italic
+                                                ${isActive
+                                                    ? 'text-gray-900 dark:text-gray-100 border-b-2 border-gray-800 dark:border-gray-100 font-semibold'
+                                                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 border-b-2 border-transparent hover:border-gray-300 dark:hover:border-gray-600'
+                                                }
+                                            `}
+                                        >
+                                            <span className="text-sm xl:text-base mr-1">{item.icon}</span>
+                                            {item.name}
+                                        </button>
+                                    );
+                                })}
+                            </nav>
+                        )}
                     </div>
 
                     {/* Right Section: Mobile Menu & Avatar */}
                     <div className="flex items-center space-x-2 sm:space-x-4">
+                        {/* Admin Notification Bell */}
+                        {isAdmin && (
+                            <button
+                                onClick={() => setAccessModalOpen(true)}
+                                className="relative p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
+                                aria-label="Notifications"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                {pendingCount > 0 && (
+                                    <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white dark:ring-gray-800 animate-pulse">
+                                        {pendingCount}
+                                    </span>
+                                )}
+                            </button>
+                        )}
+
                         <button
                             onClick={toggleTheme}
                             className="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
@@ -109,19 +150,21 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
                             {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
                         </button>
 
-                        <button
-                            className="xl:hidden p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition mr-2"
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            aria-label="Menu"
-                        >
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                {mobileMenuOpen ? (
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                ) : (
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                                )}
-                            </svg>
-                        </button>
+                        {!hideNavigation && (
+                            <button
+                                className="xl:hidden p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition mr-2"
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                aria-label="Menu"
+                            >
+                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    {mobileMenuOpen ? (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    ) : (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    )}
+                                </svg>
+                            </button>
+                        )}
 
                         <div className="relative">
                             <button
@@ -159,36 +202,39 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu }) => {
             {/* Modals */}
             <EditProfileModal isOpen={modalOpen === 'profile'} onClose={() => setModalOpen(null)} />
             <ChangePasswordModal isOpen={modalOpen === 'security'} onClose={() => setModalOpen(null)} />
+            <AccessManagementModal isOpen={accessModalOpen} onClose={() => setAccessModalOpen(false)} />
 
             {/* Menu Mobile Dropdown */}
-            {mobileMenuOpen && (
-                <div className="xl:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg overflow-hidden animate-in slide-in-from-top duration-200">
-                    <nav className="px-3 py-3 space-y-1">
-                        {filteredNavItems.map((item) => {
-                            const isActive = displayActiveKey === item.key;
-                            return (
-                                <button
-                                    key={item.key}
-                                    onClick={() => handleNavClick(item.key)}
-                                    className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition duration-150
+            {
+                mobileMenuOpen && !hideNavigation && (
+                    <div className="xl:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg overflow-hidden animate-in slide-in-from-top duration-200">
+                        <nav className="px-3 py-3 space-y-1">
+                            {filteredNavItems.map((item) => {
+                                const isActive = displayActiveKey === item.key;
+                                return (
+                                    <button
+                                        key={item.key}
+                                        onClick={() => handleNavClick(item.key)}
+                                        className={`w-full flex items-center px-4 py-3 rounded-xl text-sm font-medium transition duration-150
                                         ${isActive
-                                            ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-bold'
-                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                        }
+                                                ? 'bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-bold'
+                                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                            }
                                     `}
-                                >
-                                    <span className="text-lg mr-4">{item.icon}</span>
-                                    {item.name}
-                                </button>
-                            );
-                        })}
+                                    >
+                                        <span className="text-lg mr-4">{item.icon}</span>
+                                        {item.name}
+                                    </button>
+                                );
+                            })}
 
-                        <div className="h-px bg-gray-100 my-2" />
+                            <div className="h-px bg-gray-100 my-2" />
 
-                    </nav>
-                </div>
-            )}
-        </header>
+                        </nav>
+                    </div>
+                )
+            }
+        </header >
     );
 };
 

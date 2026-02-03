@@ -17,14 +17,25 @@ import {
     Calendar,
     Search
 } from 'lucide-react';
+import LoadingOverlay from '../../components/layout/LoadingOverlay';
 import { BASE_URL_API } from '../../constants/globalConstants';
+import { useProjectId } from '../../hooks/useProjectId';
 
 const ITEMS_PER_PAGE = 10;
+
+const getAuthHeaders = () => {
+    const headers = { 'Content-Type': 'application/json' };
+    const projectId = localStorage.getItem("selectedProjectId");
+    if (projectId) {
+        headers['X-Project-ID'] = projectId;
+    }
+    return headers;
+};
 
 const API_CONFIG = {
     bilanUrl: `${BASE_URL_API}/bilans/`,
     compteResultatUrl: `${BASE_URL_API}/CompteResultats/`,
-    headers: { 'Content-Type': 'application/json' }
+    getHeaders: getAuthHeaders
 };
 
 const formatDate = (date) => {
@@ -122,7 +133,7 @@ const PaginationControls = ({ currentPage, totalPages, totalItems, setCurrentPag
     );
 };
 
-const TransactionView = () => {
+const TransactionView = ({ onNewSaisieClick, viewType }) => {
     const [selectedSection, setSelectedSection] = useState('bilan');
     const [currentPage, setCurrentPage] = useState(1);
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
@@ -137,6 +148,7 @@ const TransactionView = () => {
     const [error, setError] = useState(null);
     const [totalItems, setTotalItems] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const projectId = useProjectId();
 
     // NOUVELLE LOGIQUE DE PÉRIODE
     const [availableYears, setAvailableYears] = useState([]);
@@ -147,7 +159,10 @@ const TransactionView = () => {
     useEffect(() => {
         const fetchAvailableYears = async () => {
             try {
-                const res = await fetch(`${BASE_URL_API}/journals/years/`);
+                const res = await fetch(`${BASE_URL_API}/journals/years/`, {
+                    headers: API_CONFIG.getHeaders(),
+                    credentials: 'include'
+                });
                 if (res.ok) {
                     const years = await res.json();
                     setAvailableYears(years);
@@ -165,7 +180,7 @@ const TransactionView = () => {
             }
         };
         fetchAvailableYears();
-    }, []);
+    }, [projectId]);
 
     // EFFET: Calculer automatiquement les dates de début/fin quand les sélecteurs changent
     useEffect(() => {
@@ -222,22 +237,17 @@ const TransactionView = () => {
 
     const fetchWithParams = async (url, params, normalizer, setter) => {
         const queryParams = new URLSearchParams(params).toString();
-        const res = await fetch(`${url}?${queryParams}`, { headers: API_CONFIG.headers });
+        const res = await fetch(`${url}?${queryParams}`, {
+            headers: API_CONFIG.getHeaders(),
+            credentials: 'include'
+        });
         if (!res.ok) throw new Error("Erreur lors du chargement des données");
 
         const json = await res.json();
 
         // Support PAGINATION DRF (StandardPagination)
-        // json = { count: 100, next: "...", previous: "...", results: [...] }
         if (json.results && Array.isArray(json.results)) {
             setter(normalizer(json.results));
-            // On pourrait aussi setter le total count ici si on avait un state pour ça
-            // Mais pour l'instant on garde la logique existante où la pagination est "visuelle"
-            // ATTENTION: La pagination actuelle du composant est client-side.
-            // Si on passe en server-side, il faut modifier toute la logique de pagination du composant.
-
-            // Pour cette étape, on va adapter le composant pour qu'il soit Hybride ou Full Server-side.
-            // Vu que le composant gère "currentPage", on va l'envoyer au backend.
             return { results: json.results, count: json.count };
         } else {
             // Fallback ancien format (array direct)
@@ -251,27 +261,20 @@ const TransactionView = () => {
         setLoading(true);
         setError(null);
         try {
-            // Paramètres communs
             const commonParams = {
                 date_start: dateDebut,
                 date_end: dateFin,
-                // AJOUT PAGINATION SERVEUR
                 page: currentPage,
-                // page_size: itemsPerPage // Optionnel si on veut forcer différent du défaut serveur (20)
             };
 
             if (recherche) commonParams.search = recherche;
 
             if (selectedSection === 'bilan') {
-                const { results, count } = await fetchWithParams(`${BASE_URL_API}/bilans/`, commonParams, normalizeBilanData, setBilanData);
+                const { count } = await fetchWithParams(`${BASE_URL_API}/bilans/`, commonParams, normalizeBilanData, setBilanData);
                 setTotalItems(count);
-                // Si le serveur renvoie count, on calcule nb pages
-                // Note: itemsPerPage doit être aligné avec le serveur (20 par défaut dans StandardPagination)
-                // Ou on récupère pageSize du serveur si possible (pas standard DRF).
-                // On va supposer 20 pour le moment ou ajuster itemsPerPage coté front.
                 setTotalPages(Math.ceil(count / ITEMS_PER_PAGE));
             } else {
-                const { results, count } = await fetchWithParams(`${BASE_URL_API}/CompteResultats/`, commonParams, normalizeCompteResultatData, setCompteResultatData);
+                const { count } = await fetchWithParams(`${BASE_URL_API}/CompteResultats/`, commonParams, normalizeCompteResultatData, setCompteResultatData);
                 setTotalItems(count);
                 setTotalPages(Math.ceil(count / ITEMS_PER_PAGE));
             }
@@ -290,10 +293,9 @@ const TransactionView = () => {
                 date_end: dateFin
             }).toString();
 
-            // Charger les KPIs du Résultat Net et du Bilan en parallèle
             const [resNetRes, bilanKpisRes] = await Promise.all([
-                fetch(`${BASE_URL_API}/resultat-net/?${queryParams}`, { headers: API_CONFIG.headers }),
-                fetch(`${BASE_URL_API}/bilan-kpis-variations/?${queryParams}`, { headers: API_CONFIG.headers })
+                fetch(`${BASE_URL_API}/resultat-net/?${queryParams}`, { headers: API_CONFIG.getHeaders(), credentials: 'include' }),
+                fetch(`${BASE_URL_API}/bilan-kpis-variations/?${queryParams}`, { headers: API_CONFIG.getHeaders(), credentials: 'include' })
             ]);
 
             if (resNetRes.ok) {
@@ -312,48 +314,34 @@ const TransactionView = () => {
 
     useEffect(() => {
         const loadData = async () => {
-            // Ne charger que si les dates sont définies (après chargement des années disponibles)
-            if (!dateDebut || !dateFin) {
-                return;
-            }
+            if (!dateDebut || !dateFin) return;
 
             setLoading(true);
             setError(null);
             setCurrentPage(1);
             try {
-                // Charger les données en parallèle
                 await Promise.all([
-                    // Bilan = période (dateDebut -> dateFin) - Aligné avec le Compte de Résultat
                     fetchWithParams(API_CONFIG.bilanUrl, { date_start: dateDebut, date_end: dateFin }, normalizeBilanData, setBilanData),
-                    // CR = période (dateDebut -> dateFin)
                     fetchWithParams(API_CONFIG.compteResultatUrl, { date_start: dateDebut, date_end: dateFin }, normalizeCompteResultatData, setCompteResultatData),
                 ]);
-                // Charger les KPIs séparément (ne pas bloquer si ça échoue)
                 fetchKPIs();
             } catch (err) {
                 console.error("Erreur chargement:", err);
-                // Ne pas afficher d'erreur si les données sont quand même chargées
             }
             finally { setLoading(false); }
         };
         loadData();
-    }, [dateDebut, dateFin]);
+    }, [dateDebut, dateFin, projectId]);
 
     const filterData = (details, isBilan = false) => {
         const searchLower = recherche.toLowerCase().trim();
         let filtered = details;
 
-        // Filtrer par période d'exercice
-        // Le backend a déjà filtré par période (date_start -> date_end) pour le Bilan et le CR
         if (dateDebut && dateFin) {
             filtered = filtered.filter(item => {
-                // Robust String Comparison (YYYY-MM-DD)
-                const itemsPerPage = 20; // Aligné avec StandardPagination backend
                 const itemDate = (item.date || '').substring(0, 10);
                 const start = (dateDebut || '').substring(0, 10);
                 const end = (dateFin || '').substring(0, 10);
-
-                // Bilan et CR : tous deux par période
                 return itemDate >= start && itemDate <= end;
             });
         } else if (selectedYear) {
@@ -363,7 +351,6 @@ const TransactionView = () => {
             });
         }
 
-        // Filtrer par recherche
         if (searchLower) {
             filtered = filtered.filter(item =>
                 item.numero_compte.toLowerCase().includes(searchLower) ||
@@ -376,8 +363,6 @@ const TransactionView = () => {
     };
 
     const calculations = useMemo(() => {
-        // IMPORTANT: Pour le Bilan, on spécifie isBilan=true pour éviter le filtre par date de début
-        // Cela permet aux KPI (Actif, Passif) de refléter le cumul historique
         const bilan = filterData(bilanData, true);
         const compteResultat = filterData(compteResultatData, false);
 
@@ -390,10 +375,7 @@ const TransactionView = () => {
         const produits = compteResultat.filter(i => i.nature.toLowerCase().includes('produit')).reduce((a, b) => a + b.montant_ar, 0);
         const charges = compteResultat.filter(i => i.nature.toLowerCase().includes('charge')).reduce((a, b) => a + b.montant_ar, 0);
 
-        // Use backend value if available, else fallback to local calculation
         const resultatNet = kpiData && kpiData.resultat_net !== undefined ? parseFloat(kpiData.resultat_net) : (produits - charges);
-
-        // Formule : Capitaux Propres = Comptes catégorie CAPITAUX_PROPRES + Résultat Net de la période
         const capitauxPropresTotal = capitauxPropresBilan + resultatNet;
 
         const totalActif = actifCourant + actifNonCourant;
@@ -402,10 +384,8 @@ const TransactionView = () => {
         const totalDettes = passifCourant + passifNonCourant;
         const endettementRatio = capitauxPropresTotal ? (totalDettes / capitauxPropresTotal * 100) : 0;
 
-        // Backend provides variations
         const resultatNetChange = kpiData && kpiData.variation !== undefined ? parseFloat(kpiData.variation) : 0;
 
-        // Variations des KPIs du Bilan depuis le nouvel endpoint
         const actifCourantChange = bilanKpisData?.variations?.actif_courant || 0;
         const actifNonCourantChange = bilanKpisData?.variations?.actif_non_courant || 0;
         const capitauxPropresChange = bilanKpisData?.variations?.capitaux_propres || 0;
@@ -435,20 +415,12 @@ const TransactionView = () => {
         ['Ratio Endettement', calculations.endettementRatio, calculations.endettementChange, true, FileText, 'Dettes/CP']
     ];
 
-    // AVEC PAGINATION SERVEUR :
-    // allDetails contient déjà uniquement les résultats de la page courante renvoyés par l'API
     const allDetails = useMemo(() => selectedSection === 'bilan' ? bilanData : compteResultatData, [selectedSection, bilanData, compteResultatData]);
-
-    // On ne fait plus de slice ici, on prend tout ce que l'API nous a donné pour cette page
     const paginatedDetails = allDetails;
 
-    // Note: totalItems est mis à jour dans fetchData via le 'count' de l'API
-    // totalPages aussi est mis à jour dans fetchData
-    // On ignore le calcul local basé sur allDetails.length qui ne serait que de 20 max.
-
     return (
-        <div className="fixed inset-0 pt-14 flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-            <main className="flex-1 flex flex-col min-h-0 overflow-hidden p-2 gap-2">
+        <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 min-h-screen">
+            <main className="flex flex-col p-2 sm:p-4 gap-4">
                 {/* Période d'exercice */}
                 {/* Période d'exercice */}
                 {/* 1. PÉRIODE D'EXERCICE - Style GestionPiecesBoard */}
@@ -636,17 +608,7 @@ const TransactionView = () => {
 
                 {/* Table des détails */}
                 <div className="px-2 flex-1 min-h-0 relative">
-                    {loading && (
-                        <div className="absolute inset-0 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm z-20 flex justify-center items-center rounded-xl">
-                            <div className="flex flex-col items-center max-w-sm w-full text-center">
-                                <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-                                    <div className="absolute inset-0 border-4 border-gray-200 rounded-full"></div>
-                                    <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-                                </div>
-                                <p className="text-base sm:text-lg font-semibold text-gray-800 animate-pulse px-4">Chargement des données...</p>
-                            </div>
-                        </div>
-                    )}
+                    {loading && <LoadingOverlay message="Chargement des données..." fullScreen={false} />}
                     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col h-full">
                         <div className="overflow-auto min-h-0">
                             <table className="w-full border-collapse text-xs sm:text-sm min-w-[800px] table-fixed">

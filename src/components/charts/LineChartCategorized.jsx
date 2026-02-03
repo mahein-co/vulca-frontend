@@ -11,6 +11,9 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { BASE_URL_API } from '../../constants/globalConstants';
+import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
+import { useProjectId } from '../../hooks/useProjectId';
+import LoadingOverlay from '../../components/layout/LoadingOverlay';
 
 // Configuration des catégories et métriques
 const METRICS_CONFIG = {
@@ -44,6 +47,7 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
   const [selectedMetrics, setSelectedMetrics] = useState(['roe', 'roa', 'marge_op']);
   const [evolutionData, setEvolutionData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const projectId = useProjectId();
 
   // Récupérer les métriques de la catégorie sélectionnée
   const availableMetrics = METRICS_CONFIG[selectedCategory] || [];
@@ -73,7 +77,17 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
             url += `?date_start=${globalDateStart}&date_end=${globalDateEnd}`;
           }
 
-          return fetch(url, { signal: abortController.signal })
+          // Nettoyer l'URL si elle contient BASE_URL_API (fetchWithReauth ajoute automatiquement BASE_URL sauf si http)
+          // Mais ici metric.endpoint est juste le path (ex: /evolution-roe/)
+          // Sauf qu'on a ajouté BASE_URL_API ligne 72. 
+
+          // Correction: remove BASE_URL_API pre-pend logic manually or let fetchWithReauth handle full url?
+          // fetchWithReauth checks "if (!url.startsWith('http'))"
+          // So if we pass full url, it uses it.
+
+          return fetchWithReauth(url, {
+            signal: abortController.signal
+          })
             .then(res => res.json())
             .then(data => ({ metric, data: data.evolution || [] }));
         });
@@ -115,7 +129,7 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
     return () => {
       abortController.abort();
     };
-  }, [selectedCategory, selectedMetrics, globalDateStart, globalDateEnd]);
+  }, [selectedCategory, selectedMetrics, globalDateStart, globalDateEnd, projectId]);
 
   // Gérer le changement de catégorie
   const handleCategoryChange = (category) => {
@@ -192,9 +206,7 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
       {/* Graphique */}
       <div className="w-full h-64 sm:h-80 md:h-96 relative">
         {loading ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-gray-500 dark:text-gray-400 text-xs sm:text-base">Chargement des données...</div>
-          </div>
+          <LoadingOverlay message="Chargement des métriques..." fullScreen={false} />
         ) : selectedMetrics.length === 0 ? (
           <div className="w-full h-full flex items-center justify-center">
             <div className="text-gray-500 dark:text-gray-400 text-xs sm:text-base text-center px-4">Sélectionnez une métrique</div>

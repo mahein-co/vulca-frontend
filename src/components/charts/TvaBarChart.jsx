@@ -11,11 +11,15 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { BASE_URL_API } from '../../constants/globalConstants';
+import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
+import { useProjectId } from '../../hooks/useProjectId';
+import LoadingOverlay from '../layout/LoadingOverlay';
 
 export default function TvaBarChart({ globalDateStart, globalDateEnd }) {
   const { isDarkMode } = useTheme();
   const [tvaData, setTvaData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const projectId = useProjectId();
 
   useEffect(() => {
     // Utiliser AbortController pour éviter les double-fetches en dev mode
@@ -26,7 +30,7 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd }) {
       setLoading(true);
       try {
         // 1. Récupérer la date max des factures depuis l'API
-        const dateRangeResponse = await fetch(`${BASE_URL_API}/journals/date-range/`, {
+        const dateRangeResponse = await fetchWithReauth(`/journals/date-range/`, {
           signal: abortController.signal
         });
         const dateRangeData = await dateRangeResponse.json();
@@ -49,7 +53,7 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd }) {
 
           // Ajouter la promesse au tableau (exécution parallèle)
           monthPromises.push(
-            fetch(`${BASE_URL_API}/tva/?date_start=${dateStart}&date_end=${dateEnd}`, {
+            fetchWithReauth(`/tva/?date_start=${dateStart}&date_end=${dateEnd}`, {
               signal: abortController.signal
             })
               .then(res => res.json())
@@ -85,7 +89,7 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd }) {
     return () => {
       abortController.abort();
     };
-  }, [globalDateStart, globalDateEnd]);
+  }, [globalDateStart, globalDateEnd, projectId]);
 
   // Calculer les données du dernier mois pour le résumé
   const latestData = tvaData.length > 0 ? tvaData[tvaData.length - 1] : { net: 0 };
@@ -147,8 +151,8 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd }) {
       </div>
 
       {loading ? (
-        <div className="w-full h-96 lg:h-[450px] flex items-center justify-center">
-          <div className="text-gray-500 dark:text-gray-400">Chargement des données TVA...</div>
+        <div className="w-full h-80 sm:h-96 relative">
+          <LoadingOverlay message="Chargement des données TVA..." fullScreen={false} />
         </div>
       ) : (
         <div className="w-full h-80 sm:h-96">

@@ -1,13 +1,23 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { FaRobot } from "react-icons/fa";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import IndexHeader from "../header/IndexHeader";
 import LargeSidebar from "../sidebar/LargeSidebar";
 import IndexChatbotPage from "../../views/chat/IndexChatbotPage";
+import { useProjectId } from "../../hooks/useProjectId";
 import { useDispatch, useSelector } from "react-redux";
 import { actionCloseChat, actionOpenChat } from "../../states/chat/chatSlice";
 
 export default function DashboardLayout() {
+  const navigate = useNavigate();
+
+  const projectId = useProjectId();
+  useEffect(() => {
+    if (!projectId) {
+      navigate("/projects");
+    }
+  }, [navigate, projectId]);
+
   // USE-DISPATCH =================================
   const dispatch = useDispatch();
 

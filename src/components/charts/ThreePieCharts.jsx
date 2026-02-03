@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../states/context/ThemeContext';
 import axios from 'axios';
 import { BASE_URL_API } from '../../constants/globalConstants';
+import { getApiHeaders } from '../../utils/apiUtils';
+import { useProjectId } from '../../hooks/useProjectId';
 import {
   PieChart,
   Pie,
@@ -10,6 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
+import LoadingOverlay from '../layout/LoadingOverlay';
 
 // Différentes palettes de couleurs pour chaque camembert
 const COLORS_PRODUITS = ['#10b981', '#059669', '#047857', '#065f46', '#064e3b'];
@@ -22,6 +25,7 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
   const [chargesData, setChargesData] = useState([]);
   const [comparisonData, setComparisonData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const projectId = useProjectId();
 
   // Palettes de couleurs à fort contraste et très distinctes
   const COLORS_PRODUITS_NEW = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'];
@@ -36,7 +40,7 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
 
     // Fetch des données pour les 3 camemberts
     Promise.all([
-      axios.get(`${BASE_URL_API}/CompteResultats/${params}`),
+      axios.get(`${BASE_URL_API}/CompteResultats/${params}`, { headers: getApiHeaders(), withCredentials: true }),
     ])
       .then(([res]) => {
         let rawData = res.data;
@@ -114,7 +118,7 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
         console.error("Erreur lors du chargement des répartitions", err);
         setLoading(false);
       });
-  }, [globalDateStart, globalDateEnd]);
+  }, [globalDateStart, globalDateEnd, projectId]);
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -187,8 +191,8 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700 flex items-center justify-center h-96">
-        <p className="text-gray-500 dark:text-gray-400 animate-pulse">Chargement des répartitions...</p>
+      <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300 dark:border-gray-700 relative h-96">
+        <LoadingOverlay message="Chargement des répartitions..." fullScreen={false} />
       </div>
     );
   }

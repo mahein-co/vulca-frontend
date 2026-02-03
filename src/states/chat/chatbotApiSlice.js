@@ -16,7 +16,8 @@ export const chatbotApiSlice = createApi({
 
         createHistory: builder.mutation({
             query: ({ data, project_id }) => ({
-                url: "new-chat/",
+                /*url: "new-chat/",*/
+                url: "histories/",
                 method: "POST",
                 body: data,
             }),
@@ -26,10 +27,15 @@ export const chatbotApiSlice = createApi({
         }),
 
         getMessages: builder.query({
-            query: ({ historyId, project_id }) => `messages-history/${historyId}/?project_id=${project_id}`,
-            providesTags: (result, error, { historyId, project_id }) => [
-                { type: 'ChatMessage', id: `${project_id}-${historyId}` },
-            ],
+            query: ({ historyId, project_id }) => {
+                const pid = project_id || localStorage.getItem("selectedProjectId");
+                console.log("getMessages query - historyId:", historyId, "project_id:", pid);
+                return `histories/${historyId}/?project_id=${pid}`;   
+            },
+            providesTags: (result, error, { historyId, project_id }) => {
+                const pid = project_id || localStorage.getItem("selectedProjectId");
+                return [{ type: 'ChatMessage', id: `${pid}-${historyId}` }];
+            },
         }),
 
         sendMessage: builder.mutation({
@@ -38,14 +44,17 @@ export const chatbotApiSlice = createApi({
                 method: "POST",
                 body: data,
             }),
-            invalidatesTags: (result, error, { data, project_id }) => [
-                { type: 'ChatMessage', id: `${project_id || localStorage.getItem("selectedProjectId")}-${data.message_history}` },
-            ],
+            invalidatesTags: (result, error, { data, project_id }) => {
+                const pid = project_id || localStorage.getItem("selectedProjectId");
+                return [
+                    { type: 'ChatMessage', id: `${pid}-${data.message_history}` },
+                ];
+            },
         }),
 
         renameHistory: builder.mutation({
             query: ({ historyId, title, project_id }) => ({
-                url: `messages-history/${historyId}/rename/`,
+                url: `histories/${historyId}/rename/`,
                 method: "PATCH",
                 body: { title },
             }),
@@ -56,7 +65,7 @@ export const chatbotApiSlice = createApi({
 
         deleteHistory: builder.mutation({
             query: ({ historyId, project_id }) => ({
-                url: `messages-history/${historyId}/delete/`,
+                url: `histories/${historyId}/delete/`,
                 method: "DELETE",
             }),
             invalidatesTags: (result, error, { project_id }) => [

@@ -39,9 +39,10 @@ export default function IndexChatbotPage({ close }) {
   const [renameHistory] = useRenameHistoryMutation();
   const [deleteHistory] = useDeleteHistoryMutation();
 
-  const { data: dbMessages, isLoading: loadingMessages } = useGetMessagesQuery(selectedHistoryId, {
-    skip: !selectedHistoryId
-  });
+  const { data: dbMessages, isLoading: loadingMessages } = useGetMessagesQuery(
+    {historyId: selectedHistoryId, projectId }, 
+    {skip: !selectedHistoryId}
+  );
 
   const parseMarkdown = (text) => {
     if (!text) return "";
@@ -54,8 +55,11 @@ export default function IndexChatbotPage({ close }) {
   };
 
   useEffect(() => {
-    const rawMessages = dbMessages?.results || dbMessages;
+    /*const rawMessages = dbMessages?.results || dbMessages;*/
+    const rawMessages = dbMessages?.history?.chat_messages || dbMessages?.chat_messages || [];
     console.log("Chatbot rawMessages:", rawMessages);
+    console.log("📨 Full dbMessages:", dbMessages);
+
     if (rawMessages && Array.isArray(rawMessages)) {
       const flat = [];
       rawMessages.forEach(m => {
@@ -77,12 +81,13 @@ export default function IndexChatbotPage({ close }) {
       console.log("Chatbot flat messages:", flat);
       setMessages(flat);
     } else {
+      console.log("⚠️ No messages array found");
       setMessages([]);
     }
   }, [dbMessages]);
 
   useEffect(() => {
-    const rawHistories = histories?.results || histories;
+    const rawHistories = histories?.histories || histories;
     console.log("Chatbot rawHistories:", rawHistories);
     if (rawHistories && Array.isArray(rawHistories) && rawHistories.length > 0 && !selectedHistoryId) {
       // Trier par ID décroissant pour avoir le plus récent en premier
@@ -108,12 +113,29 @@ export default function IndexChatbotPage({ close }) {
 
   const handleNewChat = async () => {
     try {
-      const result = await createHistory({ title: "Nouvelle discussion" }).unwrap();
-      setSelectedHistoryId(result.id);
+      /*const result = await createHistory({ title: "Nouvelle discussion" }).unwrap();*/
+      const result = await createHistory({ 
+        data: { title: "Nouvelle discussion" }, 
+        project_id: projectId 
+      }).unwrap();
+
+      const historyId = result?.history?.id || result?.id;
+      console.log("New history created with ID:", historyId);
+
+      /*setSelectedHistoryId(result.id);*/
+      setSelectedHistoryId(historyId);
       setMessages([]);
       if (window.innerWidth < 768) setIsSidebarOpen(false);
     } catch (err) {
       console.error("Failed to create history", err);
+
+      Swal.fire({
+        title: 'Erreur',
+        text: err?.data?.message || "Impossible de créer une nouvelle discussion",
+        icon: 'error',
+        background: isDarkMode ? '#1e293b' : '#fff',
+        color: isDarkMode ? '#fff' : '#1e293b'
+      });
     }
   };
 
@@ -127,8 +149,8 @@ export default function IndexChatbotPage({ close }) {
 
     try {
       await sendMessage({
-        user_input: userText,
-        message_history: selectedHistoryId
+        data: { user_input: userText, message_history: selectedHistoryId },
+        project_id: projectId
       }).unwrap();
     } catch (err) {
       setMessages(prev => [...prev, {
@@ -258,8 +280,8 @@ export default function IndexChatbotPage({ close }) {
         <div className="flex-1 overflow-y-auto space-y-1.5 custom-scrollbar pr-1">
           {loadingHistories ? (
             <div className="opacity-40 text-sm animate-pulse text-center">Chargement...</div>
-          ) : Array.isArray(histories?.results || histories) && (histories?.results || histories).length > 0 ? (
-            (histories?.results || histories).map(h => (
+          ) : Array.isArray(histories?.histories || histories) && (histories?.histories || histories).length > 0 ? (
+            (histories?.histories || histories).map(h => (
               <div
                 key={h.id}
                 onClick={() => {
@@ -443,7 +465,8 @@ export default function IndexChatbotPage({ close }) {
                 type="text"
                 value={currentMessage}
                 onChange={(e) => setCurrentMessage(e.target.value)}
-                disabled={sendingMessage || !selectedHistoryId}
+                /* disabled={sendingMessage || !selectedHistoryId} */
+                disabled={sendingMessage}
                 placeholder={selectedHistoryId ? "Posez votre question..." : "Sélectionnez une discussion"}
                 className={`w-full px-5 py-3 rounded-xl text-sm outline-none transition-all border
                   ${isDarkMode

@@ -14,10 +14,12 @@ import BonAchatForm from "./views/ocr/forms/BonAchatForm";
 import BankForm from "./views/ocr/forms/BankForm";
 import Classification from "./views/classification/Classification";
 import GrandLivre from "./views/grandlivre/grandlivre";
+import ProjectSelection from "./views/ProjectSelection";
 
 export default function Routes() {
   return useRoutes([
     { path: "/", element: <Navigate to={"/app"} /> },
+    { path: "/projects", element: <ProjectSelection /> },
     {
       path: "/app",
       element: <DashboardLayout />,

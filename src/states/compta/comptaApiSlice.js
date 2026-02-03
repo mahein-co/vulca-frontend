@@ -1,24 +1,30 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { BASE_URL_API } from "../../constants/globalConstants";
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryWithHeaders } from "../apiConfig";
 
 export const comptaApiSlice = createApi({
   reducerPath: "comptaApi",
-  baseQuery: fetchBaseQuery({ baseUrl: BASE_URL_API, credentials: "include" }),
+  baseQuery: baseQueryWithHeaders,
   tagTypes: ["compta"],
   endpoints: (builder) => ({
+    // ✅ MULTI-TENANT: project_id enables cache isolation per project
     getChiffreAffaireMensuel: builder.query({
-      query: (annee) => {
+      query: ({ project_id, annee }) => {
         let url = "compta/chiffre-affaire-mensuel/";
-        if (annee) {
-            url += `?annee=${annee}`;
-        }
-        return url;
+        const params = new URLSearchParams();
+        if (project_id) params.append('project_id', project_id);
+        if (annee) params.append('annee', annee);
+        return params.toString() ? `${url}?${params.toString()}` : url;
       },
-      providesTags: ["compta"],
+      providesTags: (result, error, { project_id }) => [
+        { type: 'compta', id: `ca-mensuel-${project_id}` },
+      ],
     }),
+
     getChiffreAffaireAnnuel: builder.query({
-      query: () => "compta/chiffre-affaire-annuel/",
-      providesTags: ["compta"],
+      query: (project_id) => `compta/chiffre-affaire-annuel/?project_id=${project_id}`,
+      providesTags: (result, error, project_id) => [
+        { type: 'compta', id: `ca-annuel-${project_id}` },
+      ],
     }),
   }),
 });

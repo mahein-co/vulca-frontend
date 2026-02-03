@@ -11,6 +11,7 @@ import {
   useRenameHistoryMutation,
   useDeleteHistoryMutation
 } from "../../states/chat/chatbotApiSlice";
+import { useProjectId } from "../../hooks/useProjectId";
 import Swal from "sweetalert2";
 import { useTheme } from "../../states/context/ThemeContext";
 
@@ -29,7 +30,10 @@ export default function IndexChatbotPage({ close }) {
   const [editingTitle, setEditingTitle] = useState("");
   const messagesRef = useRef(null);
 
-  const { data: histories, isLoading: loadingHistories } = useGetHistoriesQuery();
+  // ✅ MULTI-TENANT: Get project_id for cache isolation
+  const projectId = useProjectId();
+
+  const { data: histories, isLoading: loadingHistories } = useGetHistoriesQuery(projectId);
   const [createHistory] = useCreateHistoryMutation();
   const [sendMessage, { isLoading: sendingMessage }] = useSendMessageMutation();
   const [renameHistory] = useRenameHistoryMutation();

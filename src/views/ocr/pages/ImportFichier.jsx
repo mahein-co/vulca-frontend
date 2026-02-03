@@ -1,22 +1,8 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
+import LoadingOverlay from '../../../components/layout/LoadingOverlay';
 import { formatDateToISO } from '../../../utils/dateUtils';
-
 import { useExtractDataFromFileMutation, useSaveOneFileSourceMutation } from '../../../states/ocr/ocrApiSlice';
-
-// Composant Overlay de Chargement
-const LoadingOverlay = ({ message }) => (
-    <div className="fixed inset-0 bg-white/70 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center animate-simpleFadeIn p-4">
-        <div className="flex flex-col items-center max-w-sm w-full text-center">
-            {/* Spinner style iOS/moderne */}
-            <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-                <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-            </div>
-            <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 animate-pulse px-4">{message}</p>
-        </div>
-    </div>
-);
 
 const determinePieceType = (data) => {
     if (!data) return 'Autres';
@@ -77,6 +63,8 @@ const styles = `
     animation: fadeOut 0.3s ease-out forwards;
 }
 `;
+
+
 
 // --- Constantes et Données MOCK ---
 
@@ -176,7 +164,7 @@ const DocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onRemove
                     <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-2 text-center break-all">{file.name}</p>
                     <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
                         <p className="text-xs sm:text-sm text-blue-800 dark:text-blue-300 text-center">
-                            💡 L'aperçu Excel natif n'est pas disponible. Le fichier sera traité lors de l'extraction OCR.
+                            💡 L'aperçu Excel natif n'est pas disponible. Le fichier sera traité lors de l'extraction.
                         </p>
                     </div>
                 </div>
@@ -280,7 +268,7 @@ const OcrValidationForm = ({
             {/* Top border instead of gradient */}
             <div className="absolute top-0 left-0 right-0 h-1 bg-gray-200 dark:bg-gray-700" />
 
-            {/* Boutons d'Action OCR */}
+            {/* Boutons d'Action */}
             <div className="mb-2 sm:mb-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 border-b border-gray-100 dark:border-gray-700 pb-2 flex-shrink-0">
                 <div className="flex gap-2 w-full sm:w-auto">
                     <button
@@ -749,7 +737,7 @@ export default function ImportFichier({ onSaisieCompleted }) {
     }, [currentDocument, currentIndex]);
 
 
-    // 5. Extraction OCR
+    // 5. Extraction des données
     const handleExtractText = async () => {
         if (!currentFile) return;
 
@@ -798,7 +786,7 @@ export default function ImportFichier({ onSaisieCompleted }) {
 
         } catch (err) {
             console.error(err);
-            showErrorNotification("Echec de l'extraction OCR verifiez le fichier.");
+            showErrorNotification("Echec de l'extraction, vérifiez le fichier.");
         }
     };
 
@@ -885,12 +873,12 @@ export default function ImportFichier({ onSaisieCompleted }) {
 
     // Validation du Lot via API (DRF)
     const handleValiderAll = async () => {
-        if (!isLotValidatable) return alert("Extraction OCR requise pour tous les documents.");
+        if (!isLotValidatable) return alert("Extraction requise pour tous les documents.");
 
         setIsSaving(true);
         try {
             const results = await Promise.all(documents.map(doc => {
-                if (!doc.data.extractedJson) throw new Error("OCR manquant pour un document");
+                if (!doc.data.extractedJson) throw new Error("Extraction manquante pour un document");
 
                 const formData = new FormData();
                 formData.append('file', doc.file);
@@ -939,7 +927,8 @@ export default function ImportFichier({ onSaisieCompleted }) {
             {/* OVERLAY DE CHARGEMENT */}
             {(isExtracting || isSaving || isBatchExtracting) && (
                 <LoadingOverlay
-                    message={isSaving ? "Validation et enregistrement en cours..." : (isBatchExtracting ? "Extraction par lot en cours..." : "Extraction des données (OCR) en cours...")}
+                    message={isSaving ? "Validation et enregistrement en cours..." : (isBatchExtracting ? "Extraction par lot en cours..." : "Extraction des données en cours...")}
+                    fullScreen={false}
                 />
             )}
 

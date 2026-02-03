@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { BASE_URL_API } from '../../constants/globalConstants';
+import { fetchWithReauth } from '../../utils/apiUtils';
 
 export default function LineChartROEROA({ globalDateStart, globalDateEnd }) {
   const [evolutionData, setEvolutionData] = useState([]);
@@ -17,19 +18,19 @@ export default function LineChartROEROA({ globalDateStart, globalDateEnd }) {
 
   useEffect(() => {
     const abortController = new AbortController();
-    
+
     const fetchEvolutionData = async () => {
       setLoading(true);
       try {
         // Récupérer les données ROE et ROA en parallèle
         const [roeResponse, roaResponse] = await Promise.all([
-          fetch(`${BASE_URL_API}/evolution-roe/`, { signal: abortController.signal }),
-          fetch(`${BASE_URL_API}/evolution-roa/`, { signal: abortController.signal })
+          fetchWithReauth(`/evolution-roe/`, { signal: abortController.signal }),
+          fetchWithReauth(`/evolution-roa/`, { signal: abortController.signal })
         ]);
-        
+
         const roeData = await roeResponse.json();
         const roaData = await roaResponse.json();
-        
+
         if (!abortController.signal.aborted) {
           // Combiner les deux datasets
           const combined = roeData.evolution.map((roeItem, index) => ({
@@ -38,7 +39,7 @@ export default function LineChartROEROA({ globalDateStart, globalDateEnd }) {
             roe: roeItem.roe,
             roa: roaData.evolution[index]?.roa || null
           }));
-          
+
           setEvolutionData(combined);
         }
       } catch (error) {
@@ -69,16 +70,16 @@ export default function LineChartROEROA({ globalDateStart, globalDateEnd }) {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={evolutionData} margin={{ top: 10, right: 30, left: 40, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-            <XAxis 
-              dataKey="mois" 
+            <XAxis
+              dataKey="mois"
               stroke="#4b5563"
               tick={{ fontSize: 12 }}
               angle={-15}
               textAnchor="end"
               height={60}
             />
-            <YAxis 
-              stroke="#4b5563" 
+            <YAxis
+              stroke="#4b5563"
               tickFormatter={(value) => `${value.toFixed(1)}%`}
             />
             <Tooltip
@@ -92,7 +93,7 @@ export default function LineChartROEROA({ globalDateStart, globalDateEnd }) {
               formatter={(value) => (value !== null ? value.toFixed(2) + ' %' : '--')}
             />
             <Legend wrapperStyle={{ paddingTop: '10px' }} />
-            
+
             {/* ROE - Bleu */}
             <Line
               type="monotone"
@@ -103,7 +104,7 @@ export default function LineChartROEROA({ globalDateStart, globalDateEnd }) {
               activeDot={{ r: 7, stroke: '#2563eb', strokeWidth: 2 }}
               name="ROE (Return on Equity)"
             />
-            
+
             {/* ROA - Vert */}
             <Line
               type="monotone"

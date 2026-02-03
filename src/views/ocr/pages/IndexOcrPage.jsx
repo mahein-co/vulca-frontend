@@ -13,7 +13,7 @@ export default function IndexOcrPage() {
     {
       imageUrl: ImageIcon,
       fileType: "image",
-      appName: "Uploaded Image OCR",
+      appName: "Uploaded Image",
       description: "PNG, JPG, JPEG up to 10MB",
       acceptFile: ".png, .jpg, .jpeg",
       numberOfFiles: 1,
@@ -21,7 +21,7 @@ export default function IndexOcrPage() {
     {
       imageUrl: PdfIcon,
       fileType: "pdf",
-      appName: "Uploaded PDF OCR",
+      appName: "Uploaded PDF",
       description: "With 12 pages limit",
       acceptFile: ".pdf",
       numberOfFiles: 1,
@@ -29,7 +29,7 @@ export default function IndexOcrPage() {
     {
       imageUrl: ExcelIcon,
       fileType: "tableau",
-      appName: "Uploaded Excel OCR",
+      appName: "Uploaded Excel",
       description: "XLSX, CSV, XLS up to 5MB",
       acceptFile: ".xlsx, .csv, .xls",
       numberOfFiles: 5,

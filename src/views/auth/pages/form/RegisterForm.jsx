@@ -3,7 +3,7 @@ import { BiChevronLeft } from "react-icons/bi";
 import { FaEye, FaRegEyeSlash } from "react-icons/fa";
 import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
-import { useRegisterUserMutation } from "../../../../states/user/userApiSlice";
+import { useRegisterUserMutation, useGetAdminCountQuery } from "../../../../states/user/userApiSlice";
 import { actionSetNewUser } from "../../../../states/user/userSlice";
 
 import RegisterErrorMessage from "../../message/RegisterErrorMessage";
@@ -18,7 +18,7 @@ export default function RegisterForm() {
     // STATE EMAIL
     const [email, setEmail] = useState(null);
     // STATE ROLE
-    const [role, setRole] = useState("user");
+    const [role, setRole] = useState("expert_comptable");
     // STATE PASSWORD
     const [password, setPassword] = useState(null);
     // STATE PASSWORD CONFIRMATION
@@ -46,6 +46,16 @@ export default function RegisterForm() {
             error: errorRegister,
         },
     ] = useRegisterUserMutation() || {};
+
+    // GET ADMIN COUNT
+    const {
+        data: adminCountData,
+        isLoading: isLoadingAdminCount,
+        isError: isErrorAdminCount
+    } = useGetAdminCountQuery();
+
+    // Default to 0 if query fails or is loading
+    const adminCount = adminCountData?.admin_count ?? 0;
 
     // FUNCTION  REGISTER HANDLER
     const registerUserHandler = (e) => {
@@ -168,10 +178,20 @@ export default function RegisterForm() {
                                                 name="role"
                                                 value={role}
                                             >
-                                                <option value="user">Utilisateur</option>
-                                                <option value="admin">Administrateur</option>
+                                                <option value="expert_comptable">Expert Comptable</option>
+                                                {adminCount < 3 && <option value="admin">Administrateur</option>}
                                                 <option value="assistant">Assistant</option>
                                             </select>
+                                            {/* Dynamic Admin Quota Message */}
+                                            <p className="text-xs text-red-500 mt-1 ml-1">
+                                                {adminCount >= 3 ? (
+                                                    <span className="font-medium">⚠️ Le quota de 3 administrateurs est atteint</span>
+                                                ) : (
+                                                    <span>
+                                                        {3 - adminCount} administrateur{3 - adminCount > 1 ? 's' : ''} {3 - adminCount > 1 ? 'peuvent' : 'peut'} être créé{3 - adminCount > 1 ? 's' : ''}
+                                                    </span>
+                                                )}
+                                            </p>
                                         </div>
                                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             {/* <!-- Password --> */}

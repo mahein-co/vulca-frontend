@@ -11,12 +11,17 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { BASE_URL_API } from '../../constants/globalConstants';
+import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
+import { useProjectId } from '../../hooks/useProjectId';
+import LoadingOverlay from '../layout/LoadingOverlay';
 
 export default function LineChartCAEvolution() {
   const { isDarkMode } = useTheme();
   const [evolutionData, setEvolutionData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [totals, setTotals] = useState({ ca: 0, charges: 0, resultat: 0, moyenne: 0 });
+  const [dateRangeDisplay, setDateRangeDisplay] = useState('');
+  const projectId = useProjectId();
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -24,7 +29,7 @@ export default function LineChartCAEvolution() {
     const fetchEvolutionData = async () => {
       setLoading(true);
       try {
-        const dateRangeResponse = await fetch(`${BASE_URL_API}/journals/date-range/`, {
+        const dateRangeResponse = await fetchWithReauth(`/journals/date-range/`, {
           signal: abortController.signal
         });
         const dateRangeData = await dateRangeResponse.json();
@@ -42,8 +47,13 @@ export default function LineChartCAEvolution() {
         const dateStart = startDateObj.toISOString().split('T')[0];
         const dateEnd = endDateObj.toISOString().split('T')[0];
 
+        // Format date range for display
+        const startDateStr = startDateObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+        const endDateStr = endDateObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+        setDateRangeDisplay(`${startDateStr} - ${endDateStr}`);
+
         // Fetch ONE call instead of 6
-        const response = await fetch(`${BASE_URL_API}/evolution-ca-resultat/?date_start=${dateStart}&date_end=${dateEnd}`, {
+        const response = await fetchWithReauth(`/evolution-ca-resultat/?date_start=${dateStart}&date_end=${dateEnd}`, {
           signal: abortController.signal
         });
 
@@ -82,7 +92,7 @@ export default function LineChartCAEvolution() {
     return () => {
       abortController.abort();
     };
-  }, []);
+  }, [projectId]);
 
   const formatCurrency = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(val).replace('MGA', 'Ar');
 
@@ -94,7 +104,7 @@ export default function LineChartCAEvolution() {
           <div>
             {/* Titre déjà affiché par le parent, on peut afficher la période ici ou rien */}
             <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-1">
-              Derniers 6 mois
+              {dateRangeDisplay}
             </p>
           </div>
 
@@ -117,9 +127,7 @@ export default function LineChartCAEvolution() {
 
       <div className="w-full h-64 sm:h-80 md:h-96 relative">
         {loading ? (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-gray-500 dark:text-gray-400 animate-pulse text-xs sm:text-base">Chargement de l'évolution...</div>
-          </div>
+          <LoadingOverlay message="Chargement de l'évolution..." fullScreen={false} />
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={evolutionData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>

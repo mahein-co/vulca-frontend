@@ -114,9 +114,10 @@ import BonAchatForm from './views/ocr/forms/BonAchatForm';
 import BankForm from './views/ocr/forms/BankForm';
 import FichePayeForm from './views/ocr/forms/FichePaye.jsx';
 import GestionUtilisateurs from './views/piece/GestionUtilisateurs';
+import ProjectSelection from './views/project/ProjectSelection';
 
 
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import AuthLayout from "./views/auth/layout/AuthLayout";
 import AuthIndexLogin from "./views/auth/pages/AuthIndexLogin";
 import AuthIndexRegister from "./views/auth/pages/AuthIndexRegister";
@@ -133,13 +134,7 @@ const FormModal = ({ children, onClose }) => (
         />
 
         <div className="relative bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-7xl h-[90vh] overflow-y-auto">
-            <button
-                onClick={onClose}
-                className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 z-10 p-1.5 bg-white dark:bg-gray-800 rounded-full shadow-md hover:shadow-lg transition-all"
-                aria-label="Fermer"
-            >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-            </button>
+
 
             <div className="p-3 sm:p-4 md:p-6 h-full">
                 {children}
@@ -152,6 +147,8 @@ const FormModal = ({ children, onClose }) => (
 
 
 function App() {
+    const location = useLocation();
+
     // Check if user is authenticated
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
         const userInfo = localStorage.getItem('userInfo');
@@ -184,15 +181,37 @@ function App() {
         // Listen for storage changes (e.g., login in another tab)
         window.addEventListener('storage', checkAuth);
 
+        // Hide scrollbar globally
+        document.body.classList.add('no-scrollbar');
+
         return () => window.removeEventListener('storage', checkAuth);
     }, []);
 
-    // Redirect if authenticated but on auth route (clean URL)
+    // Redirect logic
     useEffect(() => {
-        if (isAuthenticated && window.location.pathname.startsWith('/auth')) {
-            window.history.replaceState(null, '', '/');
+        if (isAuthenticated) {
+            const selectedProjectId = localStorage.getItem('selectedProjectId');
+            const isSelectProjectPage = location.pathname === '/projects';
+            const isLegacySelectPage = location.pathname === '/select-project';
+
+            if (isLegacySelectPage) {
+                window.location.replace('/projects');
+                return;
+            }
+
+            // If on auth pages, redirect appropriately
+            if (location.pathname.startsWith('/auth')) {
+                const targetPath = selectedProjectId ? '/' : '/projects';
+                window.location.replace(targetPath);
+                return;
+            }
+
+            // If no project selected and not on selection page, redirect to selection
+            if (!selectedProjectId && !isSelectProjectPage) {
+                window.location.replace('/projects');
+            }
         }
-    }, [isAuthenticated]);
+    }, [isAuthenticated, location.pathname]);
     // ...
     // If not authenticated, show auth routes
     if (!isAuthenticated) {
@@ -292,7 +311,7 @@ function App() {
     const renderPage = () => {
         // Wrapper par défaut avec padding pour les vues internes qui ne gèrent pas le Header fixe
         const ContentWrapper = ({ children }) => (
-            <div className="pt-14 p-4 max-w-full mx-auto">{children}</div>
+            <div className="pt-14 p-1 max-w-full mx-auto">{children}</div>
         );
 
         switch (currentPage) {
@@ -326,6 +345,8 @@ function App() {
     const handleOpenChat = () => dispatch(actionOpenChat());
     const handleCloseChat = () => dispatch(actionCloseChat());
 
+    const isProjectSelection = location.pathname === '/projects';
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
             {/* CORRECTION : Passer la fonction openSaisieMenuFromHeader au Header */}
@@ -333,18 +354,25 @@ function App() {
                 currentPage={currentPage}
                 onNavigate={navigate}
                 onOpenSaisieMenu={openSaisieMenuFromHeader} // <--- C'est ici que ça se joue
+                hideNavigation={isProjectSelection}
             />
 
             <main className="pt-0 min-h-screen">
-                {renderPage()}
+                {/* Project Selection Route */}
+                {isProjectSelection ? (
+                    <ProjectSelection />
+                ) : (
+                    <>
+                        {renderPage()}
+                        {/* Modal pour les formulaires */}
+                        {isFormModalOpen && currentFormType && (
+                            <FormModal onClose={closeFormModal}>
+                                {renderFormInModal()}
+                            </FormModal>
+                        )}
+                    </>
+                )}
             </main>
-
-            {/* Modal pour les formulaires */}
-            {isFormModalOpen && currentFormType && (
-                <FormModal onClose={closeFormModal}>
-                    {renderFormInModal()}
-                </FormModal>
-            )}
 
             {/* ... Toaster ... */}
             <Toaster
@@ -357,20 +385,22 @@ function App() {
                 }}
             />
 
-            {/* CHATBOT BUTTON */}
-            <div className="z-[100]">
-                <button
-                    onClick={handleOpenChat}
-                    className="fixed right-6 bottom-8 bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center group"
-                    aria-label="Ouvrir l'assistant"
-                >
-                    <FaRobot size={24} className="group-hover:rotate-12 transition-transform" />
-                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
-                    </span>
-                </button>
-            </div>
+            {/* CHATBOT BUTTON - Hidden on project selection */}
+            {!isProjectSelection && (
+                <div className="z-[100]">
+                    <button
+                        onClick={handleOpenChat}
+                        className="fixed right-6 bottom-8 bg-blue-600 hover:bg-blue-500 text-white p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 flex items-center justify-center group"
+                        aria-label="Ouvrir l'assistant"
+                    >
+                        <FaRobot size={24} className="group-hover:rotate-12 transition-transform" />
+                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-blue-500"></span>
+                        </span>
+                    </button>
+                </div>
+            )}
 
             {/* CHATBOT MODAL */}
             {isChatModalOpen && (

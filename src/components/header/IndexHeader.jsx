@@ -1,7 +1,10 @@
 import React from "react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { FaFolderOpen } from "react-icons/fa";
 
 export default function IndexHeader() {
+  const navigate = useNavigate();
   const activePageTitle = useSelector(
     (state) => state.navigations.activePageTitle
   );
@@ -17,10 +20,20 @@ export default function IndexHeader() {
 
   return (
     <React.Fragment>
-      <header className="sticky -top-1 lg:top-0 w-full bg-slate-900 shadow-sm p-4 flex justify-between items-center z-50">
+      <header className="sticky -top-1 lg:top-0 w-full bg-slate-900 dark:bg-gray-900 shadow-sm p-4 flex justify-between items-center z-50">
 
         {/* Titre à gauche */}
-        <h1 className="text-xl font-bold text-primary">{activePageTitle}</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-xl font-bold text-primary">{activePageTitle}</h1>
+          <button
+            onClick={() => navigate("/projects")}
+            className="flex items-center gap-2 text-sm bg-slate-700 dark:bg-gray-700 hover:bg-slate-600 dark:hover:bg-gray-600 text-slate-300 dark:text-gray-300 px-3 py-2 rounded-lg transition-colors shadow-sm"
+            title="Changer de projet"
+          >
+            <FaFolderOpen className="text-blue-400" />
+            <span className="hidden sm:inline">Gestion Projet</span>
+          </button>
+        </div>
 
         {/* Zone de droite : Filtres + Search + Avatar */}
         <div className="flex items-center gap-4">

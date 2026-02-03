@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BASE_URL_API } from '../../constants/globalConstants';
+import { fetchWithReauth } from '../../utils/apiUtils';
+import LoadingOverlay from '../../components/layout/LoadingOverlay';
 
 const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
   const [balanceData, setBalanceData] = useState([]);
@@ -35,9 +37,16 @@ const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
       if (startDate) url += `date_start=${startDate}&`;
       if (endDate) url += `date_end=${endDate}`;
 
-      fetch(url)
+      fetchWithReauth(url)
         .then(res => res.json())
-        .then(data => setBalanceData(data))
+        .then(data => {
+          if (Array.isArray(data)) {
+            setBalanceData(data);
+          } else {
+            console.error("Format inattendu:", data);
+            setBalanceData([]);
+          }
+        })
         .catch(err => console.error("Erreur chargement Balance:", err))
         .finally(() => setIsLoading(false));
     }
@@ -162,17 +171,7 @@ const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
 
         {/* Corps du tableau (Zone Scrollable) */}
         <div className="flex-grow p-2 sm:p-4 min-h-0 bg-white dark:bg-gray-800 relative flex flex-col">
-          {isLoading && (
-            <div className="absolute inset-0 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm z-20 flex justify-center items-center">
-              <div className="flex flex-col items-center max-w-sm w-full text-center">
-                <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-                  <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-600 rounded-full"></div>
-                  <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-                </div>
-                <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 animate-pulse px-4">Chargement de la balance...</p>
-              </div>
-            </div>
-          )}
+          {isLoading && <LoadingOverlay message="Chargement de la balance..." fullScreen={false} />}
 
           <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden flex flex-col flex-grow min-h-0">
             <div className="overflow-auto min-h-0">

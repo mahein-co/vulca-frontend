@@ -119,7 +119,7 @@ export default function OTPVerification() {
             setTimeout(() => {
                 saveCurrentUserToLS(currentUser);
                 dispatch(actionGetCurrentUser(currentUser));
-                window.location.href = '/'; // Manual redirect to ensure dashboard loads
+                window.location.replace('/projects'); // Redirect to project selection instead of root
             }, 1400);
         }
 

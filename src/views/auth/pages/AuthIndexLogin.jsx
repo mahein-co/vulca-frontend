@@ -33,8 +33,9 @@ export default function AuthIndexLogin() {
     // Redirect if already logged in
     useEffect(() => {
         const userInfo = localStorage.getItem('userInfo');
+        const selectedProjectId = localStorage.getItem('selectedProjectId');
         if (userInfo) {
-            window.location.href = '/';
+            window.location.href = selectedProjectId ? '/' : '/projects';
         }
     }, []);
 
@@ -48,8 +49,8 @@ export default function AuthIndexLogin() {
                 saveCurrentUserToLS(userInfo);
                 dispatch(actionGetCurrentUser(userInfo));
 
-                // Redirect to dashboard by changing window location
-                window.location.replace('/');
+                // Redirect to project selection page instead of dashboard
+                window.location.replace('/projects');
             }, 700);
         }
     }, [dispatch, isSuccess, isLoading, userInfo]);
@@ -57,7 +58,7 @@ export default function AuthIndexLogin() {
     return (
         <React.Fragment>
             <UtilsPageMeta
-                title={"Vulca | Login"}
+                title={"REKAPY | Login"}
                 description={"Authentication page."}
             />
             <LoginForm

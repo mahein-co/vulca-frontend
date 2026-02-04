@@ -149,7 +149,11 @@ export default function IndexChatbotPage({ close }) {
 
     try {
       await sendMessage({
-        data: { user_input: userText, message_history: selectedHistoryId },
+        data: { 
+          user_input: userText, 
+          message_history: selectedHistoryId,
+          project_id: projectId
+        },
         project_id: projectId
       }).unwrap();
     } catch (err) {

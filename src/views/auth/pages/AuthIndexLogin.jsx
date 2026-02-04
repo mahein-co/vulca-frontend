@@ -45,19 +45,29 @@ export default function AuthIndexLogin() {
             // Wait 0.7 seconde
             setTimeout(() => {
                 // Get current user
-                console.log("DEBUG LOGIN SUCCESS: Response data:", userInfo);
+                console.log("DEBUG LOGIN SUCCESS: Full response data:", JSON.stringify(userInfo, null, 2));
+                console.log("DEBUG LOGIN SUCCESS: Response keys:", Object.keys(userInfo || {}));
+
                 if (userInfo?.access) {
-                    console.log("DEBUG LOGIN: Access token found in response!");
+                    console.log("✅ DEBUG LOGIN: Access token found in response!");
+                    console.log("DEBUG LOGIN: Token length:", userInfo.access.length);
                 } else {
-                    console.error("DEBUG LOGIN: NO ACCESS TOKEN IN RESPONSE!");
+                    console.error("❌ DEBUG LOGIN: NO ACCESS TOKEN IN RESPONSE!");
+                    console.error("DEBUG LOGIN: Available data:", userInfo);
                 }
 
+                // Save to localStorage even if token is missing (for debugging)
                 saveCurrentUserToLS(userInfo);
                 dispatch(actionGetCurrentUser(userInfo));
 
-                // Use navigate instead of window.location.replace to avoid full page reload
-                // This prevents the infinite redirect loop
-                navigate('/projects', { replace: true });
+                // Only navigate if we have a valid token
+                if (userInfo?.access) {
+                    // Use navigate instead of window.location.replace to avoid full page reload
+                    // This prevents the infinite redirect loop
+                    navigate('/projects', { replace: true });
+                } else {
+                    console.error("Cannot navigate: Missing access token");
+                }
             }, 700);
         }
     }, [dispatch, isSuccess, isLoading, userInfo, navigate]);

@@ -42,11 +42,17 @@ const baseQueryUsersRoot = fetchBaseQuery({
  * Custom base query that handles 401 errors by attempting to refresh the token.
  */
 const baseQueryWithReauth = async (args, api, extraOptions, baseQueryInstance) => {
+    // Log the request
+    const url = typeof args === 'string' ? args : args?.url;
+    console.log("🌐 API Request:", { url, baseUrl: baseQueryInstance.name, args });
+
     let result = await baseQueryInstance(args, api, extraOptions);
+
+    // Log the response
+    console.log("📥 API Response:", { url, data: result.data, error: result.error });
 
     if (result.error && result.error.status === 401) {
         // Prevent infinite loop for the refresh endpoint itself
-        const url = typeof args === 'string' ? args : args?.url;
         if (url === "/users/token/refresh/") {
             return result;
         }

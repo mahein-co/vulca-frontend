@@ -30,9 +30,20 @@ export default function AuthIndexLogin() {
             password: e.target.password.value,
         };
 
+        console.log("🚀 Attempting login with:", { email: loginFormData.email });
+
         // Pass the input data into function login
         actionUserLogin(loginFormData);
     };
+
+    // Log mutation state for debugging
+    console.log("📊 Mutation State:", {
+        isLoading,
+        isSuccess,
+        isError,
+        error,
+        userInfo,
+    });
 
     // ❌ REMOVED: Redirect if already logged in
     // This was causing infinite loop with App.js redirect logic

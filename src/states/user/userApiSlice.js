@@ -45,6 +45,18 @@ export const userApiSlice = createApi({
                 body: data,
             }),
             invalidatesTags: ["currentUser"],
+            transformResponse: (response, meta, arg) => {
+                console.log("🔍 RTK Query transformResponse - Raw response:", response);
+                console.log("🔍 RTK Query transformResponse - Meta:", meta);
+
+                // Return the response as-is (it should contain access, refresh, etc.)
+                return response;
+            },
+            transformErrorResponse: (response, meta, arg) => {
+                console.error("❌ RTK Query transformErrorResponse:", response);
+                console.error("❌ Meta:", meta);
+                return response;
+            },
         }),
 
         // USER REGISTER

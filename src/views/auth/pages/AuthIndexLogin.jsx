@@ -1,11 +1,15 @@
 import React, { useEffect } from "react";
 import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { useUserLoginMutation } from "../../../states/user/userApiSlice";
 import { actionGetCurrentUser } from "../../../states/user/userSlice";
 import LoginForm from "./form/LoginForm";
 import UtilsPageMeta from "../../../components/meta/UtilsPageMeta";
 import { saveCurrentUserToLS } from "../../../localstorage/user/userLocalStorage";
+
 export default function AuthIndexLogin() {
+    const navigate = useNavigate();
+
     // USER API: LOGIN
     const [
         actionUserLogin,
@@ -30,30 +34,26 @@ export default function AuthIndexLogin() {
         actionUserLogin(loginFormData);
     };
 
-    // Redirect if already logged in
-    useEffect(() => {
-        const userInfo = localStorage.getItem('userInfo');
-        if (userInfo) {
-            // Always redirect to project selection page to let user choose/confirm project
-            window.location.href = '/projects';
-        }
-    }, []);
+    // ❌ REMOVED: Redirect if already logged in
+    // This was causing infinite loop with App.js redirect logic
+    // App.js already handles this in its useEffect
 
     // USE_EFFECT
     useEffect(() => {
         // Check if login is success
         if (!isLoading && isSuccess) {
-            // Wait 0.7seconde to
+            // Wait 0.7 seconde
             setTimeout(() => {
                 // Get current user
                 saveCurrentUserToLS(userInfo);
                 dispatch(actionGetCurrentUser(userInfo));
 
-                // Redirect to project selection page instead of dashboard
-                window.location.replace('/projects');
+                // Use navigate instead of window.location.replace to avoid full page reload
+                // This prevents the infinite redirect loop
+                navigate('/projects', { replace: true });
             }, 700);
         }
-    }, [dispatch, isSuccess, isLoading, userInfo]);
+    }, [dispatch, isSuccess, isLoading, userInfo, navigate]);
 
     return (
         <React.Fragment>

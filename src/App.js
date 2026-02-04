@@ -117,7 +117,7 @@ import GestionUtilisateurs from './views/piece/GestionUtilisateurs';
 import ProjectSelection from './views/project/ProjectSelection';
 
 
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import AuthLayout from "./views/auth/layout/AuthLayout";
 import AuthIndexLogin from "./views/auth/pages/AuthIndexLogin";
 import AuthIndexRegister from "./views/auth/pages/AuthIndexRegister";
@@ -148,6 +148,7 @@ const FormModal = ({ children, onClose }) => (
 
 function App() {
     const location = useLocation();
+    const navigate = useNavigate();
 
     // Check if user is authenticated
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -157,6 +158,9 @@ function App() {
 
     const dispatch = useDispatch();
     const isChatModalOpen = useSelector((state) => state.chatbot.isChatModalOpen);
+
+    // Subscribe to Redux auth state
+    const userAuth = useSelector((state) => state.user.userAuthenticated);
 
     const [currentPage, setCurrentPage] = useState(() => {
         return localStorage.getItem('vulca_current_page') || 'dashboard';
@@ -169,11 +173,13 @@ function App() {
     const [currentFormType, setCurrentFormType] = useState(null);
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
-    // Check authentication on mount and when localStorage changes
+    // Sync isAuthenticated with Redux state and localStorage
     useEffect(() => {
         const checkAuth = () => {
             const userInfo = localStorage.getItem('userInfo');
-            setIsAuthenticated(!!userInfo);
+            // Check both Redux state and localStorage
+            const isAuth = !!userInfo || !!userAuth;
+            setIsAuthenticated(isAuth);
         };
 
         checkAuth();
@@ -182,9 +188,9 @@ function App() {
         window.addEventListener('storage', checkAuth);
 
         return () => window.removeEventListener('storage', checkAuth);
-    }, []);
+    }, [userAuth]); // Re-run when Redux auth state changes
 
-    // Redirect logic
+    // Redirect logic - Use navigate instead of window.location.replace
     useEffect(() => {
         if (isAuthenticated) {
             const selectedProjectId = localStorage.getItem('selectedProjectId');
@@ -192,23 +198,23 @@ function App() {
             const isLegacySelectPage = location.pathname === '/select-project';
 
             if (isLegacySelectPage) {
-                window.location.replace('/projects');
+                navigate('/projects', { replace: true });
                 return;
             }
 
             // If on auth pages, redirect appropriately
             if (location.pathname.startsWith('/auth')) {
                 const targetPath = selectedProjectId ? '/' : '/projects';
-                window.location.replace(targetPath);
+                navigate(targetPath, { replace: true });
                 return;
             }
 
             // If no project selected and not on selection page, redirect to selection
             if (!selectedProjectId && !isSelectProjectPage) {
-                window.location.replace('/projects');
+                navigate('/projects', { replace: true });
             }
         }
-    }, [isAuthenticated, location.pathname]);
+    }, [isAuthenticated, location.pathname, navigate]);
     // ...
     // If not authenticated, show auth routes
     if (!isAuthenticated) {
@@ -258,7 +264,7 @@ function App() {
 
 
 
-    const navigate = (page) => {
+    const navigateToPage = (page) => {
         setCurrentPage(page);
         if (page === 'saisie-manuelle') {
             setCurrentFormType(null);
@@ -344,12 +350,17 @@ function App() {
 
     const isProjectSelection = location.pathname === '/projects';
 
+    // Prevent Dashboard flash: If authenticated but still on auth pages (waiting for redirect), don't render main app
+    if (isAuthenticated && location.pathname.startsWith('/auth')) {
+        return null; // Or <LoadingSpinner />
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
             {/* CORRECTION : Passer la fonction openSaisieMenuFromHeader au Header */}
             <Header
                 currentPage={currentPage}
-                onNavigate={navigate}
+                onNavigate={navigateToPage}
                 onOpenSaisieMenu={openSaisieMenuFromHeader} // <--- C'est ici que ça se joue
                 hideNavigation={isProjectSelection}
             />

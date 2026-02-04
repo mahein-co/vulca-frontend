@@ -5,13 +5,8 @@ import { BASE_URL_API } from "../constants/globalConstants";
 // Base query for /api/* endpoints
 const baseQuery = fetchBaseQuery({
     baseUrl: BASE_URL_API,
-    credentials: "include",
+    credentials: "include", // Sends HttpOnly cookies automatically
     prepareHeaders: (headers) => {
-        const token = localStorage.getItem("accessToken");
-        if (token) {
-            headers.set("Authorization", `Bearer ${token}`);
-        }
-
         const projectId = localStorage.getItem("selectedProjectId");
         if (projectId) {
             headers.set("X-Project-ID", projectId);
@@ -25,13 +20,8 @@ const baseQueryUsersRoot = fetchBaseQuery({
     baseUrl: BASE_URL_API.endsWith('/')
         ? BASE_URL_API.slice(0, -5) // remove '/api/'
         : BASE_URL_API.replace('/api', ''),
-    credentials: "include",
+    credentials: "include", // Sends HttpOnly cookies automatically
     prepareHeaders: (headers) => {
-        const token = localStorage.getItem("accessToken");
-        if (token) {
-            headers.set("Authorization", `Bearer ${token}`);
-        }
-
         const projectId = localStorage.getItem("selectedProjectId");
         if (projectId) {
             headers.set("X-Project-ID", projectId);
@@ -61,10 +51,7 @@ const baseQueryWithReauth = async (args, api, extraOptions, baseQueryInstance) =
         );
 
         if (refreshResult.data) {
-            // ✅ Mettre à jour le token en localStorage après refresh
-            if (refreshResult.data.access) {
-                localStorage.setItem("accessToken", refreshResult.data.access);
-            }
+            // ✅ Token refresh successful - cookie updated automatically by backend
             // Refresh success! Retry the original request
             result = await baseQueryInstance(args, api, extraOptions);
         } else {
@@ -73,8 +60,8 @@ const baseQueryWithReauth = async (args, api, extraOptions, baseQueryInstance) =
 
             // Clean up localStorage to avoid redirection loops in App.js
             localStorage.removeItem("userInfo");
-            localStorage.removeItem("accessToken"); 
             localStorage.removeItem("selectedProjectId");
+            localStorage.removeItem("selectedProjectName");
             localStorage.removeItem("vulca_current_page");
 
             // Redirect to login if not already on an auth page

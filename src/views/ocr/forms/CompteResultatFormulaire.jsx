@@ -2,7 +2,9 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
 import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
 import { getTodayISO } from '../../../utils/dateUtils';
-import { BASE_URL_API } from '../../../constants/globalConstants';
+import { useSaveCompteResultatManualMutation } from "../../../states/compta/comptaApiSlice";
+import { useProjectId } from '../../../hooks/useProjectId';
+import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
 const BackToFormsPage = ({ onClick }) => (
     <button onClick={onClick} className="text-indigo-500 hover:text-indigo-700 text-xs font-medium flex items-center transition duration-150" title="Retour au menu de saisie">
@@ -49,6 +51,8 @@ const PCG_MAPPING = {
 export default function CompteResultatForm({ onSaisieCompleted }) {
     const [lignes, setLignes] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const projectId = useProjectId();
+    const [saveCompteResultatManual] = useSaveCompteResultatManualMutation();
     const [nouvelleLigne, setNouvelleLigne] = useState(() => ({
         numeroCompte: '',
         libelle: '',
@@ -59,6 +63,11 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
     const [ligneEnModification, setLigneEnModification] = useState(null);
     const [erreurNumeroCompte, setErreurNumeroCompte] = useState(false);
     const [validationErrors, setValidationErrors] = useState({});
+
+    // Modal State
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
+    const [isDeleteAll, setIsDeleteAll] = useState(false);
 
     useEffect(() => {
         document.body.style.overflow = 'hidden';
@@ -204,8 +213,31 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
     };
 
     const supprimerLigne = (id) => {
-        setLignes(lignes.filter(ligne => ligne.id !== id));
-        if (ligneEnModification === id) resetNouvelleLigne(true);
+        setItemToDelete(id);
+        setIsDeleteAll(false);
+        setDeleteModalOpen(true);
+    };
+
+    const handleDeleteAll = () => {
+        setIsDeleteAll(true);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (isDeleteAll) {
+            setLignes([]);
+            resetNouvelleLigne(true);
+            toast.success("Toutes les lignes ont été supprimées.");
+        } else {
+            if (itemToDelete) {
+                setLignes(lignes.filter(ligne => ligne.id !== itemToDelete));
+                if (ligneEnModification === itemToDelete) resetNouvelleLigne(true);
+                toast.success("Ligne supprimée.");
+            }
+        }
+        setDeleteModalOpen(false);
+        setItemToDelete(null);
+        setIsDeleteAll(false);
     };
 
     const { resultat } = useMemo(() => {
@@ -231,13 +263,7 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                     nature: ligne.nature // CHARGE / PRODUIT
                 };
 
-                return fetch(`${BASE_URL_API}/CompteResultats/manual/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
-                });
+                return saveCompteResultatManual({ data: payload, project_id: projectId }).unwrap();
             });
 
             await Promise.all(promises);
@@ -312,6 +338,18 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                             </button>
                         </div>
                     </div>
+
+                    {lignes.length > 0 && (
+                        <div className="flex justify-end mb-4">
+                            <button
+                                onClick={handleDeleteAll}
+                                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs font-semibold flex items-center bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-md border border-red-200 dark:border-red-800 transition-colors"
+                            >
+                                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                Supprimer tout
+                            </button>
+                        </div>
+                    )}
 
                     {lignes.length > 0 && (
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden mb-4">
@@ -396,6 +434,18 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                     )}
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                title={isDeleteAll ? "Vider le compte de résultat ?" : "Supprimer la ligne ?"}
+                message={isDeleteAll
+                    ? "Cette action supprimera toutes les lignes en cours de saisie. Cette action est irréversible."
+                    : "Êtes-vous sûr de vouloir supprimer cette ligne ?"}
+                confirmText={isDeleteAll ? "Tout supprimer" : "Supprimer"}
+                isDanger={true}
+            />
         </div>
     );
 }

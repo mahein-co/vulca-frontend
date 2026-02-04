@@ -4,6 +4,8 @@ import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/n
 import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
+import { useProjectId } from '../../../hooks/useProjectId';
+import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
 // Helper for currency formatting
 const formatMontant = (montant) => {
@@ -45,6 +47,7 @@ const LoadingOverlay = ({ message }) => (
 export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
 
   // API Hooks
+  const projectId = useProjectId();
   const [actionSaveReleveBancaire, { isLoading: isLoadingSave, isSuccess: isSuccessSave, isError: isErrorSave, data: dataSave }] = useSavePieceByFormularMutation();
   const [actionGenerateJournal, { isLoading: isLoadingJournal, isSuccess: isSuccessJournal, isError: isErrorJournal, error: errorJournal }] = useGenerateJournalMutation();
 
@@ -69,6 +72,11 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
   const [dataToGenerateJournal, setDataToGenerateJournal] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
   const [headerErrors, setHeaderErrors] = useState({});
+
+  // Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [isDeleteAll, setIsDeleteAll] = useState(false);
 
   // Handlers
   const handleChangeHeader = useCallback((e) => {
@@ -175,7 +183,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
     }
 
     setValidationErrors({});
-    const ligne = { date, reference: nouvelleLigne.reference, description, debit: debitValue, credit: creditValue, id: Date.now() };
+    const ligne = { date, reference: nouvelleLigne.reference, description, debit: debitValue, credit: creditValue, id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}` };
     setTransactions(prev => [...prev, ligne]);
     // Preserve date for next entry as it might be sequential
     setNouvelleLigne(prev => ({ ...prev, reference: '', description: '', debit: '', credit: '' }));
@@ -200,10 +208,31 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
   };
 
   const supprimerLigne = (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer cette transaction ?")) {
-      setTransactions(transactions.filter(t => t.id !== id));
-      if (ligneEnModification === id) resetNouvelleLigne();
+    setItemToDelete(id);
+    setIsDeleteAll(false);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteAll = () => {
+    setIsDeleteAll(true);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (isDeleteAll) {
+      setTransactions([]);
+      resetNouvelleLigne();
+      toast.success("Toutes les lignes ont été supprimées. L'en-tête est déverrouillé.");
+    } else {
+      if (itemToDelete) {
+        setTransactions(transactions.filter(t => t.id !== itemToDelete));
+        if (ligneEnModification === itemToDelete) resetNouvelleLigne();
+        toast.success("Transaction supprimée.");
+      }
     }
+    setDeleteModalOpen(false);
+    setItemToDelete(null);
+    setIsDeleteAll(false);
   };
 
   // Calculations
@@ -286,7 +315,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
     };
 
     setDataToGenerateJournal(data);
-    actionSaveReleveBancaire(data);
+    actionSaveReleveBancaire({ data, project_id: projectId });
   };
 
   // Effects for API
@@ -356,35 +385,31 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                   Informations Compte
                 </h2>
 
-                {transactions.length > 0 && (
-                  <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-1 rounded mb-2 border border-red-200 dark:border-red-800">
-                    ⚠️ Les informations de l'en-tête sont bloquées car des lignes ont déjà été ajoutées. Supprimez toutes les lignes pour les modifier.
-                  </p>
-                )}
+
 
                 <div className="grid grid-cols-1 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Banque</label>
-                    <input type="text" name="nomBanque" value={header.nomBanque} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: BNI, BOA..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${transactions.length > 0 ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.nomBanque ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                    <input type="text" name="nomBanque" value={header.nomBanque} onChange={handleChangeHeader} placeholder="Ex: BNI, BOA..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${headerErrors.nomBanque ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">N° Compte (RIB)</label>
-                    <input type="text" name="numeroCompte" value={header.numeroCompte} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Ex: 0000 1234..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${transactions.length > 0 ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.numeroCompte ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                    <input type="text" name="numeroCompte" value={header.numeroCompte} onChange={handleChangeHeader} placeholder="Ex: 0000 1234..." className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${headerErrors.numeroCompte ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Titulaire</label>
-                    <input type="text" name="nomTitulaire" value={header.nomTitulaire} onChange={handleChangeHeader} disabled={transactions.length > 0} placeholder="Nom du titulaire" className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${transactions.length > 0 ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.nomTitulaire ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
+                    <input type="text" name="nomTitulaire" value={header.nomTitulaire} onChange={handleChangeHeader} placeholder="Nom du titulaire" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${headerErrors.nomTitulaire ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                   </div>
                   {/* Solde Initial input removed */}
 
                   <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                     <div>
                       <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">Période Du</label>
-                      <input type="date" name="dateDebut" value={header.dateDebut} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 ${transactions.length > 0 ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.dateDebut ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
+                      <input type="date" name="dateDebut" value={header.dateDebut} onChange={handleChangeHeader} className={`w-full px-1 py-1 text-xs border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 ${headerErrors.dateDebut ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
                     </div>
                     <div>
                       <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">Au</label>
-                      <input type="date" name="dateFin" value={header.dateFin} onChange={handleChangeHeader} disabled={transactions.length > 0} className={`w-full px-1 py-1 text-xs border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 ${transactions.length > 0 ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.dateFin ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
+                      <input type="date" name="dateFin" value={header.dateFin} onChange={handleChangeHeader} className={`w-full px-1 py-1 text-xs border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 ${headerErrors.dateFin ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
                     </div>
                   </div>
                 </div>
@@ -392,8 +417,16 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
 
               {/* Card 2: Add Transaction */}
               <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border-t-2 border-gray-300 dark:border-gray-700">
-                <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-3">
-                  {ligneEnModification ? '✏️ Modifier transaction' : '➕ Ajouter transaction'}
+                <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center justify-between">
+                  <span>{ligneEnModification ? '✏️ Modifier transaction' : '➕ Ajouter transaction'}</span>
+                  {transactions.length > 0 && (
+                    <button
+                      onClick={handleDeleteAll}
+                      className="ml-4 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 px-3 py-1 rounded text-xs font-semibold transition-colors border border-red-200 dark:border-red-800"
+                    >
+                      Tout supprimer
+                    </button>
+                  )}
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
@@ -550,6 +583,18 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
           </div>
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title={isDeleteAll ? "Supprimer toutes les lignes ?" : "Supprimer la transaction ?"}
+        message={isDeleteAll
+          ? "Cette action supprimera toutes les transactions saisies et déverrouillera l'en-tête. Cette action est irréversible."
+          : "Êtes-vous sûr de vouloir supprimer cette transaction ?"}
+        confirmText={isDeleteAll ? "Tout supprimer" : "Supprimer"}
+        isDanger={true}
+      />
     </>
   );
 }

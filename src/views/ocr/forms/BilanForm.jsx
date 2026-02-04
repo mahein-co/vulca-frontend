@@ -2,7 +2,9 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
 import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
 import { getTodayISO } from '../../../utils/dateUtils';
-import { BASE_URL_API } from '../../../constants/globalConstants';
+import { useSaveBilanManualMutation } from "../../../states/compta/comptaApiSlice";
+import { useProjectId } from '../../../hooks/useProjectId';
+import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
 const BackToFormsPage = ({ onClick }) => (
     <button
@@ -80,6 +82,8 @@ export default function BilanForm({ onSaisieCompleted }) {
 
     const [lignes, setLignes] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const projectId = useProjectId();
+    const [saveBilanManual] = useSaveBilanManualMutation();
     const [nouvelleLigne, setNouvelleLigne] = useState(() => ({
         numeroCompte: '',
         libelle: '',
@@ -91,6 +95,11 @@ export default function BilanForm({ onSaisieCompleted }) {
     const [ligneEnModification, setLigneEnModification] = useState(null);
     const [erreurNumeroCompte, setErreurNumeroCompte] = useState(false);
     const [validationErrors, setValidationErrors] = useState({});
+
+    // Modal State
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
+    const [isDeleteAll, setIsDeleteAll] = useState(false);
 
     useEffect(() => {
         if (!nouvelleLigne.date) {
@@ -333,8 +342,31 @@ export default function BilanForm({ onSaisieCompleted }) {
     };
 
     const supprimerLigne = (id) => {
-        setLignes(lignes.filter(ligne => ligne.id !== id));
-        if (ligneEnModification === id) resetNouvelleLigne(true);
+        setItemToDelete(id);
+        setIsDeleteAll(false);
+        setDeleteModalOpen(true);
+    };
+
+    const handleDeleteAll = () => {
+        setIsDeleteAll(true);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (isDeleteAll) {
+            setLignes([]);
+            resetNouvelleLigne(true);
+            toast.success("Toutes les lignes ont été supprimées.");
+        } else {
+            if (itemToDelete) {
+                setLignes(lignes.filter(ligne => ligne.id !== itemToDelete));
+                if (ligneEnModification === itemToDelete) resetNouvelleLigne(true);
+                toast.success("Ligne supprimée.");
+            }
+        }
+        setDeleteModalOpen(false);
+        setItemToDelete(null);
+        setIsDeleteAll(false);
     };
 
     const { ecart } = useMemo(() => {
@@ -369,13 +401,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                     categorie: ligne.categorie?.toUpperCase().replace(/ /g, '_') // ACTIF_COURANTS, etc.
                 };
 
-                return fetch(`${BASE_URL_API}/bilans/manual/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(payload)
-                });
+                return saveBilanManual({ data: payload, project_id: projectId }).unwrap();
             });
 
             await Promise.all(promises);
@@ -421,8 +447,16 @@ export default function BilanForm({ onSaisieCompleted }) {
                 <div className="max-w-7xl mx-auto w-full p-3">
 
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4 border-t-2 border-gray-300 dark:border-gray-700">
-                        <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-3">
-                            {ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une nouvelle ligne'}
+                        <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center justify-between">
+                            <span>{ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une nouvelle ligne'}</span>
+                            {lignes.length > 0 && (
+                                <button
+                                    onClick={handleDeleteAll}
+                                    className="ml-4 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 px-3 py-1 rounded text-xs font-semibold transition-colors border border-red-200 dark:border-red-800"
+                                >
+                                    Tout supprimer
+                                </button>
+                            )}
                         </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
@@ -522,6 +556,18 @@ export default function BilanForm({ onSaisieCompleted }) {
                             </button>
                         </div>
                     </div>
+
+                    {lignes.length > 0 && (
+                        <div className="flex justify-end mb-4">
+                            <button
+                                onClick={handleDeleteAll}
+                                className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-xs font-semibold flex items-center bg-red-50 dark:bg-red-900/20 px-3 py-1.5 rounded-md border border-red-200 dark:border-red-800 transition-colors"
+                            >
+                                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                Supprimer tout
+                            </button>
+                        </div>
+                    )}
 
                     {lignes.length > 0 && (
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-4">
@@ -649,6 +695,18 @@ export default function BilanForm({ onSaisieCompleted }) {
                     )}
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                title={isDeleteAll ? "Vider le bilan ?" : "Supprimer la ligne ?"}
+                message={isDeleteAll
+                    ? "Cette action supprimera toutes les lignes du bilan en cours de saisie. Cette action est irréversible."
+                    : "Êtes-vous sûr de vouloir supprimer cette ligne ?"}
+                confirmText={isDeleteAll ? "Tout supprimer" : "Supprimer"}
+                isDanger={true}
+            />
         </div >
     );
 }

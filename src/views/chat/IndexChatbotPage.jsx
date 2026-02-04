@@ -40,8 +40,8 @@ export default function IndexChatbotPage({ close }) {
   const [deleteHistory] = useDeleteHistoryMutation();
 
   const { data: dbMessages, isLoading: loadingMessages } = useGetMessagesQuery(
-    {historyId: selectedHistoryId, projectId }, 
-    {skip: !selectedHistoryId}
+    { historyId: selectedHistoryId, projectId },
+    { skip: !selectedHistoryId }
   );
 
   const parseMarkdown = (text) => {
@@ -114,9 +114,9 @@ export default function IndexChatbotPage({ close }) {
   const handleNewChat = async () => {
     try {
       /*const result = await createHistory({ title: "Nouvelle discussion" }).unwrap();*/
-      const result = await createHistory({ 
-        data: { title: "Nouvelle discussion" }, 
-        project_id: projectId 
+      const result = await createHistory({
+        data: { title: "Nouvelle discussion" },
+        project_id: projectId
       }).unwrap();
 
       const historyId = result?.history?.id || result?.id;
@@ -141,22 +141,37 @@ export default function IndexChatbotPage({ close }) {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!currentMessage.trim() || !selectedHistoryId) return;
+    if (!currentMessage.trim()) return;
 
     const userText = currentMessage;
     setCurrentMessage("");
+    // Optimistic update for UI
     setMessages(prev => [...prev, { role: "user", content: userText }]);
 
     try {
+      let historyId = selectedHistoryId;
+
+      // If no history selected, create one first
+      if (!historyId) {
+        const result = await createHistory({
+          data: { title: "Nouvelle discussion" },
+          project_id: projectId
+        }).unwrap();
+        historyId = result?.history?.id || result?.id;
+        setSelectedHistoryId(historyId);
+        // Refresh histories list if needed, but the mutation should handle invalidation
+      }
+
       await sendMessage({
-        data: { 
-          user_input: userText, 
-          message_history: selectedHistoryId,
+        data: {
+          user_input: userText,
+          message_history: historyId,
           project_id: projectId
         },
         project_id: projectId
       }).unwrap();
     } catch (err) {
+      console.error("Failed to send", err);
       setMessages(prev => [...prev, {
         role: "assistant",
         content: "Une erreur est survenue lors de l'envoi."
@@ -470,8 +485,9 @@ export default function IndexChatbotPage({ close }) {
                 value={currentMessage}
                 onChange={(e) => setCurrentMessage(e.target.value)}
                 /* disabled={sendingMessage || !selectedHistoryId} */
+                /* disabled={sendingMessage} */
                 disabled={sendingMessage}
-                placeholder={selectedHistoryId ? "Posez votre question..." : "Sélectionnez une discussion"}
+                placeholder={"Posez votre question..."}
                 className={`w-full px-5 py-3 rounded-xl text-sm outline-none transition-all border
                   ${isDarkMode
                     ? "bg-slate-900 border-gray-700/50 text-white placeholder-gray-500 focus:border-indigo-500"
@@ -481,7 +497,7 @@ export default function IndexChatbotPage({ close }) {
             </div>
             <button
               type="submit"
-              disabled={sendingMessage || !currentMessage.trim() || !selectedHistoryId}
+              disabled={sendingMessage || !currentMessage.trim()}
               className="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all shadow-lg active:scale-95 disabled:opacity-20 flex-shrink-0"
             >
               <FaPaperPlane size={14} />

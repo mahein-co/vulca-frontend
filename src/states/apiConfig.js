@@ -30,10 +30,25 @@ const baseQuery = fetchBaseQuery({
 });
 
 // Base query for root endpoints (auth/users)
+// Users endpoints are at the root level (e.g., /users/login/)
+// while other endpoints are under /api/ (e.g., /api/projects/)
 const baseQueryUsersRoot = fetchBaseQuery({
-    baseUrl: BASE_URL_API.endsWith('/')
-        ? BASE_URL_API.slice(0, -5)
-        : BASE_URL_API.replace('/api', ''),
+    baseUrl: (() => {
+        const hostname = window.location.hostname;
+        let url;
+        if (hostname === 'localhost' || hostname === '127.0.0.1') {
+            // Local development
+            url = `http://${hostname}:8000`;
+        } else if (hostname.includes('lexaiq.com')) {
+            // Production - use api.lexaiq.com
+            url = 'https://api.lexaiq.com';
+        } else {
+            // Fallback
+            url = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://api.lexaiq.com';
+        }
+        console.log("🔧 baseQueryUsersRoot configured with baseUrl:", url);
+        return url;
+    })(),
     credentials: "include",
     prepareHeaders: prepareHeadersWithAuth,
 });

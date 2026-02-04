@@ -45,6 +45,13 @@ export default function AuthIndexLogin() {
             // Wait 0.7 seconde
             setTimeout(() => {
                 // Get current user
+                console.log("DEBUG LOGIN SUCCESS: Response data:", userInfo);
+                if (userInfo?.access) {
+                    console.log("DEBUG LOGIN: Access token found in response!");
+                } else {
+                    console.error("DEBUG LOGIN: NO ACCESS TOKEN IN RESPONSE!");
+                }
+
                 saveCurrentUserToLS(userInfo);
                 dispatch(actionGetCurrentUser(userInfo));
 

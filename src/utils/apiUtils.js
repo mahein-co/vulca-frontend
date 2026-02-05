@@ -23,6 +23,19 @@ export const fetchWithReauth = async (url, options = {}) => {
         if (projectId && !headers["X-Project-ID"]) {
             headers["X-Project-ID"] = projectId;
         }
+
+        // Add Authorization header from localStorage (Fallback for Cookies)
+        const userInfo = localStorage.getItem("userInfo");
+        if (userInfo) {
+            try {
+                const parsedUser = JSON.parse(userInfo);
+                if (parsedUser.access) {
+                    headers["Authorization"] = `Bearer ${parsedUser.access}`;
+                }
+            } catch (e) {
+                console.error("Error parsing user info for token", e);
+            }
+        }
         return headers;
     };
 
@@ -34,7 +47,7 @@ export const fetchWithReauth = async (url, options = {}) => {
     const fetchOptions = {
         ...options,
         headers: getHeaders(),
-        credentials: "include", // Essential for HttpOnly cookies
+        credentials: "include", // Essential for HttpOnly cookies (we keep both methods)
     };
 
     let response = await fetch(fullUrl, fetchOptions);
@@ -49,17 +62,44 @@ export const fetchWithReauth = async (url, options = {}) => {
         }
 
         const rootUrl = BASE_URL_API.replace('/api', '');
+
+        // Get refresh token from storage
+        let refreshToken = null;
+        try {
+            const userInfo = localStorage.getItem("userInfo");
+            if (userInfo) {
+                refreshToken = JSON.parse(userInfo).refresh;
+            }
+        } catch (e) { }
+
         const refreshResponse = await fetch(`${rootUrl}/users/token/refresh/`, {
             method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ refresh: refreshToken }), // Send refresh in body
             credentials: "include",
         });
 
         if (refreshResponse.ok) {
             console.log("Refresh successful, retrying original request...");
-            // Retry with updated headers (if project changed in between, though unlikely)
+
+            // Get new access token from response body
+            const data = await refreshResponse.json();
+            if (data.access) {
+                // Update localStorage with new token
+                const userInfo = localStorage.getItem("userInfo");
+                if (userInfo) {
+                    const parsedUser = JSON.parse(userInfo);
+                    parsedUser.access = data.access;
+                    localStorage.setItem("userInfo", JSON.stringify(parsedUser));
+                }
+            }
+
+            // Retry with updated headers
             return fetch(fullUrl, {
                 ...fetchOptions,
-                headers: getHeaders()
+                headers: getHeaders() // Will pick up new token from LS
             });
         } else {
             console.error("Refresh failed, redirecting to login.");

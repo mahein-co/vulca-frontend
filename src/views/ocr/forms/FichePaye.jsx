@@ -4,6 +4,7 @@ import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { useProjectId } from '../../../hooks/useProjectId';
 
 // Helper for currency formatting
 const formatMontant = (montant) => {
@@ -45,6 +46,7 @@ const LoadingOverlay = ({ message }) => (
 export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
 
     // API Hooks
+    const projectId = useProjectId();
     const [actionSaveFichePaie, { isLoading: isLoadingSave, isSuccess: isSuccessSave, isError: isErrorSave, data: dataSave }] = useSavePieceByFormularMutation();
     const [actionGenerateJournal, { isLoading: isLoadingJournal, isSuccess: isSuccessJournal, isError: isErrorJournal, error: errorJournal }] = useGenerateJournalMutation();
 
@@ -178,7 +180,7 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
         };
 
         setDataToGenerateJournal(data);
-        actionSaveFichePaie(data);
+        actionSaveFichePaie({ data, project_id: projectId });
     };
 
     // Effects for API
@@ -248,13 +250,13 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
                                 <div className="grid grid-cols-1 gap-3">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Employé</label>
-                                        <input type="text" name="employe" value={formData.employe} onChange={handleChange} placeholder="Nom de l'employé" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.employe ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                                        <input type="text" name="employe" value={formData.employe} onChange={handleChange} placeholder="Nom de l'employé" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${validationErrors.employe ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">N° Fiche de Paye</label>
-                                            <input type="text" name="numFichePaie" value={formData.numFichePaie} onChange={handleChange} placeholder="ex: PAIE-2025-01" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.numFichePaie ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                                            <input type="text" name="numFichePaie" value={formData.numFichePaie} onChange={handleChange} placeholder="ex: PAIE-2025-01" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${validationErrors.numFichePaie ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Période de Paiement</label>
@@ -284,7 +286,7 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
                                 <div className="space-y-3">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-900 dark:text-gray-100 mb-1 uppercase tracking-wide">Salaire Brut (Ar)</label>
-                                        <input type="text" name="salaireBrut" value={formData.salaireBrut} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-base font-semibold rounded-md text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${validationErrors.salaireBrut ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                                        <input type="text" name="salaireBrut" value={formData.salaireBrut} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-base font-semibold rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.salaireBrut ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4 pt-2">

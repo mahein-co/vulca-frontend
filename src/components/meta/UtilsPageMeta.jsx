@@ -4,7 +4,7 @@ import { Helmet } from 'react-helmet';
 export default function UtilsPageMeta({ title, description }) {
     return (
         <Helmet>
-            <title>{title || 'REKAPY - Comptabilité'}</title>
+            <title>{title || 'Vulca - Comptabilité'}</title>
             <meta name="description" content={description || 'Application de comptabilité'} />
         </Helmet>
     );

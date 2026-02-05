@@ -15,6 +15,8 @@ import BankForm from "./views/ocr/forms/BankForm";
 import Classification from "./views/classification/Classification";
 import GrandLivre from "./views/grandlivre/grandlivre";
 import ProjectSelection from "./views/ProjectSelection";
+import ChatContainer from "./components/chatbot/ChatContainer"
+
 
 export default function Routes() {
   return useRoutes([
@@ -35,6 +37,7 @@ export default function Routes() {
         { path: "grandlivre", element: <GrandLivre /> },
         { path: "forms/bilan", element: <BilanForm /> },
         { path: "forms/CompteResultat", element: <CompteResultatForm /> },
+        { path: "chat", element: <ChatContainer /> },
 
       ],
     },

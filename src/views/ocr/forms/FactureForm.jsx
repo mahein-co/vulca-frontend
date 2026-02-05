@@ -4,6 +4,8 @@ import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/n
 import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
+import { useProjectId } from '../../../hooks/useProjectId';
+import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
 const TAUX_TVA_DEFAULT = 20;
 
@@ -37,6 +39,7 @@ const LoadingOverlay = ({ message }) => (
 export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
 
     // API Hooks
+    const projectId = useProjectId();
     const [actionSaveFacture, { isLoading: isLoadingSave, isSuccess: isSuccessSave, isError: isErrorSave, data: dataSave }] = useSavePieceByFormularMutation();
     const [actionGenerateJournal, { isLoading: isLoadingJournal, isSuccess: isSuccessJournal, isError: isErrorJournal, error: errorJournal, reset }] = useGenerateJournalMutation();
 
@@ -67,6 +70,11 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
     const [validationErrors, setValidationErrors] = useState({});
 
     const [headerErrors, setHeaderErrors] = useState({});
+
+    // Modal State
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [itemToDelete, setItemToDelete] = useState(null);
+    const [isDeleteAll, setIsDeleteAll] = useState(false);
 
     const hasLines = useMemo(() => lignes.length > 0, [lignes]);
 
@@ -213,7 +221,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
             totalLigneTTC: totalHTLigne + montantTVALigne
         };
 
-        const ligne = { ...data, id: Date.now() };
+        const ligne = { ...data, id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}` };
         setLignes(prevLignes => [...prevLignes, ligne]);
         resetNouvelleLigne();
     };
@@ -231,8 +239,31 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
     };
 
     const supprimerLigne = (id) => {
-        setLignes(lignes.filter(ligne => ligne.id !== id));
-        if (ligneEnModification === id) resetNouvelleLigne();
+        setItemToDelete(id);
+        setIsDeleteAll(false);
+        setDeleteModalOpen(true);
+    };
+
+    const handleDeleteAll = () => {
+        setIsDeleteAll(true);
+        setDeleteModalOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (isDeleteAll) {
+            setLignes([]);
+            resetNouvelleLigne();
+            toast.success("Toutes les lignes ont été supprimées. L'en-tête est déverrouillé.");
+        } else {
+            if (itemToDelete) {
+                setLignes(lignes.filter(ligne => ligne.id !== itemToDelete));
+                if (ligneEnModification === itemToDelete) resetNouvelleLigne();
+                toast.success("Ligne supprimée.");
+            }
+        }
+        setDeleteModalOpen(false);
+        setItemToDelete(null);
+        setIsDeleteAll(false);
     };
 
     useEffect(() => {
@@ -294,7 +325,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
         };
 
         setDataToGenerateJournal(data);
-        actionSaveFacture(data);
+        actionSaveFacture({ data, project_id: projectId });
     };
 
     // Effects for API
@@ -377,14 +408,10 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                 <div className='mb-3'>
                                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Type de Document</label>
 
-                                    {hasLines && (
-                                        <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-1 rounded mb-2 border border-red-200 dark:border-red-800">
-                                            ⚠️ Les informations de l'en-tête sont bloquées car des lignes ont déjà été ajoutées. Supprimez toutes les lignes pour les modifier.
-                                        </p>
-                                    )}
+
 
                                     <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0">
-                                        <label className={`flex items-center text-sm ${hasLines ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                        <label className="flex items-center text-sm cursor-pointer">
                                             <input
                                                 type="radio"
                                                 name="typeFacture"
@@ -392,11 +419,10 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                                 checked={typeFacture === 'vente'}
                                                 onChange={() => setTypeFacture('vente')}
                                                 className="h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 bg-white dark:bg-gray-700"
-                                                disabled={hasLines}
                                             />
                                             <span className="ml-2 text-gray-700 dark:text-gray-300">Facture de <strong>Vente</strong></span>
                                         </label>
-                                        <label className={`flex items-center text-sm ${hasLines ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}`}>
+                                        <label className="flex items-center text-sm cursor-pointer">
                                             <input
                                                 type="radio"
                                                 name="typeFacture"
@@ -404,7 +430,6 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                                 checked={typeFacture === 'achat'}
                                                 onChange={() => setTypeFacture('achat')}
                                                 className="h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 bg-white dark:bg-gray-700"
-                                                disabled={hasLines}
                                             />
                                             <span className="ml-2 text-gray-700 dark:text-gray-300">Facture d'<strong>Achat</strong></span>
                                         </label>
@@ -423,8 +448,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             value={header.numeroFacture}
                                             onChange={handleChangeHeader}
                                             placeholder="F-2024-001"
-                                            disabled={hasLines}
-                                            className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.numeroFacture ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
+                                            className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${headerErrors.numeroFacture ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
                                         />
                                     </div>
 
@@ -437,8 +461,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             name="dateFacture"
                                             value={header.dateFacture}
                                             onChange={handleChangeHeader}
-                                            disabled={hasLines}
-                                            className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.dateFacture ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
+                                            className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${headerErrors.dateFacture ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                                         />
                                     </div>
 
@@ -452,8 +475,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             value={partenaireValue}
                                             onChange={handleChangeHeader}
                                             placeholder={`Ex: Société Alpha SARL`}
-                                            disabled={hasLines}
-                                            className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.nomClient || headerErrors.nomFournisseur ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
+                                            className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${headerErrors.nomClient || headerErrors.nomFournisseur ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
                                         />
 
                                     </div>
@@ -474,8 +496,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                                 value={header.rcs}
                                                 onChange={handleChangeHeader}
                                                 placeholder="RCS..."
-                                                disabled={hasLines}
-                                                className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`}
+                                                className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md`}
                                             />
                                         </div>
 
@@ -487,8 +508,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                                 value={header.nif}
                                                 onChange={handleChangeHeader}
                                                 placeholder="NIF..."
-                                                disabled={hasLines}
-                                                className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`}
+                                                className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md`}
                                             />
                                         </div>
 
@@ -500,8 +520,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                                 value={header.stat}
                                                 onChange={handleChangeHeader}
                                                 placeholder="STAT..."
-                                                disabled={hasLines}
-                                                className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`}
+                                                className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md`}
                                             />
                                         </div>
 
@@ -514,8 +533,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                                 onChange={handleChangeHeader}
                                                 step="1"
                                                 placeholder="0"
-                                                disabled={hasLines}
-                                                className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md text-right ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed' : ''}`}
+                                                className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md text-right`}
                                             />
                                         </div>
                                     </div>
@@ -523,6 +541,14 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
 
                                 <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">
                                     {ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une ligne'}
+                                    {hasLines && (
+                                        <button
+                                            onClick={handleDeleteAll}
+                                            className="ml-4 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 px-3 py-1 rounded text-xs font-semibold transition-colors border border-red-200 dark:border-red-800"
+                                        >
+                                            Tout supprimer
+                                        </button>
+                                    )}
                                 </h2>
 
                                 <div className="grid grid-cols-12 gap-3">
@@ -730,6 +756,18 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                     </div>
                 </div>
             </div>
+
+            <ConfirmationModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                title={isDeleteAll ? "Supprimer toutes les lignes ?" : "Supprimer la ligne ?"}
+                message={isDeleteAll
+                    ? "Cette action supprimera toutes les lignes de la facture et déverrouillera l'en-tête. Cette action est irréversible."
+                    : "Êtes-vous sûr de vouloir supprimer cette ligne de facture ?"}
+                confirmText={isDeleteAll ? "Tout supprimer" : "Supprimer"}
+                isDanger={true}
+            />
         </>
     );
 }

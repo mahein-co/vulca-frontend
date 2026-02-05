@@ -3,7 +3,22 @@ import IconOcr from "../assets/icons/pdf.png";
 import IconFinance from "../assets/icons/finance.png";
 import IconAdd from "../assets/icons/add.png";
 
-export const BASE_URL_API = process.env.REACT_APP_API_URL || "http://localhost:8000/api";
+// Dynamically determine API URL based on current hostname to ensure Same-Site cookies work
+const hostname = window.location.hostname;
+let apiHost;
+
+if (hostname === 'localhost' || hostname === '127.0.0.1') {
+  apiHost = `http://${hostname}:8000/api`;
+} else if (hostname.includes('lexaiq.com')) {
+  // Force production API URL for any lexaiq.com subdomain
+  apiHost = "https://api.lexaiq.com/api";
+} else {
+  // Fallback to env var or default
+  apiHost = process.env.REACT_APP_API_URL || "https://api.lexaiq.com/api";
+}
+
+export const BASE_URL_API = apiHost;
+
 
 export const PATHS = {
   home: "/",

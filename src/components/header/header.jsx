@@ -71,7 +71,6 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu, hideNavigation }) =
     // Fetch pending requests for admin notification
     const { data: pendingRequests } = useGetPendingRequestsQuery(undefined, {
         skip: !isAdmin,
-        pollingInterval: 5000 // Poll every 5s for near-real-time updates
     });
 
     const pendingCount = pendingRequests?.length || 0;

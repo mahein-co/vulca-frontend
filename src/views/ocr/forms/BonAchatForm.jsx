@@ -4,6 +4,8 @@ import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/n
 import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
+import { useProjectId } from '../../../hooks/useProjectId';
+import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
 const BASE_URL_API = 'http://api.exemple.com'; // Placeholder, unused with real API
 const TAUX_TVA_DEFAULT = 20;
@@ -38,6 +40,7 @@ const LoadingOverlay = ({ message }) => (
 export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
 
   // API Hooks
+  const projectId = useProjectId();
   const [actionSaveBonAchat, { isLoading: isLoadingSave, isSuccess: isSuccessSave, isError: isErrorSave, data: dataSave }] = useSavePieceByFormularMutation();
   const [actionGenerateJournal, { isLoading: isLoadingJournal, isSuccess: isSuccessJournal, isError: isErrorJournal, error: errorJournal }] = useGenerateJournalMutation();
 
@@ -64,6 +67,11 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
   const [dataToGenerateJournal, setDataToGenerateJournal] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
   const [headerErrors, setHeaderErrors] = useState({});
+
+  // Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [isDeleteAll, setIsDeleteAll] = useState(false);
 
   const hasLines = useMemo(() => lignes.length > 0, [lignes]);
 
@@ -227,8 +235,31 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
   };
 
   const supprimerLigne = (id) => {
-    setLignes(lignes.filter(ligne => ligne.id !== id));
-    if (ligneEnModification === id) resetNouvelleLigne();
+    setItemToDelete(id);
+    setIsDeleteAll(false);
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteAll = () => {
+    setIsDeleteAll(true);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (isDeleteAll) {
+      setLignes([]);
+      resetNouvelleLigne();
+      toast.success("Toutes les lignes ont été supprimées. L'en-tête est déverrouillé.");
+    } else {
+      if (itemToDelete) {
+        setLignes(lignes.filter(ligne => ligne.id !== itemToDelete));
+        if (ligneEnModification === itemToDelete) resetNouvelleLigne();
+        toast.success("Ligne supprimée.");
+      }
+    }
+    setDeleteModalOpen(false);
+    setItemToDelete(null);
+    setIsDeleteAll(false);
   };
 
   useEffect(() => {
@@ -315,7 +346,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
     };
 
     setDataToGenerateJournal(data);
-    actionSaveBonAchat(data);
+    actionSaveBonAchat({ data, project_id: projectId });
   };
 
   return (
@@ -356,16 +387,12 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                   Informations Générales
                 </h2>
 
-                {hasLines && (
-                  <p className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-1 rounded mb-2 border border-red-200 dark:border-red-800">
-                    ⚠️ Les informations de l'en-tête sont bloquées car des lignes ont déjà été ajoutées. Supprimez toutes les lignes pour les modifier.
-                  </p>
-                )}
+
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Fournisseur</label>
-                    <input type="text" name="fournisseur" value={header.fournisseur} onChange={handleChangeHeader} disabled={hasLines} placeholder="Nom du fournisseur" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.fournisseur ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                    <input type="text" name="fournisseur" value={header.fournisseur} onChange={handleChangeHeader} placeholder="Nom du fournisseur" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${headerErrors.fournisseur ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                   </div>
 
                   <div className="col-span-2">
@@ -377,25 +404,24 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                       name="client"
                       value={header.client}
                       onChange={handleChangeHeader}
-                      disabled={hasLines}
                       placeholder="Nom du client"
-                      className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.client ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
+                      className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${headerErrors.client ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`}
                     />
                   </div>
 
                   <div className="col-span-1">
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">N° Bon</label>
-                    <input type="text" name="numeroBon" value={header.numeroBon} onChange={handleChangeHeader} disabled={hasLines} placeholder="BA-001" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.numeroBon ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                    <input type="text" name="numeroBon" value={header.numeroBon} onChange={handleChangeHeader} placeholder="BA-001" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${headerErrors.numeroBon ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                   </div>
 
                   <div className="col-span-1">
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date</label>
-                    <input type="date" name="dateBon" value={header.dateBon} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.dateBon ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
+                    <input type="date" name="dateBon" value={header.dateBon} onChange={handleChangeHeader} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${headerErrors.dateBon ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                   </div>
 
                   <div className="col-span-2">
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Lieu / Adresse </label>
-                    <input type="text" name="address" value={header.address} onChange={handleChangeHeader} disabled={hasLines} placeholder="Adresse" className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''} ${headerErrors.address ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                    <input type="text" name="address" value={header.address} onChange={handleChangeHeader} placeholder="Adresse" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${headerErrors.address ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                   </div>
                 </div>
 
@@ -408,25 +434,33 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     <div className="col-span-1">
                       <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">RCS</label>
-                      <input type="text" name="rcs" value={header.rcs} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''}`} placeholder="RCS..." />
+                      <input type="text" name="rcs" value={header.rcs} onChange={handleChangeHeader} className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md`} placeholder="RCS..." />
                     </div>
                     <div className="col-span-1">
                       <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">NIF</label>
-                      <input type="text" name="nif" value={header.nif} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''}`} placeholder="NIF..." />
+                      <input type="text" name="nif" value={header.nif} onChange={handleChangeHeader} className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md`} placeholder="NIF..." />
                     </div>
                     <div className="col-span-1">
                       <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">STAT</label>
-                      <input type="text" name="stat" value={header.stat} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''}`} placeholder="STAT..." />
+                      <input type="text" name="stat" value={header.stat} onChange={handleChangeHeader} className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md`} placeholder="STAT..." />
                     </div>
                     <div className="col-span-1">
                       <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">TVA (%)</label>
-                      <input type="number" name="tauxTVA" value={header.tauxTVA} onChange={handleChangeHeader} disabled={hasLines} className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md text-right ${hasLines ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed opacity-60' : ''}`} placeholder="0" />
+                      <input type="number" name="tauxTVA" value={header.tauxTVA} onChange={handleChangeHeader} className={`w-full px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 rounded-md text-right`} placeholder="0" />
                     </div>
                   </div>
                 </div>
 
-                <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-3">
-                  {ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une ligne'}
+                <h2 className="text-base font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center justify-between">
+                  <span>{ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une ligne'}</span>
+                  {lignes.length > 0 && (
+                    <button
+                      onClick={handleDeleteAll}
+                      className="ml-4 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 px-3 py-1 rounded text-xs font-semibold transition-colors border border-red-200 dark:border-red-800"
+                    >
+                      Tout supprimer
+                    </button>
+                  )}
                 </h2>
 
                 <div className="grid grid-cols-12 gap-3">
@@ -605,6 +639,18 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
           </div>
         </div>
       </div>
+
+      <ConfirmationModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title={isDeleteAll ? "Supprimer toutes les lignes ?" : "Supprimer la ligne ?"}
+        message={isDeleteAll
+          ? "Cette action supprimera toutes les lignes du bon d'achat et déverrouillera l'en-tête. Cette action est irréversible."
+          : "Êtes-vous sûr de vouloir supprimer cette ligne ?"}
+        confirmText={isDeleteAll ? "Tout supprimer" : "Supprimer"}
+        isDanger={true}
+      />
     </>
   );
 }

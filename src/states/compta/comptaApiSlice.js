@@ -26,7 +26,25 @@ export const comptaApiSlice = createApi({
         { type: 'compta', id: `ca-annuel-${project_id}` },
       ],
     }),
+
+    saveBilanManual: builder.mutation({
+      query: ({ data, project_id }) => ({
+        url: `compta/bilans/manual/?project_id=${project_id}`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["compta"],
+    }),
+
+    saveCompteResultatManual: builder.mutation({
+      query: ({ data, project_id }) => ({
+        url: `compta/CompteResultats/manual/?project_id=${project_id}`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["compta"],
+    }),
   }),
 });
 
-export const { useGetChiffreAffaireMensuelQuery, useGetChiffreAffaireAnnuelQuery } = comptaApiSlice;
+export const { useGetChiffreAffaireMensuelQuery, useGetChiffreAffaireAnnuelQuery, useSaveBilanManualMutation, useSaveCompteResultatManualMutation } = comptaApiSlice;

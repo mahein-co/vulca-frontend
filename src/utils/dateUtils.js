@@ -32,12 +32,15 @@ export const parseFrenchDate = (dateString) => {
         return dateString;
     }
 
-    // Parse DD/MM/YYYY format
-    const match = dateString.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    // Parse DD/MM/YYYY or DD/MM/YY format, accept separators / - . or space
+    const match = dateString.match(/^(\d{1,2})[\/\.\-\s](\d{1,2})[\/\.\-\s](\d{2,4})$/);
     if (match) {
         const day = match[1].padStart(2, '0');
         const month = match[2].padStart(2, '0');
-        const year = match[3];
+        let year = match[3];
+        if (year.length === 2) {
+            year = `20${year}`;
+        }
         return `${year}-${month}-${day}`;
     }
 
@@ -69,8 +72,8 @@ export const formatDateToISO = (dateInput) => {
         return dateString;
     }
 
-    // French format DD/MM/YYYY
-    if (/^\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}$/.test(dateString)) {
+    // French-like formats DD/MM/YYYY, DD/MM/YY, with separators / . - or space
+    if (/^\d{1,2}[\/\.\-\s]\d{1,2}[\/\.\-\s]\d{2,4}$/.test(dateString)) {
         return parseFrenchDate(dateString);
     }
 
@@ -82,6 +85,58 @@ export const formatDateToISO = (dateInput) => {
         }
     } catch (e) {
         // Invalid date
+    }
+
+    // Additional parsing attempts for common OCR outputs
+    // 1) YYYYMMDD
+    if (/^\d{8}$/.test(dateString)) {
+        const y = dateString.slice(0, 4);
+        const m = dateString.slice(4, 6);
+        const d = dateString.slice(6, 8);
+        return `${y}-${m}-${d}`;
+    }
+
+    // 2) DD.MM.YYYY or DD.MM.YY or DD MM YYYY
+    const dmMatch = dateString.match(/^(\d{1,2})[\.\s](\d{1,2})[\.\s](\d{2,4})$/);
+    if (dmMatch) {
+        let day = dmMatch[1].padStart(2, '0');
+        let month = dmMatch[2].padStart(2, '0');
+        let year = dmMatch[3];
+        if (year.length === 2) {
+            year = `20${year}`;
+        }
+        return `${year}-${month}-${day}`;
+    }
+
+    // 3) French month names (e.g., 12 janvier 2024, 5 janv. 24)
+    const months = {
+        jan: '01', janv: '01', janvier: '01',
+        fev: '02', fevr: '02', fév: '02', févr: '02', fevrier: '02', février: '02',
+        mar: '03', mars: '03',
+        avr: '04', avril: '04',
+        mai: '05',
+        jun: '06', juin: '06',
+        jul: '07', juil: '07', juillet: '07',
+        aou: '08', aout: '08', août: '08',
+        sep: '09', sept: '09', septembre: '09',
+        oct: '10', octobre: '10',
+        nov: '11', novembre: '11',
+        dec: '12', decem: '12', decembre: '12', décembre: '12', dec: '12', déc: '12'
+    };
+
+    const monthNameRegex = new RegExp(`^(\\d{1,2})[\s\-\\./]+([A-Za-zÀ-ÖØ-öø-ÿ\.\'\-]+)[\s\-\\./]+(\\d{2,4})$`);
+    const mnMatch = dateString.match(monthNameRegex);
+    if (mnMatch) {
+        const day = mnMatch[1].padStart(2, '0');
+        let mon = mnMatch[2].toLowerCase().replace(/\./g, '').normalize('NFD').replace(/\p{Diacritic}/gu, '');
+        let year = mnMatch[3];
+        if (year.length === 2) year = `20${year}`;
+        // Try to find month code by prefix matching
+        for (const key of Object.keys(months)) {
+            if (mon.startsWith(key)) {
+                return `${year}-${months[key]}-${day}`;
+            }
+        }
     }
 
     return '';

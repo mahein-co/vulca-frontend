@@ -1,5 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import LoadingOverlay from '../layout/LoadingOverlay';
+import { useDispatch, useSelector } from 'react-redux';
+import { setCurrentPage, selectActiveFilter } from '../../states/dashboard/dashboardFilterSlice';
+import FilterManager from '../dashboard/FilterManager';
 import {
   FileText,
   TrendingUp,
@@ -237,26 +240,27 @@ const EtatFinance = () => {
     }
   };
 
-  // Chargement initial des données
+  const dispatch = useDispatch();
+
+  // NOUVEAU: Synchroniser la page actuelle pour le chatbot
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
+    dispatch(setCurrentPage("finance"));
+  }, [dispatch]);
 
-      try {
-        await Promise.all([
-          fetchBilanData(),
-          fetchCompteResultatData()
-        ]);
-        setError(null);
-      } catch (err) {
-        setError(`Erreur lors du chargement des données: ${err.message}`);
-      } finally {
-        setLoading(false);
+  // NOUVEAU: Synchroniser avec le filtre global
+  const activeFilter = useSelector(selectActiveFilter);
+  useEffect(() => {
+    if (activeFilter && activeFilter.type === 'date') {
+      const { start, end } = activeFilter.value;
+      const d = new Date(start);
+      if (!isNaN(d.getTime())) {
+        setSelectedYear(d.getFullYear());
+        // On pourrait aussi extraire le mois/trimestre mais le filtrage par date range dans calculations est plus précis
       }
-    };
+    }
+  }, [activeFilter]);
 
-    loadData();
-  }, []);
+  // Chargement initial des données
 
   // Fonction de filtrage par période
   const filterByPeriod = (details) => {
@@ -345,7 +349,7 @@ const EtatFinance = () => {
       resultatNetChange,
       endettementChange
     };
-  }, [bilanData, compteResultatData, selectedPeriod, selectedYear, selectedMonth, selectedQuarter, historicalData]);
+  }, [bilanData, compteResultatData, selectedPeriod, selectedYear, selectedMonth, selectedQuarter, historicalData, activeFilter]);
 
   const cards = [
     ['Actif Courant', calculations.actifCourant, null, false, DollarSign],
@@ -379,6 +383,9 @@ const EtatFinance = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans">
       <div className="max-w-7xl mx-auto">
+        {/* NOUVEAU: Filtre Chatbot ici aussi */}
+        <FilterManager page="finance" />
+
         {/* Message d'erreur en bandeau rouge */}
         {error && (
           <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-lg shadow-md">

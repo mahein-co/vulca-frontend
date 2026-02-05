@@ -67,8 +67,11 @@ const baseQueryWithReauth = async (args, api, extraOptions, baseQueryInstance) =
     console.log("📥 API Response:", { url, data: result.data, error: result.error });
 
     if (result.error && result.error.status === 401) {
+        console.warn(`[API] 401 Unauthorized for ${args?.url || args}. Attempting refresh...`);
+        
         // Prevent infinite loop for the refresh endpoint itself
         if (url === "/users/token/refresh/") {
+            console.error("[API] Refresh token itself returned 401. Logging out.");
             return result;
         }
 
@@ -93,6 +96,7 @@ const baseQueryWithReauth = async (args, api, extraOptions, baseQueryInstance) =
         );
 
         if (refreshResult.data) {
+            console.log("[API] Refresh successful! Retrying original request.");
             // ✅ Token refresh successful
             // Update localStorage with new token if returned
             if (refreshResult.data.access) {

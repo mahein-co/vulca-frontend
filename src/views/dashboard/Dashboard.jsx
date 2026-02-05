@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { selectActiveFilter, setActiveFilter, setCurrentPage } from '../../states/dashboard/dashboardFilterSlice';
 import BalanceModal from '../balance/BalanceModal';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
+import FilterManager from '../../components/dashboard/FilterManager';
 
 import BarCharts from '../../components/charts/BarCharts';
 import TvaBarChart from '../../components/charts/TvaBarChart';
@@ -301,27 +304,25 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
 // --- 3. Composant Principal Dashboard ---
 
 const Dashboard = () => {
+  const dispatch = useDispatch(); // NOUVEAU: Indispensable pour Redux
 
 
 
 
 
-  // États globaux de date pour le filtrage
-  const [globalDateStart, setGlobalDateStart] = useState('2019-01-01');
+  const currentYear = new Date().getFullYear();
+  const [globalDateStart, setGlobalDateStart] = useState(`${currentYear}-01-01`);
   const [globalDateEnd, setGlobalDateEnd] = useState(new Date().toISOString().split('T')[0]);
   const projectId = useProjectId();
 
-  // Chargement automatique de la plage de dates disponible (Min/Max des journaux)
+  // NOUVEAU: Synchroniser la page actuelle pour le chatbot
   useEffect(() => {
-    fetchWithReauth(`/journals/date-range/`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.min_date) setGlobalDateStart(data.min_date);
-        if (data.max_date) setGlobalDateEnd(data.max_date);
-      })
-      .catch(err => console.error("Erreur chargement date range global:", err));
-  }, [projectId]);
+    dispatch(setCurrentPage("dashboard"));
+  }, [dispatch]);
 
+  // Chargement automatique de la plage de dates disponible (Min/Max des journaux)
+
+  // États Indicateurs Financiers (Chargés en une seule fois)
   // États Indicateurs Financiers (Chargés en une seule fois)
   const [indicators, setIndicators] = useState({
     ca: 0,
@@ -342,6 +343,16 @@ const Dashboard = () => {
   });
 
   const [loadingIndicators, setLoadingIndicators] = useState(true);
+
+  // NOUVEAU: Écouter le filtre Redux pour mettre à jour les graphiques locaux
+  const activeFilter = useSelector(selectActiveFilter);
+  
+  useEffect(() => {
+    if (activeFilter?.type === 'date' && activeFilter.value) {
+      if (activeFilter.value.start) setGlobalDateStart(activeFilter.value.start);
+      if (activeFilter.value.end) setGlobalDateEnd(activeFilter.value.end);
+    }
+  }, [activeFilter]);
 
   // État pour le ROE
   const [roeData, setRoeData] = useState({
@@ -576,38 +587,8 @@ const Dashboard = () => {
   return (
     <div className="px-4 sm:px-0 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900 dark:to-gray-900 min-h-screen transition-colors duration-200">
 
-      {/* 1. Sélecteur de Période */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700">
-        <div className="mb-2 sm:mb-0">
-          <p className="font-semibold text-gray-800 dark:text-gray-100">Période d'exercice</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Sélectionnez la période à analyser</p>
-        </div>
-
-        <div className="flex flex-wrap gap-2 sm:space-x-3 items-center text-sm">
-          <div className="flex items-center space-x-2">
-            <label className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm">Du</label>
-            <input
-              type="date"
-              value={globalDateStart}
-              onChange={(e) => setGlobalDateStart(e.target.value)}
-              className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <label className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm">Au</label>
-            <input
-              type="date"
-              value={globalDateEnd}
-              onChange={(e) => setGlobalDateEnd(e.target.value)}
-              className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            />
-          </div>
-          {/* Bouton d'affichage dynamique de la période */}
-          <button className="bg-gray-800 dark:bg-gray-700 text-white dark:text-gray-100 px-3 py-1.5 rounded-lg text-xs sm:text-sm hover:bg-gray-900 dark:hover:bg-gray-600 font-medium shadow-sm transition-all focus:outline-none">
-            {new Date(globalDateStart).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })} - {new Date(globalDateEnd).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-          </button>
-        </div>
-      </div>
+      {/* 1. Filtres pour le Chatbot (Isolé par page) */}
+      <FilterManager page="dashboard" />
 
       {/* 2. Cartes de Résumé - identique au style des cartes Bilan & États */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 sm:gap-3 pb-2 mb-6">

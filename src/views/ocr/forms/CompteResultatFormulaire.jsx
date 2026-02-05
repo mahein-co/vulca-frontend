@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import toast from "react-hot-toast";
+import { toast } from 'react-hot-toast';
+import { fetchWithReauth } from '../../../utils/apiUtils';
 import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
 import { getTodayISO } from '../../../utils/dateUtils';
 import { useSaveCompteResultatManualMutation } from "../../../states/compta/comptaApiSlice";
@@ -263,6 +264,13 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                     nature: ligne.nature // CHARGE / PRODUIT
                 };
 
+                return fetchWithReauth('/CompteResultats/manual/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
                 return saveCompteResultatManual({ data: payload, project_id: projectId }).unwrap();
             });
 

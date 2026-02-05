@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
     ScaleIcon,
     CalculatorIcon,
@@ -7,6 +7,7 @@ import {
     BanknotesIcon,
     ReceiptPercentIcon,
 } from '@heroicons/react/24/outline';
+import ImportExcel from './ImportExcel';
 
 const FORM_TYPES = {
     bilan: 'bilan',
@@ -15,6 +16,7 @@ const FORM_TYPES = {
     achat: 'achat',
     banque: 'banque',
     ficheDePaie: 'ficheDePaie',
+    importExcel: 'importExcel',
 };
 
 // Structure de données (inchangée)
@@ -25,6 +27,7 @@ const formSections = [
             // Section 1 : 2 formulaires
             { type: FORM_TYPES.bilan, name: 'Bilan', description: 'Actif et passif de l\'entreprise à une date donnée.', icon: ScaleIcon, color: 'blue' },
             { type: FORM_TYPES.compteResultat, name: 'Compte de Résultat', description: 'Charges et produits pour déterminer le résultat net de l\'exercice.', icon: CalculatorIcon, color: 'green' },
+            { type: FORM_TYPES.importExcel, name: 'Importer (Excel/CSV)', description: 'Importer des états financiers via Excel ou CSV.', icon: DocumentTextIcon, color: 'indigo' },
         ],
     },
     {
@@ -34,16 +37,80 @@ const formSections = [
             { type: FORM_TYPES.facture, name: 'Facture Client/Fournisseur', description: 'Enregistrement détaillé d\'une facture d\'achat ou de vente.', icon: DocumentTextIcon, color: 'indigo' },
             { type: FORM_TYPES.achat, name: 'Bon d\'Achat/Réception', description: 'Saisie d\'un document d\'achat ou de réception sans détail comptable complet.', icon: ShoppingCartIcon, color: 'orange' },
             { type: FORM_TYPES.ficheDePaie, name: 'Fiche de Paie / Salaire', description: 'Enregistrement des charges sociales, salaires nets et bruts.', icon: ReceiptPercentIcon, color: 'purple' },
-            { type: FORM_TYPES.banque, name: 'Relevé Bancaire', description: 'Enregistrement manuel des mouvements de trésorerie (dépenses, encaissements).', icon: BanknotesIcon, color: 'red' },
+                { type: FORM_TYPES.banque, name: 'Relevé Bancaire', description: 'Enregistrement manuel des mouvements de trésorerie (dépenses, encaissements).', icon: BanknotesIcon, color: 'red' },
         ],
     },
 ];
 
 export default function IndexAddByFormsPage({ onOpenForm }) {
+    const [showExcelImport, setShowExcelImport] = useState(false);
 
     const handleFormClick = (formType) => {
+        if (formType === FORM_TYPES.importExcel) {
+            setShowExcelImport(true);
+            return;
+        }
         onOpenForm(formType);
     };
+
+    const handleExcelImportComplete = () => {
+        console.log('Import Excel terminé');
+        setShowExcelImport(false);
+        // Optionnel: rafraîchir les données, afficher un message, etc.
+    };
+
+    // --- Composant local : ImportExcelInline ---
+    function ImportExcelInline({ onFilesSelected }) {
+        // Simple UI: centered button + drop area. On select/drop -> call onImported()
+        const inputRef = React.useRef(null);
+        const [isDragActive, setIsDragActive] = useState(false);
+
+        const openFilePicker = () => {
+            if (inputRef.current) inputRef.current.click();
+        };
+
+        const handleFilesChosen = (e) => {
+            const files = (e.target && e.target.files) || e;
+            if (!files || files.length === 0) return;
+            // stocker les fichiers en attente de validation
+            if (onFilesSelected) onFilesSelected(files);
+        };
+
+        const handleDrop = (e) => {
+            e.preventDefault();
+            setIsDragActive(false);
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFilesChosen(e.dataTransfer.files);
+            }
+        };
+
+        return (
+            <div>
+                <input
+                    ref={inputRef}
+                    type="file"
+                    accept=".csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+                    onChange={(e) => handleFilesChosen(e.target.files)}
+                    className="hidden"
+                    multiple
+                />
+
+                <div
+                    onClick={openFilePicker}
+                    onDrop={handleDrop}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragActive(true); }}
+                    onDragLeave={() => setIsDragActive(false)}
+                    className={`cursor-pointer select-none rounded-lg border-2 border-dashed p-16 flex flex-col items-center justify-center text-center ${isDragActive ? 'border-indigo-500 bg-indigo-50/30' : 'border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600'}`}
+                >
+                    <svg className="w-16 h-16 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    <div className="text-xl font-bold text-gray-800 dark:text-gray-100 text-center">Importer fichiers Excel / CSV</div>
+                    <div className="text-sm text-gray-500 mt-2 text-center">ou glissez-déposez ici</div>
+                </div>
+            </div>
+        );
+    }
 
     const colorClasses = {
         blue: { text: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800', hoverBorder: 'group-hover:border-blue-300 dark:group-hover:border-blue-600', hoverBg: 'group-hover:bg-blue-50/50 dark:group-hover:bg-blue-900/10' },
@@ -57,6 +124,8 @@ export default function IndexAddByFormsPage({ onOpenForm }) {
     return (
         <div className="p-4 sm:p-5 lg:p-6 w-full mx-auto space-y-5">
 
+            <div className={`transition-all duration-300 ${showExcelImport ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+
             <div className="text-center mb-5">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Saisie Manuelle</h2>
                 <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Sélectionnez le type de document ou d'état financier à saisir.</p>
@@ -64,7 +133,7 @@ export default function IndexAddByFormsPage({ onOpenForm }) {
 
             {
                 formSections.map((section, sectionIndex) => {
-                    const lgGridCols = section.forms.length <= 2 ? 'lg:grid-cols-2' : 'lg:grid-cols-4';
+                    const lgGridCols = section.forms.length <= 2 ? 'lg:grid-cols-2' : (section.forms.length === 3 ? 'lg:grid-cols-3' : 'lg:grid-cols-4');
 
                     return (
                         <div key={sectionIndex} className="space-y-3">
@@ -112,6 +181,15 @@ export default function IndexAddByFormsPage({ onOpenForm }) {
                     );
                 })
             }
+
+            </div>
+
+            {/* Importation Excel */}
+            {showExcelImport && (
+                <ImportExcel
+                    onSaisieCompleted={handleExcelImportComplete}
+                />
+            )}
 
             <div className="h-2"></div>
         </div >

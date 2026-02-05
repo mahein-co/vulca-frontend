@@ -14,6 +14,8 @@ import {
 import { useProjectId } from "../../hooks/useProjectId";
 import Swal from "sweetalert2";
 import { useTheme } from "../../states/context/ThemeContext";
+import { useSelector } from 'react-redux';  // NOUVEAU
+import { selectFilteredData } from '../../states/dashboard/dashboardFilterSlice';  // NOUVEAU
 
 export default function IndexChatbotPage({ close }) {
   const [messages, setMessages] = useState([]);
@@ -32,6 +34,7 @@ export default function IndexChatbotPage({ close }) {
 
   // ✅ MULTI-TENANT: Get project_id for cache isolation
   const projectId = useProjectId();
+  const filteredData = useSelector(selectFilteredData);  // NOUVEAU: Récupérer les données filtrées
 
   const { data: histories, isLoading: loadingHistories } = useGetHistoriesQuery(projectId);
   const [createHistory] = useCreateHistoryMutation();
@@ -162,11 +165,16 @@ export default function IndexChatbotPage({ close }) {
         // Refresh histories list if needed, but the mutation should handle invalidation
       }
 
+      console.log("📤 Envoi message au chatbot...");
+      console.log("📊 Données filtrées incluses:", filteredData ? "OUI" : "NON");
+      if (filteredData) console.log("🔍 Détail données filtrées:", filteredData);
+
       await sendMessage({
         data: {
           user_input: userText,
           message_history: historyId,
-          project_id: projectId
+          project_id: projectId,
+          filtered_data: filteredData  // NOUVEAU: Envoyer les données filtrées
         },
         project_id: projectId
       }).unwrap();

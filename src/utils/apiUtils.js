@@ -44,13 +44,29 @@ export const fetchWithReauth = async (url, options = {}) => {
         fullUrl = `${BASE_URL_API}${url.startsWith('/') ? '' : '/'}${url}`;
     }
 
+    const { timeout = 600000, ...restOptions } = options; // Default timeout 10 minutes for OCR
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+
     const fetchOptions = {
-        ...options,
+        ...restOptions,
         headers: getHeaders(),
-        credentials: "include", // Essential for HttpOnly cookies (we keep both methods)
+        credentials: "include", // Essential for HttpOnly cookies
+        signal: controller.signal,
+
     };
 
-    let response = await fetch(fullUrl, fetchOptions);
+    let response;
+    try {
+        response = await fetch(fullUrl, fetchOptions);
+        clearTimeout(id);
+    } catch (e) {
+        clearTimeout(id);
+        if (e.name === 'AbortError') {
+            throw new Error(`La requête a expiré après ${timeout / 1000} secondes. Le traitement OCR est peut-être trop long.`);
+        }
+        throw e;
+    }
 
     // Handle 401 Unauthorized
     if (response.status === 401) {

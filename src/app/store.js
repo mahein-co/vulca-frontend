@@ -3,6 +3,7 @@ import ocrReducer from "../states/ocr/ocrSlice";
 import navigationsReducer from "../states/navigations/navigationsSlice";
 import chatReducer from "../states/chat/chatSlice";
 import userReducer from "../states/user/userSlice";
+import dashboardFilterReducer from "../states/dashboard/dashboardFilterSlice";
 import { ocrApiSlice } from "../states/ocr/ocrApiSlice";
 import { journalApiSlice } from "../states/journal/journalApiSlice";
 import { comptaApiSlice } from "../states/compta/comptaApiSlice";
@@ -17,6 +18,7 @@ export const store = configureStore({
     navigations: navigationsReducer,
     chatbot: chatReducer,
     user: userReducer,
+    dashboardFilter: dashboardFilterReducer,
     [ocrApiSlice.reducerPath]: ocrApiSlice.reducer,
     [journalApiSlice.reducerPath]: journalApiSlice.reducer,
     [comptaApiSlice.reducerPath]: comptaApiSlice.reducer,

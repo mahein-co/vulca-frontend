@@ -17,7 +17,7 @@ export const chatbotApiSlice = createApi({
         createHistory: builder.mutation({
             query: ({ data, project_id }) => ({
                 /*url: "new-chat/",*/
-                url: "histories/",
+                url: `/histories/?project_id=${project_id}`,
                 method: "POST",
                 body: data,
             }),

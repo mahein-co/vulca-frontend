@@ -577,12 +577,95 @@ const Dashboard = () => {
 
 
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
+  const [isIndicatorsModalOpen, setIsIndicatorsModalOpen] = useState(false);
+  
+  // États pour l'analyse IA
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
+  const [analysisError, setAnalysisError] = useState(null);
 
   const handleCardClick = (action) => {
     if (action === 'openBalance') {
       setIsBalanceModalOpen(true);
     }
   };
+
+  // Fonction pour analyser le dashboard avec l'IA
+  const handleAIAnalysis = async () => {
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    
+    // Préparer les données du dashboard
+    const dashboardData = {
+      indicators: {
+        ca: caData.ca,
+        caf: cafDataVar.caf,
+        ebe: ebeDataVar.ebe,
+        marge_brute: margeBruteDataVar.marge_brute,
+        bfr: bfrDataVar.bfr,
+        tresorerie: tresorerieDataVar.tresorerie,
+      },
+      ratios: {
+        roe: roeData.roe,
+        roa: roaData.roa,
+        marge_nette: margeNetteDataVar.marge_nette,
+        marge_operationnelle: margeOperationnelleData.marge_operationnelle,
+        current_ratio: currentRatioData.current_ratio,
+        quick_ratio: quickRatioData.quick_ratio,
+        rotation_stock: rotationStockData.rotation_stock,
+        annuite_caf: indicators.ratios?.annuite_caf,
+        dette_caf: indicators.ratios?.dette_caf,
+        fi_ebe: indicators.ratios?.fi_ebe,
+        fi_ca: indicators.ratios?.fi_ca,
+        gearing: indicators.ratios?.gearing,
+        leverage: indicators.ratios?.leverage,
+      },
+      date_range: {
+        start_date: globalDateStart,
+        end_date: globalDateEnd
+      }
+    };
+    
+    try {
+      const response = await fetchWithReauth('/dashboard/ai-analysis/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dashboardData)
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setAiAnalysis(data.analysis);
+        setHasAnalyzed(true);
+      } else {
+        setAnalysisError(data.error || 'Erreur lors de l\'analyse');
+      }
+    } catch (error) {
+      console.error('Erreur analyse IA:', error);
+      setAnalysisError('Impossible de contacter le serveur d\'analyse');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // Déclencher l'analyse automatiquement à l'ouverture de la modale
+  useEffect(() => {
+    if (isIndicatorsModalOpen && !hasAnalyzed && !isAnalyzing) {
+      handleAIAnalysis();
+    }
+  }, [isIndicatorsModalOpen]);
+
+  // Réinitialiser l'analyse quand les dates changent
+  useEffect(() => {
+    if (hasAnalyzed) {
+      setHasAnalyzed(false);
+      setAiAnalysis(null);
+    }
+  }, [globalDateStart, globalDateEnd]);
 
   return (
     <div className="px-4 sm:px-0 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900 dark:to-gray-900 min-h-screen transition-colors duration-200">
@@ -864,6 +947,19 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Bouton Analyser en bas */}
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={() => setIsIndicatorsModalOpen(true)}
+            className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Analyser en détails
+          </button>
+        </div>
       </div>
       {/* 3. Graphique d'Évolution du Chiffre d'Affaires */}
       <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300 dark:border-gray-700">
@@ -904,6 +1000,341 @@ const Dashboard = () => {
         startDate={globalDateStart}
         endDate={globalDateEnd}
       />
+
+      {/* Modale d'Analyse des Indicateurs */}
+      {isIndicatorsModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex justify-center items-start p-2 sm:p-4">
+          <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl my-4 sm:my-8 flex flex-col border-t-2 border-emerald-500 dark:border-emerald-600">
+            
+            {/* En-tête */}
+            <div className="flex-none p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800 rounded-t-lg sticky top-0 z-10">
+              <div className="flex items-center">
+                <span className="text-2xl sm:text-3xl mr-3">📊</span>
+                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Analyse des Indicateurs Financiers</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {/* Bouton Analyser avec IA */}
+                <button
+                  onClick={handleAIAnalysis}
+                  disabled={isAnalyzing}
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Analyse en cours...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                      Analyser
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setIsIndicatorsModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full p-2 transition-all"
+                >
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {/* Corps scrollable */}
+            <div className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-6">
+              
+              {/* Section: Analyse IA */}
+              {aiAnalysis && (
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 sm:p-6 rounded-lg border-2 border-purple-300 dark:border-purple-700 shadow-lg">
+                  <h4 className="text-lg sm:text-xl font-bold text-purple-800 dark:text-purple-300 mb-2 flex items-center">
+                    <span className="text-2xl mr-2">📊</span>
+                    Résultat
+                  </h4>
+                  
+                  {/* Affichage de la période analysée */}
+                  {globalDateStart && globalDateEnd && (
+                    <div className="mb-4 px-3 py-2 bg-white dark:bg-gray-800 rounded-md border border-purple-200 dark:border-purple-700">
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                        <span className="font-semibold">📅 Période analysée :</span> {new Date(globalDateStart).toLocaleDateString('fr-FR')} - {new Date(globalDateEnd).toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                  )}
+                  
+                  {/* Vue d'ensemble */}
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg mb-4 border border-purple-200 dark:border-purple-700">
+                    <h5 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center">
+                      <span className="text-lg mr-2">📋</span>
+                      Vue d'Ensemble
+                    </h5>
+                    <p className="text-sm text-gray-700 dark:text-gray-300">{aiAnalysis.vue_ensemble}</p>
+                  </div>
+
+                  {/* Analyse des Indicateurs Principaux */}
+                  {aiAnalysis.indicateurs_principaux && (
+                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-4 rounded-lg mb-4 border border-blue-200 dark:border-blue-700">
+                      <h5 className="font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center">
+                        <span className="text-lg mr-2">💼</span>
+                        Analyse des Indicateurs Principaux
+                      </h5>
+                      <div className="space-y-3">
+                        {aiAnalysis.indicateurs_principaux.ca && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">📊</span>
+                              Chiffre d'Affaires (CA)
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.indicateurs_principaux.ca}</p>
+                          </div>
+                        )}
+                        {aiAnalysis.indicateurs_principaux.caf && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">🏦</span>
+                              Capacité d'Autofinancement (CAF)
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.indicateurs_principaux.caf}</p>
+                          </div>
+                        )}
+                        {aiAnalysis.indicateurs_principaux.ebe && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">💰</span>
+                              Excédent Brut d'Exploitation (EBE)
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.indicateurs_principaux.ebe}</p>
+                          </div>
+                        )}
+                        {aiAnalysis.indicateurs_principaux.bfr && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">💵</span>
+                              Besoin en Fonds de Roulement (BFR)
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.indicateurs_principaux.bfr}</p>
+                          </div>
+                        )}
+                        {aiAnalysis.indicateurs_principaux.tresorerie && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">🏦</span>
+                              Trésorerie
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.indicateurs_principaux.tresorerie}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Analyse des Ratios */}
+                  {aiAnalysis.ratios && (
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-4 rounded-lg mb-4 border border-emerald-200 dark:border-emerald-700">
+                      <h5 className="font-bold text-emerald-800 dark:text-emerald-300 mb-3 flex items-center">
+                        <span className="text-lg mr-2">📈</span>
+                        Analyse des Ratios Financiers
+                      </h5>
+                      <div className="space-y-3">
+                        {aiAnalysis.ratios.rentabilite && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">📈</span>
+                              Ratios de Rentabilité
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.ratios.rentabilite}</p>
+                          </div>
+                        )}
+                        {aiAnalysis.ratios.liquidite && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">💧</span>
+                              Ratios de Liquidité
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.ratios.liquidite}</p>
+                          </div>
+                        )}
+                        {aiAnalysis.ratios.endettement && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">⚠️</span>
+                              Ratios d'Endettement
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.ratios.endettement}</p>
+                          </div>
+                        )}
+                        {aiAnalysis.ratios.activite && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">🔄</span>
+                              Ratios d'Activité
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.ratios.activite}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Analyse des Graphiques et Visualisations */}
+                  {aiAnalysis.graphiques && (
+                    <div className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 p-4 rounded-lg mb-4 border border-violet-200 dark:border-violet-700">
+                      <h5 className="font-bold text-violet-800 dark:text-violet-300 mb-3 flex items-center">
+                        <span className="text-lg mr-2">📊</span>
+                        Analyse des Graphiques et Visualisations
+                      </h5>
+                      <div className="space-y-3">
+                        {aiAnalysis.graphiques.tendances && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-violet-100 dark:border-violet-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">📈</span>
+                              Analyse des Tendances
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.graphiques.tendances}</p>
+                          </div>
+                        )}
+                        {aiAnalysis.graphiques.repartition && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-violet-100 dark:border-violet-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">🥧</span>
+                              Analyse de la Répartition
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.graphiques.repartition}</p>
+                          </div>
+                        )}
+                        {aiAnalysis.graphiques.insights_visuels && (
+                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-violet-100 dark:border-violet-800">
+                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
+                              <span className="mr-2">💡</span>
+                              Insights Visuels
+                            </h6>
+                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.graphiques.insights_visuels}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Points Forts et Faibles */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    {/* Points Forts */}
+                    {aiAnalysis.points_forts && aiAnalysis.points_forts.length > 0 && (
+                      <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-700">
+                        <h5 className="font-bold text-emerald-800 dark:text-emerald-300 mb-2 flex items-center">
+                          <span className="text-lg mr-2">✅</span>
+                          Points Forts
+                        </h5>
+                        <ul className="space-y-1">
+                          {aiAnalysis.points_forts.map((point, idx) => (
+                            <li key={idx} className="text-sm text-gray-700 dark:text-gray-300 flex items-start">
+                              <span className="text-emerald-600 mr-2 mt-0.5">•</span>
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {/* Points Faibles */}
+                    {aiAnalysis.points_faibles && aiAnalysis.points_faibles.length > 0 && (
+                      <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-700">
+                        <h5 className="font-bold text-red-800 dark:text-red-300 mb-2 flex items-center">
+                          <span className="text-lg mr-2">⚠️</span>
+                          Points Faibles
+                        </h5>
+                        <ul className="space-y-1">
+                          {aiAnalysis.points_faibles.map((point, idx) => (
+                            <li key={idx} className="text-sm text-gray-700 dark:text-gray-300 flex items-start">
+                              <span className="text-red-600 mr-2 mt-0.5">•</span>
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Insights et Corrélations */}
+                  {aiAnalysis.correlations_insights && aiAnalysis.correlations_insights.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg mb-4 border border-purple-200 dark:border-purple-700">
+                      <h5 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center">
+                        <span className="text-lg mr-2">💡</span>
+                        Insights et Corrélations
+                      </h5>
+                      <ul className="space-y-2">
+                        {aiAnalysis.correlations_insights.map((insight, idx) => (
+                          <li key={idx} className="text-sm text-gray-700 dark:text-gray-300 flex items-start">
+                            <span className="text-purple-600 mr-2 mt-0.5 font-bold">{idx + 1}.</span>
+                            <span>{insight}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Recommandations */}
+                  {aiAnalysis.recommandations && aiAnalysis.recommandations.length > 0 && (
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+                      <h5 className="font-bold text-gray-800 dark:text-gray-100 mb-3 flex items-center">
+                        <span className="text-lg mr-2">🎯</span>
+                        Recommandations Actionnables
+                      </h5>
+                      <div className="space-y-3">
+                        {aiAnalysis.recommandations.map((rec, idx) => {
+                          const priorityColors = {
+                            'URGENT': 'bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700 text-red-800 dark:text-red-300',
+                            'IMPORTANT': 'bg-orange-100 dark:bg-orange-900/30 border-orange-300 dark:border-orange-700 text-orange-800 dark:text-orange-300',
+                            'SOUHAITABLE': 'bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-800 dark:text-blue-300'
+                          };
+                          const priorityColor = priorityColors[rec.priorite] || priorityColors['SOUHAITABLE'];
+                          
+                          return (
+                            <div key={idx} className={`p-3 rounded-lg border ${priorityColor}`}>
+                              <div className="flex items-start justify-between mb-1">
+                                <span className="font-semibold text-sm">{rec.action}</span>
+                                <span className="text-xs px-2 py-1 rounded-full bg-white/50 dark:bg-black/20">
+                                  {rec.priorite}
+                                </span>
+                              </div>
+                              <p className="text-xs opacity-90">{rec.justification}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Erreur d'analyse */}
+              {analysisError && (
+                <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-700">
+                  <h5 className="font-bold text-red-800 dark:text-red-300 mb-2 flex items-center">
+                    <span className="text-lg mr-2">❌</span>
+                    Erreur d'Analyse
+                  </h5>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">{analysisError}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex-none p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-lg">
+              <button
+                onClick={() => setIsIndicatorsModalOpen(false)}
+                className="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   );
 };

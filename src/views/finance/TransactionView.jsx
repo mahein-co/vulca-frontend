@@ -15,9 +15,11 @@ import {
     Loader,
     Columns2,
     Calendar,
-    Search
+    Search,
+    Sparkles
 } from 'lucide-react';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
+import { fetchWithReauth } from '../../utils/apiUtils';
 import { BASE_URL_API } from '../../constants/globalConstants';
 import { useProjectId } from '../../hooks/useProjectId';
 
@@ -149,6 +151,12 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     const [totalItems, setTotalItems] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const projectId = useProjectId();
+
+    // ANALYSE IA
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [aiAnalysis, setAiAnalysis] = useState(null);
+    const [analysisError, setAnalysisError] = useState(null);
+    const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
 
     // NOUVELLE LOGIQUE DE PÉRIODE
     const [availableYears, setAvailableYears] = useState([]);
@@ -362,6 +370,50 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
         return filtered;
     };
 
+    // --- ANALYSE IA ---
+    const handleAIAnalysis = async () => {
+        setIsAnalyzing(true);
+        setAnalysisError(null);
+        
+        // Préparer les données pour l'analyse
+        const analysisData = {
+            view_type: selectedSection, // 'bilan' ou 'compteResultat'
+            kpis: calculations,
+            transactions: allDetails.slice(0, 50), // On prend les 50 premières lignes pour l'IA (le backend limitera à 20 mais on en donne un peu plus)
+            filters: {
+                year: selectedYear,
+                period_mode: periodMode,
+                sub_period: selectedSubPeriod
+            }
+        };
+
+        try {
+            const response = await fetchWithReauth('/compte-resultat/ai-analysis/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(analysisData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setAiAnalysis(data.analysis);
+                setIsAnalysisModalOpen(true);
+            } else {
+                setAnalysisError(data.error || 'Erreur lors de l\'analyse');
+                setIsAnalysisModalOpen(true); // Ouvrir quand même pour montrer l'erreur
+            }
+        } catch (error) {
+            console.error('Erreur analyse IA:', error);
+            setAnalysisError('Impossible de contacter le serveur d\'analyse');
+            setIsAnalysisModalOpen(true);
+        } finally {
+            setIsAnalyzing(false);
+        }
+    };
+
     const calculations = useMemo(() => {
         const bilan = filterData(bilanData, true);
         const compteResultat = filterData(compteResultatData, false);
@@ -449,7 +501,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                         </div>
 
                         {/* 2. MODE SELECTOR */}
-                        <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg overflow-x-auto max-w-full no-scrollbar w-full sm:w-auto">
+                        <div className="flex bg-gray-100 dark:bg-gray-700 p-1 rounded-lg overflow-x-auto max-w-full no-scrollbar w-full sm:w-auto mt-1 sm:mt-0">
                             {[
                                 { id: 'ANNUAL', label: 'Annuel' },
                                 { id: 'QUARTERLY', label: 'Trimestriel' },
@@ -473,11 +525,11 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
 
                         {/* 3. SUB-PERIOD SELECTOR (Animated) */}
                         {periodMode !== 'ANNUAL' && (
-                            <div className="animate-fadeIn w-full sm:w-auto contents sm:block">
+                            <div className="animate-fadeIn w-full sm:w-auto">
                                 <select
                                     value={selectedSubPeriod || ''}
                                     onChange={(e) => setSelectedSubPeriod(e.target.value)}
-                                    className="w-full sm:w-32 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-xs sm:text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-1.5 font-medium shadow-sm transition-all hover:border-indigo-300 dark:hover:border-indigo-500"
+                                    className="w-full sm:w-40 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 text-sm rounded-lg focus:ring-indigo-500 focus:border-indigo-500 block p-1.5 font-medium shadow-sm transition-all hover:border-indigo-300 dark:hover:border-indigo-500"
                                 >
                                     <option value="">Choisir...</option>
                                     {periodMode === 'QUARTERLY' ? (
@@ -498,6 +550,31 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                 </select>
                             </div>
                         )}
+
+                        {/* 4. AI ANALYZER BUTTON */}
+                        <div className="w-full sm:w-auto ml-auto">
+                            <button
+                                onClick={handleAIAnalysis}
+                                disabled={isAnalyzing}
+                                className={`w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow-md ${
+                                    isAnalyzing 
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                    : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white hover:shadow-purple-200 dark:hover:shadow-none transform hover:-translate-y-0.5 mt-2 sm:mt-0'
+                                }`}
+                            >
+                                {isAnalyzing ? (
+                                    <>
+                                        <Loader className="animate-spin h-4 w-4" />
+                                        <span>Analyse en cours...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles size={16} />
+                                        <span>Analyser</span>
+                                    </>
+                                )}
+                            </button>
+                        </div>
 
                     </div>
                 </div>
@@ -665,6 +742,180 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                 </div>
 
             </main>
+
+            {/* AI ANALYSIS MODAL */}
+            {isAnalysisModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-purple-100 dark:border-purple-900/30">
+                        {/* Header Modale */}
+                        <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
+                            <div>
+                                <h3 className="text-lg sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 flex items-center">
+                                    <Sparkles className="mr-2 sm:mr-3 text-purple-600 dark:text-purple-400 shrink-0" size={20} />
+                                    <span className="truncate">Analyse Expert-Comptable</span>
+                                </h3>
+                                <p className="text-[10px] sm:text-sm text-purple-600/70 dark:text-purple-400/70 font-medium">Interprétation pour {selectedSection === 'bilan' ? 'votre Bilan' : 'votre Compte de Résultat'}</p>
+                            </div>
+                            <button 
+                                onClick={() => setIsAnalysisModalOpen(false)}
+                                className="p-2 hover:bg-white dark:hover:bg-gray-700 rounded-full transition-colors group"
+                            >
+                                <XCircle className="text-gray-400 group-hover:text-red-500 transition-colors" size={24} />
+                            </button>
+                        </div>
+
+                        {/* Corps Modale */}
+                        <div className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-6 no-scrollbar">
+                            {analysisError ? (
+                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-6 rounded-xl flex flex-col items-center text-center">
+                                    <AlertCircle className="text-red-500 mb-3" size={48} />
+                                    <h4 className="text-lg font-bold text-red-800 dark:text-red-300 mb-2">Une erreur est survenue</h4>
+                                    <p className="text-red-600 dark:text-red-400 mb-4">{analysisError}</p>
+                                    <button 
+                                        onClick={handleAIAnalysis}
+                                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-bold shadow-lg shadow-red-200 dark:shadow-none"
+                                    >
+                                        Réessayer l'analyse
+                                    </button>
+                                </div>
+                            ) : aiAnalysis ? (
+                                <>
+                                    {/* Période Analysée */}
+                                    <div className="bg-purple-50 dark:bg-purple-900/20 px-4 py-2 rounded-lg border border-purple-100 dark:border-purple-800 inline-flex items-center space-x-2">
+                                        <Calendar size={14} className="text-purple-600 dark:text-purple-400" />
+                                        <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
+                                            Période: {selectedYear} {selectedSubPeriod ? `(${selectedSubPeriod})` : '(Annuel)'}
+                                        </span>
+                                    </div>
+
+                                    {/* Vue d'Ensemble */}
+                                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/10 dark:to-indigo-900/10 p-5 rounded-xl border-l-4 border-purple-500 shadow-sm transition-all hover:shadow-md">
+                                        <h4 className="font-bold text-purple-900 dark:text-purple-300 mb-3 flex items-center">
+                                            <span className="text-xl mr-2">📊</span> Vue d'Ensemble
+                                        </h4>
+                                        <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 italic leading-relaxed font-medium">
+                                            "{aiAnalysis.vue_ensemble}"
+                                        </p>
+                                    </div>
+
+                                    {/* Analyse Détaillée */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
+                                            <h5 className="font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center uppercase text-xs tracking-widest">
+                                                {selectedSection === 'bilan' ? '📦 Analyse des Actifs' : '↗️ Analyse des Produits'}
+                                            </h5>
+                                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                {aiAnalysis.analyse_detaillee?.produits_ou_actifs}
+                                            </p>
+                                        </div>
+                                        <div className="bg-orange-50/50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-100 dark:border-orange-800">
+                                            <h5 className="font-bold text-orange-800 dark:text-orange-300 mb-2 flex items-center uppercase text-xs tracking-widest">
+                                                {selectedSection === 'bilan' ? '🛡️ Analyse des Passifs' : '↘️ Analyse des Charges'}
+                                            </h5>
+                                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                {aiAnalysis.analyse_detaillee?.charges_ou_passifs}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Rentabilité / Équilibre */}
+                                    <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-5 rounded-xl border-t-2 border-emerald-500 shadow-sm transition-all hover:shadow-md">
+                                        <h4 className="font-bold text-emerald-900 dark:text-emerald-300 mb-2 flex items-center">
+                                            <Sparkles size={18} className="mr-2 text-emerald-600" />
+                                            {selectedSection === 'bilan' ? 'Équilibre et Solvabilité' : 'Performance et Rentabilité'}
+                                        </h4>
+                                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                            {aiAnalysis.analyse_detaillee?.performance_ou_equilibre}
+                                        </p>
+                                    </div>
+
+                                    {/* Transactions Remarquables */}
+                                    <div className="bg-slate-50 dark:bg-slate-900/30 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                                        <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center uppercase text-xs tracking-widest">
+                                            ✍️ Analyse des Transactions
+                                        </h4>
+                                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                            {aiAnalysis.transactions_remarquables}
+                                        </p>
+                                    </div>
+
+                                    {/* Points Forts & Faibles */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {aiAnalysis.points_forts && (
+                                            <div className="bg-emerald-50/30 dark:bg-emerald-900/5 p-4 rounded-xl border border-emerald-200/50 dark:border-emerald-800/30">
+                                                <h5 className="font-bold text-emerald-800 dark:text-emerald-400 mb-3 flex items-center text-xs sm:text-sm">
+                                                    ✅ Points Forts
+                                                </h5>
+                                                <ul className="space-y-2">
+                                                    {aiAnalysis.points_forts.map((pt, i) => (
+                                                        <li key={i} className="flex items-start text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                                            <span className="text-emerald-500 mr-2 shrink-0">•</span> <span>{pt}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {aiAnalysis.points_faibles && (
+                                            <div className="bg-red-50/30 dark:bg-red-900/5 p-4 rounded-xl border border-red-200/50 dark:border-red-800/30">
+                                                <h5 className="font-bold text-red-800 dark:text-red-400 mb-3 flex items-center text-xs sm:text-sm">
+                                                    ⚠️ Points Faibles / Risques
+                                                </h5>
+                                                <ul className="space-y-2">
+                                                    {aiAnalysis.points_faibles.map((pt, i) => (
+                                                        <li key={i} className="flex items-start text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                                            <span className="text-red-500 mr-2 shrink-0">•</span> <span>{pt}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* RECOMMANDATIONS */}
+                                    {aiAnalysis.recommandations && (
+                                        <div className="space-y-4">
+                                            <h4 className="font-bold text-gray-800 dark:text-gray-100 flex items-center px-1">
+                                                🚀 Plan d'Action Recommandé
+                                            </h4>
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                {aiAnalysis.recommandations.map((rec, i) => (
+                                                    <div key={i} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-purple-100 dark:border-purple-900/30 shadow-sm hover:shadow-lg transition-all border-t-4 border-t-purple-500 group">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter ${
+                                                                rec.priorite === 'URGENT' ? 'bg-red-100 text-red-700' : 
+                                                                rec.priorite === 'IMPORTANT' ? 'bg-orange-100 text-orange-700' : 
+                                                                'bg-blue-100 text-blue-700'
+                                                            }`}>
+                                                                {rec.priorite}
+                                                            </span>
+                                                        </div>
+                                                        <h6 className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                                                            {rec.action}
+                                                        </h6>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed font-medium capitalize">
+                                                            {rec.justification}
+                                                        </p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : null}
+                        </div>
+
+                        {/* Footer Modale */}
+                        <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end bg-gray-50/50 dark:bg-gray-900/20">
+                            <button 
+                                onClick={() => setIsAnalysisModalOpen(false)}
+                                className="px-5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm"
+                            >
+                                Fermer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -65,7 +65,7 @@ export const chatbotApiSlice = createApi({
 
         deleteHistory: builder.mutation({
             query: ({ historyId, project_id }) => ({
-                url: `histories/${historyId}/delete/`,
+                url: `histories/${historyId}/`,
                 method: "DELETE",
             }),
             invalidatesTags: (result, error, { project_id }) => [

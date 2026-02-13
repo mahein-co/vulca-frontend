@@ -195,10 +195,17 @@ export default function IndexChatbotPage({ close }) {
   const submitRename = async (id) => {
     if (!editingTitle.trim()) return;
     try {
-      await renameHistory({ historyId: id, title: editingTitle }).unwrap();
+      await renameHistory({ historyId: id, title: editingTitle, project_id: projectId }).unwrap();
       setEditingHistoryId(null);
     } catch (err) {
       console.error("Rename failed", err);
+      Swal.fire({
+        title: 'Erreur',
+        text: "Impossible de modifier le titre.",
+        icon: 'error',
+        background: isDarkMode ? '#1e293b' : '#fff',
+        color: isDarkMode ? '#fff' : '#1e293b'
+      });
     }
   };
 
@@ -220,7 +227,7 @@ export default function IndexChatbotPage({ close }) {
 
     if (result.isConfirmed) {
       try {
-        await deleteHistory(id).unwrap();
+        await deleteHistory({ historyId: id, project_id: projectId }).unwrap();
         if (selectedHistoryId === id) {
           setSelectedHistoryId(null);
           setMessages([]);
@@ -235,6 +242,13 @@ export default function IndexChatbotPage({ close }) {
         });
       } catch (err) {
         console.error("Failed to delete", err);
+        Swal.fire({
+          title: 'Erreur',
+          text: "Impossible de supprimer cette discussion.",
+          icon: 'error',
+          background: isDarkMode ? '#1e293b' : '#fff',
+          color: isDarkMode ? '#fff' : '#1e293b'
+        });
       }
     }
   };
@@ -253,10 +267,10 @@ export default function IndexChatbotPage({ close }) {
 
   // EXPLICIT STYLING - Robust for all devices
   const containerStyle = isFullScreen
-    ? "fixed inset-0 z-[9999] flex flex-col md:flex-row shadow-2xl overflow-hidden"
+    ? "fixed inset-0 z-[900] flex flex-col md:flex-row shadow-2xl overflow-hidden"
     : isMobile
-      ? "fixed inset-0 z-[9999] flex flex-col overflow-hidden shadow-2xl h-[100vh]"
-      : "fixed bottom-20 right-6 z-[9999] w-[420px] max-w-[calc(100vw-3rem)] h-[80vh] max-h-[800px] flex flex-col rounded-2xl border overflow-hidden shadow-2xl transition-all duration-300";
+      ? "fixed inset-0 z-[900] flex flex-col overflow-hidden shadow-2xl h-[100vh]"
+      : "fixed bottom-20 right-6 z-[900] w-[420px] max-w-[calc(100vw-3rem)] h-[80vh] max-h-[800px] flex flex-col rounded-2xl border overflow-hidden shadow-2xl transition-all duration-300";
 
   const bgColor = isDarkMode ? "#0f172a" : "#ffffff";
   const textColor = isDarkMode ? "#f8fafc" : "#1e293b";
@@ -283,9 +297,9 @@ export default function IndexChatbotPage({ close }) {
 
       {/* SIDEBAR */}
       <aside className={`
-        ${isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"}
-        ${isFullScreen && !isMobile ? "relative md:w-72 translate-x-0 border-r" : "absolute inset-y-0 left-0 w-[280px] z-[75]"}
-        h-full bg-inherit flex flex-col transition-transform duration-300 ease-in-out border-r overflow-hidden shrink-0
+        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+        ${isFullScreen && !isMobile ? (isSidebarOpen ? "relative md:w-72 border-r" : "absolute -translate-x-full") : "absolute inset-y-0 left-0 w-[280px] z-[75]"}
+        h-full bg-inherit flex flex-col transition-all duration-300 ease-in-out border-r overflow-hidden shrink-0 shadow-2xl
         ${(isSidebarOpen || (isFullScreen && !isMobile)) ? "p-4 md:p-6" : "p-0"}
       `} style={{ backgroundColor: sidebarBg, borderColor }}>
         <div className="flex items-center justify-between mb-8">
@@ -352,7 +366,7 @@ export default function IndexChatbotPage({ close }) {
       </aside>
 
       {/* SIDEBAR OVERLAY FOR MOBILE/STANDARD */}
-      {isSidebarOpen && (
+      {isSidebarOpen && (!isFullScreen || isMobile) && (
         <div
           className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[70]"
           onClick={() => setIsSidebarOpen(false)}
@@ -362,11 +376,12 @@ export default function IndexChatbotPage({ close }) {
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col h-full relative overflow-hidden z-10 w-full">
         {/* HEADER */}
-        <header className="px-5 py-4 border-b shrink-0 flex items-center justify-between z-20" style={{ backgroundColor: headerBg, borderColor }}>
+        <header className="px-5 py-4 border-b shrink-0 flex items-center justify-between z-[80]" style={{ backgroundColor: headerBg, borderColor }}>
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setIsSidebarOpen(true)}
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               className="p-2 rounded-lg transition-colors text-gray-500 hover:bg-black/5"
+              title={isSidebarOpen ? "Masquer l'historique" : "Afficher l'historique"}
             >
               <FaBars size={18} />
             </button>

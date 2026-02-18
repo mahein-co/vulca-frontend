@@ -143,8 +143,15 @@ const ExcelValidationForm = ({
     setEditMode,
     setEditedData,
     companyMetadata,
-    onMetadataChange
+    onMetadataChange,
+    onDeleteRow
 }) => {
+    // Check if company metadata has meaningful data
+    const hasCompanyInfo = useMemo(() => {
+        const meta = companyMetadata?.[currentIndex];
+        return meta && Object.values(meta).some(val => val && String(val).trim() !== '');
+    }, [companyMetadata, currentIndex]);
+
     return (
         <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 p-2 sm:p-3 h-full flex flex-col min-h-0 overflow-hidden text-sm">
             {/* Top border */}
@@ -214,159 +221,244 @@ const ExcelValidationForm = ({
                 {isExtracted && formData.sheets && formData.sheets.length > 0 && (
                     <div className="space-y-3">
                         {/* Affichage de la méthode d'extraction */}
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                             {formData.extraction_method && (
-                                <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                                    formData.extraction_method === 'OCR' 
-                                        ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                }`}>
-                                    {formData.extraction_method === 'OCR' ? '🤖 Extraction OCR' : '⚡ Lecture directe'}
-                                </span>
-                            )}
-                        </div>
 
                         {/* Informations Entreprise (En-tête) */}
-                        <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700 space-y-3">
-                            <div className="flex items-center gap-2 mb-1">
-                                <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                                <span className="font-bold text-xs uppercase text-gray-600 dark:text-gray-400">Informations Entreprise</span>
-                            </div>
+                        {hasCompanyInfo && (
+                            <div className="bg-gray-50 dark:bg-gray-900/50 p-3 rounded-lg border border-gray-100 dark:border-gray-700 space-y-3">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <svg className="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                    </svg>
+                                    <span className="font-bold text-xs uppercase text-gray-600 dark:text-gray-400">Informations Entreprise</span>
+                                </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nom de l'entreprise</label>
-                                    <input
-                                        type="text"
-                                        value={companyMetadata?.nom_entreprise || ""}
-                                        onChange={(e) => onMetadataChange("nom_entreprise", e.target.value)}
-                                        className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 focus:ring-1 focus:ring-indigo-500 outline-none"
-                                        placeholder="VULCA MENABE"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Adresse</label>
-                                    <input
-                                        type="text"
-                                        value={companyMetadata?.adresse || ""}
-                                        onChange={(e) => onMetadataChange("adresse", e.target.value)}
-                                        className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 focus:ring-1 focus:ring-indigo-500 outline-none"
-                                        placeholder="Amborogony - Toliara 1"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">NIF</label>
-                                    <input
-                                        type="text"
-                                        value={companyMetadata?.nif || ""}
-                                        onChange={(e) => onMetadataChange("nif", e.target.value)}
-                                        className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 focus:ring-1 focus:ring-indigo-500 outline-none"
-                                        placeholder="3001211395"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">STAT</label>
-                                    <input
-                                        type="text"
-                                        value={companyMetadata?.stat || ""}
-                                        onChange={(e) => onMetadataChange("stat", e.target.value)}
-                                        className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 focus:ring-1 focus:ring-indigo-500 outline-none"
-                                        placeholder="22112 51 2007 0 00084"
-                                    />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nom de l'entreprise</label>
+                                        <input
+                                            type="text"
+                                            value={companyMetadata?.nom_entreprise || ""}
+                                            onChange={(e) => onMetadataChange("nom_entreprise", e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                            placeholder="VULCA MENABE"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Adresse</label>
+                                        <input
+                                            type="text"
+                                            value={companyMetadata?.adresse || ""}
+                                            onChange={(e) => onMetadataChange("adresse", e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                            placeholder="Amborogony - Toliara 1"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">NIF</label>
+                                        <input
+                                            type="text"
+                                            value={companyMetadata?.nif || ""}
+                                            onChange={(e) => onMetadataChange("nif", e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                            placeholder="3001211395"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">STAT</label>
+                                        <input
+                                            type="text"
+                                            value={companyMetadata?.stat || ""}
+                                            onChange={(e) => onMetadataChange("stat", e.target.value)}
+                                            className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 focus:ring-1 focus:ring-indigo-500 outline-none"
+                                            placeholder="22112 51 2007 0 00084"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
+                        {/* {hasCompanyInfo && ( ... )} */}
                     </div>
                 )}
 
                 {/* Affichage des données structurées avec EditableDataGrid */}
                 {isExtracted && formData.sheets && formData.sheets.length > 0 && (
                     <div className="space-y-4 mt-4">
-                        {formData.sheets.map((sheet, sheetIdx) => {
-                            const docSheetKey = `${currentIndex}-${sheetIdx}`;
-                            const isEditMode = editMode[docSheetKey] || false;
-                            const currentData = editedData[docSheetKey] || sheet.structured_data;
+                        {formData.sheets
+                            .filter(sheet => {
+                                // Filtrer pour afficher uniquement JOURNAL, BILAN et COMPTE_RESULTAT
+                                const docType = sheet.structured_data?.type_document;
+                                return docType === 'JOURNAL' || docType === 'BILAN' || docType === 'COMPTE_RESULTAT';
+                            })
+                            .flatMap((sheet, sheetIdx) => {
+                                // Pour chaque feuille, créer une entrée par année
+                                const currentData = sheet.structured_data;
+                                if (!currentData || !currentData.lignes || currentData.lignes.length === 0) return [];
 
-                            if (!currentData || !currentData.lignes || currentData.lignes.length === 0) return null;
+                                const years = currentData.annees || [];
 
-                            return (
-                                <div key={`structured-${sheetIdx}`} className="mb-4">
-                                    <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
-                                        {/* Header with Edit Toggle */}
-                                        <div className="flex items-center justify-between mb-3">
-                                            <h6 className="font-bold text-xs text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                                                <span>📊 {sheet.sheet_name}</span>
-                                            </h6>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => {
-                                                        setEditMode(prev => ({
-                                                            ...prev,
-                                                            [docSheetKey]: !prev[docSheetKey]
-                                                        }));
-                                                    }}
-                                                    className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium transition ${
-                                                        isEditMode
-                                                            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                                                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
-                                                    }`}
-                                                >
-                                                    {isEditMode ? (
-                                                        <>
-                                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                            </svg>
-                                                            Aperçu
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                            </svg>
-                                                            Modifier
-                                                        </>
-                                                    )}
-                                                </button>
-                                                {isEditMode && editedData[docSheetKey] && (
+                                // Si pas d'années ou une seule année, afficher normalement
+                                if (years.length <= 1) {
+                                    return [{
+                                        sheet,
+                                        sheetIdx,
+                                        year: years[0] || null,
+                                        isMultiYear: false
+                                    }];
+                                }
+
+                                // Si plusieurs années, créer une entrée par année
+                                return years.map(year => ({
+                                    sheet,
+                                    sheetIdx,
+                                    year,
+                                    isMultiYear: true
+                                }));
+                            })
+                            .map(({ sheet, sheetIdx, year, isMultiYear }, displayIdx) => {
+                                // Récupérer les données modifiées si elles existent
+                                const docSheetKey = year ? `${currentIndex}-${sheetIdx}-${year}` : `${currentIndex}-${sheetIdx}`;
+                                let currentData = editedData[docSheetKey];
+
+                                // Si pas encore de modifications, créer la version initiale (filtrée par année si multi-year)
+                                if (!currentData) {
+                                    if (isMultiYear && year) {
+                                        // Filtrer les données pour ne garder que cette année
+                                        currentData = {
+                                            ...sheet.structured_data,
+                                            annees: [year],
+                                            lignes: sheet.structured_data.lignes.map(ligne => ({
+                                                ...ligne,
+                                                valeurs: { [year]: ligne.valeurs[year] }
+                                            }))
+                                        };
+                                    } else {
+                                        currentData = sheet.structured_data;
+                                    }
+                                }
+
+                                const isEditMode = editMode[docSheetKey] || false;
+
+                                return (
+                                    <div key={`structured-${displayIdx}`} className="mb-4">
+                                        <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
+                                            {/* Header with Edit Toggle */}
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div>
+                                                    <h6 className="font-bold text-xs text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                                        <span>{(() => {
+                                                            // Améliorer les titres des feuilles
+                                                            const sheetName = sheet.sheet_name.toUpperCase();
+                                                            const docType = currentData.type_document;
+
+                                                            // BILAN - ACTIF / PASSIF
+                                                            if (docType === 'BILAN') {
+                                                                if (sheetName.includes('ACTIF') && !sheetName.includes('PASSIF')) {
+                                                                    return 'BILAN - ACTIF';
+                                                                } else if (sheetName.includes('PASSIF')) {
+                                                                    return 'BILAN - PASSIF';
+                                                                } else {
+                                                                    return `BILAN - ${sheet.sheet_name}`;
+                                                                }
+                                                            }
+
+                                                            // COMPTE DE RÉSULTAT
+                                                            if (docType === 'COMPTE_RESULTAT') {
+                                                                if (sheetName.includes('CDR') || sheetName.includes('COMPTE') || sheetName.includes('RESULTAT')) {
+                                                                    return 'COMPTE DE RÉSULTAT';
+                                                                }
+                                                                return `COMPTE DE RÉSULTAT - ${sheet.sheet_name}`;
+                                                            }
+
+                                                            // JOURNAL
+                                                            if (docType === 'JOURNAL') {
+                                                                return `JOURNAL - ${sheet.sheet_name}`;
+                                                            }
+
+                                                            // Défaut
+                                                            return sheet.sheet_name;
+                                                        })()}</span>
+                                                    </h6>
+                                                    {/* Afficher la période avec l'année si multi-year */}
+                                                    {isMultiYear && year ? (
+                                                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                                                            📅 EXERCICE {year}
+                                                        </p>
+                                                    ) : currentData.company_metadata?.periode ? (
+                                                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                                                            📅 {currentData.company_metadata.periode}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+                                                <div className="flex gap-2">
                                                     <button
                                                         onClick={() => {
-                                                            setEditedData(prev => {
-                                                                const newData = { ...prev };
-                                                                delete newData[docSheetKey];
-                                                                return newData;
-                                                            });
+                                                            setEditMode(prev => ({
+                                                                ...prev,
+                                                                [docSheetKey]: !prev[docSheetKey]
+                                                            }));
                                                         }}
-                                                        className="flex items-center gap-1 px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition"
-                                                        title="Réinitialiser aux données originales"
+                                                        className={`flex items-center gap-1 px-3 py-1.5 rounded text-xs font-medium transition ${isEditMode
+                                                            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                                                            }`}
                                                     >
-                                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                        </svg>
-                                                        Réinitialiser
+                                                        {isEditMode ? (
+                                                            <>
+                                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                                </svg>
+                                                                Aperçu
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                                </svg>
+                                                                Modifier
+                                                            </>
+                                                        )}
                                                     </button>
-                                                )}
+                                                    {isEditMode && editedData[docSheetKey] && (
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditedData(prev => {
+                                                                    const newData = { ...prev };
+                                                                    delete newData[docSheetKey];
+                                                                    return newData;
+                                                                });
+                                                            }}
+                                                            className="flex items-center gap-1 px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                                                            title="Réinitialiser aux données originales"
+                                                        >
+                                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                            </svg>
+                                                            Réinitialiser
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </div>
+
+                                            {/* Editable Data Grid */}
+                                            <EditableDataGrid
+                                                data={currentData}
+                                                onChange={(updatedData) => {
+                                                    setEditedData(prev => ({
+                                                        ...prev,
+                                                        [docSheetKey]: updatedData
+                                                    }));
+                                                }}
+                                                onDeleteRow={(rowIndex, applyToAll) => {
+                                                    onDeleteRow(sheetIdx, rowIndex, year, applyToAll);
+                                                }}
+                                                readOnly={!isEditMode}
+                                            />
+
                                         </div>
-
-                                        {/* Editable Data Grid */}
-                                        <EditableDataGrid
-                                            data={currentData}
-                                            onChange={(updatedData) => {
-                                                setEditedData(prev => ({
-                                                    ...prev,
-                                                    [docSheetKey]: updatedData
-                                                }));
-                                            }}
-                                            readOnly={!isEditMode}
-                                        />
-
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
                     </div>
                 )}
             </div>
@@ -415,7 +507,7 @@ export default function ImportExcel({ onSaisieCompleted }) {
 
     // 1. Gestion des Fichiers
     const addFiles = useCallback((newFiles) => {
-        const validFiles = [...newFiles].filter(file => 
+        const validFiles = [...newFiles].filter(file =>
             file.name.match(/\.(xlsx|xls)$/i)
         );
 
@@ -488,6 +580,9 @@ export default function ImportExcel({ onSaisieCompleted }) {
         return documents.length > 0 && documents.every(doc => doc.isExtracted);
     }, [documents]);
 
+    // Check if company metadata has any meaningful data (Removed local calculation, moved to child)
+    // const hasCompanyInfo = ... (moved to ExcelValidationForm)
+
     // Handler pour les changements de métadonnées
     const handleMetadataChange = useCallback((field, value) => {
         setCompanyMetadata(prev => ({
@@ -498,6 +593,52 @@ export default function ImportExcel({ onSaisieCompleted }) {
             }
         }));
     }, [currentIndex]);
+
+    // Handler pour la suppression de ligne (avec option globale)
+    const handleDeleteRow = useCallback((sheetIdx, rowIndex, year, applyToAll) => {
+        const doc = documents[currentIndex];
+        const sheet = doc.data.sheets[sheetIdx];
+        if (!sheet || !sheet.structured_data) return;
+
+        const yearsToUpdate = (applyToAll && sheet.structured_data.annees && sheet.structured_data.annees.length > 1)
+            ? sheet.structured_data.annees
+            : [year];
+
+        setEditedData(prev => {
+            const newState = { ...prev };
+
+            yearsToUpdate.forEach(y => {
+                const key = y ? `${currentIndex}-${sheetIdx}-${y}` : `${currentIndex}-${sheetIdx}`;
+                let currentData = newState[key];
+
+                if (!currentData) {
+                    // Initialisation si pas encore de modification (même logique que l'affichage)
+                    if (y && sheet.structured_data.annees && sheet.structured_data.annees.length > 1) {
+                        currentData = {
+                            ...sheet.structured_data,
+                            annees: [y],
+                            lignes: sheet.structured_data.lignes.map(ligne => ({
+                                ...ligne,
+                                valeurs: { [y]: ligne.valeurs[y] }
+                            }))
+                        };
+                    } else {
+                        currentData = sheet.structured_data;
+                    }
+                }
+
+                // Suppression de la ligne
+                newState[key] = {
+                    ...currentData,
+                    lignes: currentData.lignes.filter((_, idx) => idx !== rowIndex)
+                };
+            });
+
+            return newState;
+        });
+
+        toast.success(applyToAll ? "Ligne supprimée sur tous les exercices" : "Ligne supprimée");
+    }, [currentIndex, documents]);
 
     // 4. Extraction OCR
     const handleExtractText = async () => {
@@ -566,7 +707,7 @@ export default function ImportExcel({ onSaisieCompleted }) {
             }
         } catch (err) {
             console.error('❌ Erreur d\'extraction:', err);
-            toast.error(`Échec de l'extraction OCR: ${err.message || 'Vérifiez le fichier.'}`);
+            toast.error(`Échec de l'analyse : ${err.message || 'Vérifiez le fichier.'}`);
         } finally {
             setIsExtracting(false);
         }
@@ -586,7 +727,8 @@ export default function ImportExcel({ onSaisieCompleted }) {
         let errors = [];
 
         try {
-            await Promise.all(docsToExtract.map(async (docToExtract) => {
+            // Extraction séquentielle (un par un) pour éviter la surcharge et les erreurs de concurrence
+            for (const docToExtract of docsToExtract) {
                 try {
                     const formData = new FormData();
                     formData.append('file', docToExtract.file);
@@ -618,13 +760,14 @@ export default function ImportExcel({ onSaisieCompleted }) {
                         }));
                         successCount++;
                     } else {
+                        console.error(`Erreur pour ${docToExtract.file.name}`, result);
                         errors.push(docToExtract.file.name);
                     }
                 } catch (err) {
                     console.error(`Échec extraction pour ${docToExtract.file.name}`, err);
                     errors.push(docToExtract.file.name);
                 }
-            }));
+            }
 
             if (errors.length > 0) {
                 toast.error(`Échec pour ${errors.length} fichier(s): ${errors.join(', ')}`);
@@ -640,103 +783,146 @@ export default function ImportExcel({ onSaisieCompleted }) {
     };
 
     // 5. Validation
+    // 5. Validation
     const handleValiderAll = async () => {
         if (!isLotValidatable) {
             return alert("Extraction OCR requise pour tous les documents.");
         }
 
         setIsSaving(true);
+        let successCountTotal = 0;
+        let bilansTotal = 0;
+        let crTotal = 0;
+        let journalsTotal = 0;
+        const saveErrors = [];
 
         try {
-            // Préparer les données structurées pour la sauvegarde
-            const sheetsData = documents.flatMap((doc, docIdx) =>
-                (doc.data.sheets || []).map((sheet, sheetIdx) => {
-                    const docSheetKey = `${docIdx}-${sheetIdx}`;
-                    // Utiliser les données éditées si disponibles, sinon les données originales
-                    const structuredData = editedData[docSheetKey] || sheet.structured_data;
+            // Traiter chaque document séquentiellement
+            for (let docIdx = 0; docIdx < documents.length; docIdx++) {
+                const doc = documents[docIdx];
+                const docSheetsData = [];
 
-                    if (!structuredData) {
-                        console.warn(`No structured data for sheet ${sheet.sheet_name}`);
-                        return null;
+                // Préparer les données pour chaque feuille
+                for (let sheetIdx = 0; sheetIdx < (doc.data.sheets || []).length; sheetIdx++) {
+                    const sheet = doc.data.sheets[sheetIdx];
+                    if (!sheet.structured_data) continue;
+
+                    const docType = sheet.structured_data.type_document;
+                    const years = sheet.structured_data.annees && sheet.structured_data.annees.length > 0
+                        ? sheet.structured_data.annees
+                        : [null];
+
+                    // Pour chaque année détectée, créer une entrée de sauvegarde séparée
+                    for (const year of years) {
+                        const docSheetKey = year ? `${docIdx}-${sheetIdx}-${year}` : `${docIdx}-${sheetIdx}`;
+                        const structuredData = editedData[docSheetKey] || sheet.structured_data;
+
+                        let rows;
+                        if (docType === 'JOURNAL') {
+                            rows = structuredData.lignes.map((ligne, idx) => {
+                                const debit = parseFloat(ligne.debit || 0);
+                                const credit = parseFloat(ligne.credit || 0);
+                                return {
+                                    numero_compte: ligne.numero_compte,
+                                    libelle: ligne.libelle || ligne.poste || '',
+                                    date: ligne.date || new Date().toISOString().split('T')[0],
+                                    numero_piece: ligne.numero_piece || '',
+                                    type_journal: ligne.type_journal || 'OD',
+                                    debit: debit,
+                                    credit: credit,
+                                    row_index: idx
+                                };
+                            });
+
+                            const totalDebit = rows.reduce((sum, r) => sum + (r.debit || 0), 0);
+                            const totalCredit = rows.reduce((sum, r) => sum + (r.credit || 0), 0);
+
+                            if (Math.abs(totalDebit - totalCredit) > 0.01) {
+                                throw new Error(`Déséquilibre dans le journal "${sheet.sheet_name}" du fichier ${doc.file.name}`);
+                            }
+                        } else {
+                            // Pour Bilan/CR, on prend uniquement la valeur de l'année concernée
+                            rows = structuredData.lignes.map((ligne, idx) => {
+                                const montant = (year && ligne.valeurs) ? (ligne.valeurs[year] || 0) : (Object.values(ligne.valeurs || {})[0] || 0);
+                                return {
+                                    numero_compte: ligne.numero_compte,
+                                    libelle: ligne.poste,
+                                    montant_ar: montant,
+                                    date: year ? `${year}-12-31` : `${new Date().getFullYear()}-12-31`,
+                                    row_index: idx,
+                                    classe: ligne.classe,
+                                    classe_libelle: ligne.classe_libelle,
+                                    valeurs_annuelles: ligne.valeurs
+                                };
+                            });
+                        }
+
+                        docSheetsData.push({
+                            sheet_name: sheet.sheet_name + (year ? ` (${year})` : ''),
+                            detected_type: docType,
+                            structured_data: structuredData,
+                            company_metadata: companyMetadata[docIdx] || {},
+                            rows: rows
+                        });
                     }
-
-                    return {
-                        sheet_name: sheet.sheet_name,
-                        detected_type: structuredData.type_document,
-                        structured_data: structuredData,
-                        company_metadata: companyMetadata[docIdx] || {}, // Métadonnées éditées par l'utilisateur
-                        // Convertir les données structurées en format attendu par le backend
-                        rows: structuredData.lignes.map((ligne, idx) => {
-                            // Trouver la première année avec une valeur non nulle pour la date
-                            const firstYear = structuredData.annees[0];
-                            const montant = ligne.valeurs[firstYear] || 0;
-
-                            return {
-                                numero_compte: ligne.numero_compte,
-                                libelle: ligne.poste,
-                                montant_ar: montant,
-                                date: `${firstYear}-12-31`, // Date de fin d'exercice
-                                row_index: idx,
-                                classe: ligne.classe,
-                                classe_libelle: ligne.classe_libelle,
-                                valeurs_annuelles: ligne.valeurs // Toutes les valeurs par année
-                            };
-                        })
-                    };
-                })
-            ).filter(Boolean); // Supprimer les null
-
-            console.log('📤 Envoi des données structurées:', sheetsData);
-
-            // Créer FormData pour envoyer le fichier + données
-            const formData = new FormData();
-            
-            // Ajouter le fichier Excel du premier document (si plusieurs, on prend le premier)
-            if (documents.length > 0 && documents[0].file) {
-                formData.append('file', documents[0].file);
-                console.log('📎 Fichier Excel ajouté:', documents[0].file.name);
-            }
-            
-            // Ajouter les données structurées en JSON
-            formData.append('sheets', JSON.stringify(sheetsData));
-            
-            // Ajouter les métadonnées d'entreprise
-            formData.append('company_metadata', JSON.stringify(companyMetadata));
-
-            console.log('📤 Envoi via FormData avec fichier Excel');
-
-            const response = await fetchWithReauth('/excel/save/', {
-                method: 'POST',
-                body: formData
-                // Pas de Content-Type header, laissé automatique pour multipart/form-data
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                const successMessage = `Importation réussie ! ${data.created_bilans || 0} bilans et ${data.created_compte_resultat || 0} comptes de résultat créés.`;
-                
-                if (data.file_source_id) {
-                    console.log(`✅ FileSource créé: ID=${data.file_source_id}, Nom=${data.file_source_name}`);
-                    toast.success(`${successMessage}\n📁 Fichier source enregistré: ${data.file_source_name}`);
-                } else {
-                    toast.success(successMessage);
                 }
+
+                if (docSheetsData.length === 0) continue;
+
+                const formData = new FormData();
+                if (doc.file) {
+                    formData.append('file', doc.file);
+                }
+                formData.append('sheets', JSON.stringify(docSheetsData));
+                formData.append('company_metadata', JSON.stringify(companyMetadata[docIdx] || {}));
+
+                try {
+                    const response = await fetchWithReauth('/excel/save/', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok) {
+                        successCountTotal++;
+                        bilansTotal += result.created_bilans || 0;
+                        crTotal += result.created_compte_resultat || 0;
+                        journalsTotal += result.created_journals || 0;
+                    } else {
+                        saveErrors.push(`${doc.file.name}: ${result.error || 'Erreur inconnue'}`);
+                    }
+                } catch (err) {
+                    saveErrors.push(`${doc.file.name}: Erreur réseau`);
+                }
+            }
+
+            // Clôture du processus
+            if (successCountTotal > 0) {
+                const parts = [];
+                if (bilansTotal > 0) parts.push(`${bilansTotal} bilan(s)`);
+                if (crTotal > 0) parts.push(`${crTotal} compte(s) de résultat`);
+                if (journalsTotal > 0) parts.push(`${journalsTotal} écriture(s) journal`);
+
+                const successMessage = `Importation réussie pour ${successCountTotal} fichier(s) ! ${parts.join(', ')} créé(s).`;
+                toast.success(successMessage);
 
                 setTimeout(() => {
                     handleClearAll();
-                    // Nettoyer les états d'édition
                     setEditMode({});
                     setEditedData({});
                     setCompanyMetadata({});
                     if (onSaisieCompleted) onSaisieCompleted();
                 }, 1000);
-            } else {
-                toast.error(data.error || 'Erreur lors de la sauvegarde');
             }
+
+            if (saveErrors.length > 0) {
+                toast.error(`Erreurs critiques sur ${saveErrors.length} fichier(s) :\n${saveErrors.join('\n')}`);
+            }
+
         } catch (error) {
-            console.error("Erreur validation:", error);
-            toast.error(error.message || "Erreur inconnue lors de la validation.");
+            console.error("Erreur validation globale:", error);
+            toast.error(error.message || "Erreur lors de la validation.");
         } finally {
             setIsSaving(false);
         }
@@ -749,7 +935,7 @@ export default function ImportExcel({ onSaisieCompleted }) {
             {/* OVERLAY DE CHARGEMENT */}
             {(isExtracting || isSaving || isBatchExtracting) && (
                 <LoadingOverlay
-                    message={isSaving ? "Validation et enregistrement en cours..." : (isBatchExtracting ? "Extraction par lot en cours..." : "Extraction OCR en cours...")}
+                    message={isSaving ? "Validation et enregistrement en cours..." : (isBatchExtracting ? "Analyse par lot en cours..." : "Analyse en cours...")}
                 />
             )}
 
@@ -826,6 +1012,7 @@ export default function ImportExcel({ onSaisieCompleted }) {
                             setEditedData={setEditedData}
                             companyMetadata={companyMetadata[currentIndex] || {}}
                             onMetadataChange={handleMetadataChange}
+                            onDeleteRow={handleDeleteRow}
                         />
                     </div>
                 </div>

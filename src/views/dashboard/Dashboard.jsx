@@ -18,6 +18,15 @@ import { useProjectId } from '../../hooks/useProjectId';
 
 
 
+// --- 1. Helpers ---
+const formatCurrencyHelper = (amount, decimals = 2) => {
+  return new Intl.NumberFormat('fr-FR', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  }).format(amount).replace(/\u202f/g, ' ').replace(/\u00a0/g, ' ');
+};
+
+
 
 // --- 2. Composants de Support ---
 
@@ -51,7 +60,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
       .then(data => {
         setJournals(data.journals || []);
         setTotalGlobal(data.total_global || 0);
-        setTotalFormatted(new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(data.total_global || 0).replace('MGA', 'Ar'));
+        setTotalFormatted(`${formatCurrencyHelper(data.total_global || 0)} Ar`);
       })
       .catch(err => console.error("Erreur chargement répartition journaux:", err));
   }, [globalStartDate, globalEndDate, projectId]);
@@ -123,7 +132,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
                 </button>
               </span>
               <span className="text-gray-800 dark:text-gray-100 font-medium">
-                {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(journal.amount).replace('MGA', 'Ar')}
+                {formatCurrencyHelper(journal.amount)} Ar
                 <span className="text-gray-500 dark:text-gray-400 ml-1">
                   ({percentageDisplay}%)
                 </span>
@@ -172,7 +181,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
                 <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
                   <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Montant Total</p>
                   <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                    {new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', currencyDisplay: 'narrowSymbol' }).format(selectedJournal.amount).replace('MGA', 'Ar')}
+                    {formatCurrencyHelper(selectedJournal.amount)} Ar
                   </p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
@@ -234,14 +243,14 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
                           <td className="border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-gray-800 dark:text-gray-200 text-xs sm:text-sm truncate max-w-[150px] sm:max-w-none">{entry.libelle}</td>
                           <td className="border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-right text-xs sm:text-sm">
                             {Number(entry.debit_ar) > 0 ? (
-                              <span className="text-red-600 dark:text-red-400 font-semibold">{new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(entry.debit_ar))} Ar</span>
+                              <span className="text-red-600 dark:text-red-400 font-semibold">{formatCurrencyHelper(Number(entry.debit_ar))} Ar</span>
                             ) : (
                               <span className="text-gray-400 dark:text-gray-600">-</span>
                             )}
                           </td>
                           <td className="border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-right text-xs sm:text-sm">
                             {Number(entry.credit_ar) > 0 ? (
-                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(entry.credit_ar))} Ar</span>
+                              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{formatCurrencyHelper(Number(entry.credit_ar))} Ar</span>
                             ) : (
                               <span className="text-gray-400 dark:text-gray-600">-</span>
                             )}
@@ -346,7 +355,7 @@ const Dashboard = () => {
 
   // NOUVEAU: Écouter le filtre Redux pour mettre à jour les graphiques locaux
   const activeFilter = useSelector(selectActiveFilter);
-  
+
   useEffect(() => {
     if (activeFilter?.type === 'date' && activeFilter.value) {
       if (activeFilter.value.start) setGlobalDateStart(activeFilter.value.start);
@@ -484,27 +493,27 @@ const Dashboard = () => {
   const summaryCards = [
     {
       title: "Chiffre d'affaires",
-      value: `Ar ${Number(caData.ca).toLocaleString("fr-FR")}`,
+      value: `Ar ${formatCurrencyHelper(caData.ca, 0)}`,
       icon: '📊',
       action: 'none',
       variation: caData.variation
     },
     {
       title: "CAF",
-      value: `Ar ${Number(cafDataVar.caf).toLocaleString("fr-FR")}`,
+      value: `Ar ${formatCurrencyHelper(cafDataVar.caf, 0)}`,
       // unit: "Capacité d'Autofinancement",
       icon: "🏦",
       variation: cafDataVar.variation
     },
     {
       title: "Marge brute",
-      value: `Ar ${Number(margeBruteDataVar.marge_brute).toLocaleString("fr-FR")}`,
+      value: `Ar ${formatCurrencyHelper(margeBruteDataVar.marge_brute, 0)}`,
       icon: "💎",
       variation: margeBruteDataVar.variation
     },
     {
       title: "EBE",
-      value: `Ar ${Number(ebeDataVar.ebe).toLocaleString("fr-FR")}`,
+      value: `Ar ${formatCurrencyHelper(ebeDataVar.ebe, 0)}`,
       // unit: "Excédent Brut d'Exploitation",
       icon: "💰",
       action: 'none',
@@ -517,7 +526,7 @@ const Dashboard = () => {
     // },
     {
       title: 'BALANCE',
-      value: `Ar ${Number(indicators.totalBalance).toLocaleString("fr-FR", { minimumFractionDigits: 2 })}`,
+      value: `Ar ${formatCurrencyHelper(indicators.totalBalance, 2)}`,
       icon: '⚖️',
       action: 'openBalance'
     },
@@ -532,7 +541,7 @@ const Dashboard = () => {
     },
     {
       title: "BFR",
-      value: `Ar ${Number(bfrDataVar.bfr).toLocaleString("fr-FR")}`,
+      value: `Ar ${formatCurrencyHelper(bfrDataVar.bfr, 0)}`,
       // unit: "Besoin en Fonds de Roulement",
       icon: "💵",
       variation: bfrDataVar.variation
@@ -569,7 +578,7 @@ const Dashboard = () => {
     },
     {
       title: "Trésorerie",
-      value: `Ar ${Number(tresorerieDataVar.tresorerie).toLocaleString("fr-FR")}`,
+      value: `Ar ${formatCurrencyHelper(tresorerieDataVar.tresorerie, 0)}`,
       icon: "🏦",
       variation: tresorerieDataVar.variation
     },
@@ -578,7 +587,7 @@ const Dashboard = () => {
 
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
   const [isIndicatorsModalOpen, setIsIndicatorsModalOpen] = useState(false);
-  
+
   // États pour l'analyse IA
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -595,7 +604,7 @@ const Dashboard = () => {
   const handleAIAnalysis = async () => {
     setIsAnalyzing(true);
     setAnalysisError(null);
-    
+
     // Préparer les données du dashboard
     const dashboardData = {
       indicators: {
@@ -626,7 +635,7 @@ const Dashboard = () => {
         end_date: globalDateEnd
       }
     };
-    
+
     try {
       const response = await fetchWithReauth('/dashboard/ai-analysis/', {
         method: 'POST',
@@ -635,9 +644,9 @@ const Dashboard = () => {
         },
         body: JSON.stringify(dashboardData)
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setAiAnalysis(data.analysis);
         setHasAnalyzed(true);
@@ -1005,7 +1014,7 @@ const Dashboard = () => {
       {isIndicatorsModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex justify-center items-start p-2 sm:p-4">
           <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl my-4 sm:my-8 flex flex-col border-t-2 border-emerald-500 dark:border-emerald-600">
-            
+
             {/* En-tête */}
             <div className="flex-none p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800 rounded-t-lg sticky top-0 z-10">
               <div className="flex items-center">
@@ -1049,7 +1058,7 @@ const Dashboard = () => {
 
             {/* Corps scrollable */}
             <div className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-6">
-              
+
               {/* Section: Analyse IA */}
               {aiAnalysis && (
                 <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 sm:p-6 rounded-lg border-2 border-purple-300 dark:border-purple-700 shadow-lg">
@@ -1057,7 +1066,7 @@ const Dashboard = () => {
                     <span className="text-2xl mr-2">📊</span>
                     Analyse Expert-Comptable
                   </h4>
-                  
+
                   {/* Affichage de la période analysée */}
                   {globalDateStart && globalDateEnd && (
                     <div className="mb-4 px-3 py-2 bg-white dark:bg-gray-800 rounded-md border border-purple-200 dark:border-purple-700">
@@ -1066,7 +1075,7 @@ const Dashboard = () => {
                       </p>
                     </div>
                   )}
-                  
+
                   {/* Vue d'ensemble */}
                   <div className="bg-white dark:bg-gray-800 p-4 rounded-lg mb-4 border border-purple-200 dark:border-purple-700">
                     <h5 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center">
@@ -1283,7 +1292,7 @@ const Dashboard = () => {
                             'SOUHAITABLE': 'border-t-blue-500 bg-blue-50/30 dark:bg-blue-900/10'
                           };
                           const priorityClass = priorityColors[rec.priorite] || priorityColors['SOUHAITABLE'];
-                          
+
                           return (
                             <div key={idx} className={`bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md border-t-4 ${priorityClass}`}>
                               <div className="flex items-center justify-between mb-2">

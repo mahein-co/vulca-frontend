@@ -16,7 +16,7 @@ export default function ExcelImportWizard({ onClose, onComplete }) {
     const [isLoading, setIsLoading] = useState(false);
     const [mappingCorrections, setMappingCorrections] = useState({});
     const [dataEdits, setDataEdits] = useState({}); // Track cell edits: {"sheetIndex-rowIndex-columnName": newValue}
-    
+
     // États pour le mode OCR
     const [useOCR, setUseOCR] = useState(false);
     const [isExtracting, setIsExtracting] = useState(false);
@@ -53,7 +53,7 @@ export default function ExcelImportWizard({ onClose, onComplete }) {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            
+
             // Ajouter le paramètre use_ocr si le mode OCR est activé
             if (useOCR) {
                 formData.append('use_ocr', 'true');
@@ -124,7 +124,60 @@ export default function ExcelImportWizard({ onClose, onComplete }) {
         try {
             // Préparer les données pour la sauvegarde
             const sheetsData = analysisResult.sheets.map((sheet, sheetIndex) => {
-                // Appliquer les corrections de mapping et les modifications de données
+                // JOURNAL: Format spécifique avec debit/credit
+                if (sheet.detected_type === 'JOURNAL') {
+                    const rows = sheet.data_preview
+                        .filter((row) => {
+                            // Filtrer les lignes de total
+                            const compteCol = sheet.columns_mapping.compte;
+                            const compte = compteCol ? row.values[compteCol] : null;
+                            return compte && compte !== 0 && compte !== '0' && compte !== null;
+                        })
+                        .map((row, rowIndex) => {
+                            const correctionKey = `${sheetIndex}-${rowIndex}`;
+                            const correction = mappingCorrections[correctionKey];
+
+                            // Appliquer les modifications de données
+                            const editedValues = {};
+                            Object.keys(row.values).forEach(columnName => {
+                                const editKey = `${sheetIndex}-${rowIndex}-${columnName}`;
+                                editedValues[columnName] = dataEdits[editKey] !== undefined
+                                    ? dataEdits[editKey]
+                                    : row.values[columnName];
+                            });
+
+                            // Extraire les colonnes
+                            const compteCol = sheet.columns_mapping.compte;
+                            const libelleCol = sheet.columns_mapping.libelle;
+                            const debitCol = sheet.columns_mapping.debit;
+                            const creditCol = sheet.columns_mapping.credit;
+                            const numeroPieceCol = sheet.columns_mapping.numero_piece;
+
+                            const numero_compte = correction || (compteCol ? String(editedValues[compteCol] || '') : '');
+                            const libelle = libelleCol ? String(editedValues[libelleCol] || '') : '';
+                            const debit = debitCol ? (editedValues[debitCol] || 0) : 0;
+                            const credit = creditCol ? (editedValues[creditCol] || 0) : 0;
+                            const numero_piece = numeroPieceCol ? String(editedValues[numeroPieceCol] || '') : null;
+
+                            return {
+                                numero_compte,
+                                libelle,
+                                debit,
+                                credit,
+                                numero_piece,
+                                date: `${new Date().getFullYear()}-12-31`,
+                                row_index: row.index
+                            };
+                        });
+
+                    return {
+                        sheet_name: sheet.sheet_name,
+                        detected_type: sheet.detected_type,
+                        rows: rows
+                    };
+                }
+
+                // BILAN / COMPTE_RESULTAT: Code ORIGINAL (ne pas modifier)
                 const rows = sheet.data_preview.map((row, rowIndex) => {
                     const correctionKey = `${sheetIndex}-${rowIndex}`;
                     const correction = mappingCorrections[correctionKey];
@@ -133,8 +186,8 @@ export default function ExcelImportWizard({ onClose, onComplete }) {
                     const editedValues = {};
                     Object.keys(row.values).forEach(columnName => {
                         const editKey = `${sheetIndex}-${rowIndex}-${columnName}`;
-                        editedValues[columnName] = dataEdits[editKey] !== undefined 
-                            ? dataEdits[editKey] 
+                        editedValues[columnName] = dataEdits[editKey] !== undefined
+                            ? dataEdits[editKey]
                             : row.values[columnName];
                     });
 
@@ -154,6 +207,7 @@ export default function ExcelImportWizard({ onClose, onComplete }) {
                     rows: rows
                 };
             });
+
 
             const response = await fetch('/api/excel/save/', {
                 method: 'POST',
@@ -208,13 +262,12 @@ export default function ExcelImportWizard({ onClose, onComplete }) {
                             <React.Fragment key={step.number}>
                                 <div className="flex flex-col items-center">
                                     <div
-                                        className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${
-                                            currentStep > step.number
-                                                ? 'bg-green-500 text-white'
-                                                : currentStep === step.number
+                                        className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-all ${currentStep > step.number
+                                            ? 'bg-green-500 text-white'
+                                            : currentStep === step.number
                                                 ? 'bg-indigo-600 text-white'
                                                 : 'bg-gray-200 dark:bg-gray-700 text-gray-500'
-                                        }`}
+                                            }`}
                                     >
                                         {currentStep > step.number ? (
                                             <CheckCircleIcon className="w-6 h-6" />
@@ -228,11 +281,10 @@ export default function ExcelImportWizard({ onClose, onComplete }) {
                                 </div>
                                 {index < steps.length - 1 && (
                                     <div
-                                        className={`flex-1 h-1 mx-2 rounded ${
-                                            currentStep > step.number
-                                                ? 'bg-green-500'
-                                                : 'bg-gray-200 dark:bg-gray-700'
-                                        }`}
+                                        className={`flex-1 h-1 mx-2 rounded ${currentStep > step.number
+                                            ? 'bg-green-500'
+                                            : 'bg-gray-200 dark:bg-gray-700'
+                                            }`}
                                     />
                                 )}
                             </React.Fragment>
@@ -402,7 +454,7 @@ function Step1Upload({ file, onFileSelect, isLoading, useOCR, setUseOCR }) {
                                 Utiliser l'extraction OCR (OpenAI Vision)
                             </span>
                             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                {useOCR 
+                                {useOCR
                                     ? "⚡ Mode OCR activé - Extraction visuelle des données (plus lent mais fonctionne avec fichiers scannés)"
                                     : "🚀 Mode rapide - Lecture directe du fichier Excel (recommandé pour fichiers standards)"
                                 }
@@ -436,12 +488,12 @@ function Step2Preview({ analysisResult, dataEdits = {}, onDataEdit, onResetEdits
 
     const currentSheet = analysisResult.sheets[selectedSheet];
     const extractionMethod = analysisResult.extraction_method || 'DIRECT';
-    
+
     // Compter les modifications pour la feuille actuelle
-    const currentSheetEdits = Object.keys(dataEdits).filter(key => 
+    const currentSheetEdits = Object.keys(dataEdits).filter(key =>
         key.startsWith(`${selectedSheet}-`)
     ).length;
-    
+
     const totalEdits = Object.keys(dataEdits).length;
 
     return (
@@ -460,13 +512,6 @@ function Step2Preview({ analysisResult, dataEdits = {}, onDataEdit, onResetEdits
                                 ✏️ {totalEdits} modification(s)
                             </span>
                         )}
-                        <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                            extractionMethod === 'OCR' 
-                                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                                : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                        }`}>
-                            {extractionMethod === 'OCR' ? '🤖 Extraction OCR' : '⚡ Lecture directe'}
-                        </span>
                     </div>
                 </div>
                 {totalEdits > 0 && (
@@ -486,20 +531,18 @@ function Step2Preview({ analysisResult, dataEdits = {}, onDataEdit, onResetEdits
                         <button
                             key={index}
                             onClick={() => setSelectedSheet(index)}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                                selectedSheet === index
-                                    ? 'bg-indigo-600 text-white'
-                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                            }`}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${selectedSheet === index
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                                }`}
                         >
                             {sheet.sheet_name}
-                            <span className={`ml-2 px-2 py-0.5 rounded text-xs ${
-                                sheet.detected_type === 'BILAN'
-                                    ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                                    : sheet.detected_type === 'COMPTE_RESULTAT'
+                            <span className={`ml-2 px-2 py-0.5 rounded text-xs ${sheet.detected_type === 'BILAN'
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+                                : sheet.detected_type === 'COMPTE_RESULTAT'
                                     ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                     : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
-                            }`}>
+                                }`}>
                                 {sheet.detected_type}
                             </span>
                         </button>
@@ -555,23 +598,21 @@ function Step2Preview({ analysisResult, dataEdits = {}, onDataEdit, onResetEdits
                                         const editKey = `${selectedSheet}-${rowIdx}-${columnName}`;
                                         const editedValue = dataEdits[editKey] !== undefined ? dataEdits[editKey] : value;
                                         const isEdited = dataEdits[editKey] !== undefined;
-                                        
+
                                         return (
                                             <td
                                                 key={colIdx}
-                                                className={`px-2 py-2 text-sm whitespace-nowrap transition-colors ${
-                                                    isEdited ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''
-                                                }`}
+                                                className={`px-2 py-2 text-sm whitespace-nowrap transition-colors ${isEdited ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''
+                                                    }`}
                                             >
                                                 <input
                                                     type="text"
                                                     value={editedValue !== null && editedValue !== undefined ? String(editedValue) : ''}
                                                     onChange={(e) => onDataEdit(selectedSheet, rowIdx, columnName, e.target.value)}
-                                                    className={`w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
-                                                        isEdited 
-                                                            ? 'border-yellow-400 dark:border-yellow-600' 
-                                                            : 'border-gray-300 dark:border-gray-600'
-                                                    }`}
+                                                    className={`w-full px-2 py-1 text-sm border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${isEdited
+                                                        ? 'border-yellow-400 dark:border-yellow-600'
+                                                        : 'border-gray-300 dark:border-gray-600'
+                                                        }`}
                                                     title={isEdited ? `Modifié: ${value} → ${editedValue}` : 'Cliquez pour modifier'}
                                                 />
                                             </td>

@@ -137,7 +137,7 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd }) {
             <div className="text-right">
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">TVA Nette</p>
               <p className={`text-base sm:text-lg font-bold text-emerald-500`}>
-                {netTva.toLocaleString('fr-FR')} Ar
+                {netTva.toLocaleString('fr-FR').replace(/\u202f/g, ' ').replace(/\u00a0/g, ' ')} Ar
               </p>
             </div>
             <div className="text-left">
@@ -186,7 +186,7 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd }) {
                   color: isDarkMode ? '#f3f4f6' : '#374151'
                 }}
                 itemStyle={{ color: isDarkMode ? '#f3f4f6' : '#374151' }}
-                formatter={(value) => [value.toLocaleString('fr-FR') + ' Ar', '']}
+                formatter={(value) => [value.toLocaleString('fr-FR').replace(/\u202f/g, ' ').replace(/\u00a0/g, ' ') + ' Ar', '']}
               />
               <Bar dataKey="collected" fill="#3b82f6" name="TVA collectée" radius={[2, 2, 0, 0]} maxBarSize={40} />
               <Bar dataKey="deductible" fill="#ef4444" name="TVA déductible" radius={[2, 2, 0, 0]} maxBarSize={40} />

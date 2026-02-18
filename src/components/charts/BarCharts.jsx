@@ -117,7 +117,7 @@ export default function BarCharts({ globalDateStart, globalDateEnd }) {
                 }}
                 itemStyle={{ color: isDarkMode ? '#f3f4f6' : '#374151' }}
                 formatter={(value, name) => {
-                  const amount = Number(value).toLocaleString('fr-FR', { minimumFractionDigits: 0 });
+                  const amount = Number(value).toLocaleString('fr-FR', { minimumFractionDigits: 0 }).replace(/\u202f/g, ' ').replace(/\u00a0/g, ' ');
                   return [amount + ' Ar', 'Mouvement'];
                 }}
                 labelFormatter={(label) => {

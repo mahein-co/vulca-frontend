@@ -19,7 +19,7 @@ const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
     return new Intl.NumberFormat('fr-FR', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
-    }).format(amount) + ' Ar';
+    }).format(amount).replace(/\u202f/g, ' ').replace(/\u00a0/g, ' ') + ' Ar';
   };
 
 
@@ -194,13 +194,13 @@ const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
                       </td>
                       <td className="border-b border-gray-100 dark:border-gray-700 px-1 sm:px-2 py-2 sm:py-2.5 text-gray-800 dark:text-gray-100 text-xs sm:text-sm truncate max-w-[200px]">{item.libelle}</td>
                       <td className="border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-right text-xs sm:text-sm text-gray-900 dark:text-gray-100">
-                        {new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(item.debit)} Ar
+                        {formatAmount(item.debit)}
                       </td>
                       <td className="border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-right font-semibold text-emerald-600 text-xs sm:text-sm">
-                        {new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(item.credit)} Ar
+                        {formatAmount(item.credit)}
                       </td>
                       <td className={`border-b border-gray-100 dark:border-gray-700 px-1 sm:px-2 py-2 sm:py-2.5 text-right font-bold text-xs sm:text-sm ${item.nature === 'Débiteur' ? 'text-red-600' : 'text-emerald-600'}`}>
-                        {new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(item.solde)} Ar
+                        {formatAmount(item.solde)}
                       </td>
                       <td className="border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-center">
                         <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 inline-flex text-[10px] sm:text-xs font-bold rounded-full ${item.nature === 'Débiteur'

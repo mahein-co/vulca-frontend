@@ -1,37 +1,54 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 
 /**
  * EditableDataGrid - Component for editing structured financial data
  * 
  * Features:
+ * - Supports multiple document types (BILAN, COMPTE_RESULTAT, JOURNAL, etc.)
  * - Inline cell editing
  * - Add/remove rows
  * - Real-time validation
- * - Visual feedback for modifications
- * - Keyboard navigation
  */
-const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
+const EditableDataGrid = ({ data, onChange, onDeleteRow, readOnly = false }) => {
     const [editingCell, setEditingCell] = useState(null);
     const [modifiedCells, setModifiedCells] = useState(new Set());
     const [validationErrors, setValidationErrors] = useState({});
 
-    // Account classes for dropdown
+    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+    const [rowToDelete, setRowToDelete] = useState(null);
+    const [applyToAll, setApplyToAll] = useState(false);
+
+    // Identify document type
+    const isJournal = useMemo(() =>
+        ['JOURNAL', 'GRAND JOURNAL'].includes(data?.type_document),
+        [data]);
+
+    // Ensure annees is an array to prevent crash if undefined (only used for non-Journal types)
+    const years = useMemo(() => Array.isArray(data?.annees) ? data.annees : [], [data]);
+
+    // Account classes for dropdown (only for Bilan/Compte Resultat)
     const ACCOUNT_CLASSES = [
-        { value: 1, label: '1 - Capitaux propres' },
-        { value: 2, label: '2 - Immobilisations' },
-        { value: 3, label: '3 - Stocks' },
-        { value: 4, label: '4 - Tiers' },
-        { value: 5, label: '5 - Trésorerie' },
-        { value: 6, label: '6 - Charges' },
-        { value: 7, label: '7 - Produits' },
+        { value: 1, label: 'Capitaux propres' },
+        { value: 2, label: 'Immobilisations' },
+        { value: 3, label: 'Stocks' },
+        { value: 4, label: 'Tiers' },
+        { value: 5, label: 'Trésorerie' },
+        { value: 6, label: 'Charges' },
+        { value: 7, label: 'Produits' },
     ];
 
     // Validation functions
     const validateAccountNumber = (value) => {
-        if (!value) return 'Numéro de compte requis';
-        const cleaned = String(value).replace(/[^0-9]/g, '');
-        if (cleaned.length < 2 || cleaned.length > 8) {
-            return 'Le numéro de compte doit contenir 2 à 8 chiffres';
+        if (!value || String(value).trim() === '-' || String(value).trim() === '') return null;
+        // Remove spaces
+        const valStr = String(value).trim();
+        // Check if it's a valid integer
+        if (!/^\d+$/.test(valStr)) {
+            return 'Le numéro de compte doit être un nombre entier';
+        }
+        if (valStr.length < 2 || valStr.length > 10) {
+            return 'Le numéro de compte doit être valide';
         }
         return null;
     };
@@ -42,32 +59,78 @@ const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
         return null;
     };
 
-    const validatePoste = (value) => {
-        if (!value || String(value).trim() === '') return 'Libellé requis';
-        if (String(value).length > 255) return 'Libellé trop long (max 255 caractères)';
+    const validateRequired = (value, label) => {
+        if (!value || String(value).trim() === '') return `${label} requis`;
         return null;
     };
 
     // Handle cell value change
     const handleCellChange = useCallback((rowIndex, field, value, year = null) => {
-        const newData = { ...data };
+        const newData = {
+            ...data,
+            lignes: [...data.lignes]
+        };
         const ligne = { ...newData.lignes[rowIndex] };
 
-        // Update the field
-        if (year !== null) {
-            ligne.valeurs = { ...ligne.valeurs, [year]: value };
-        } else {
+        if (isJournal) {
+            // Journal specific updates
             ligne[field] = value;
 
-            // Auto-update classe based on numero_compte
-            if (field === 'numero_compte' && value) {
-                const firstDigit = String(value).replace(/[^0-9]/g, '')[0];
-                if (firstDigit && firstDigit >= '1' && firstDigit <= '7') {
-                    ligne.classe = parseInt(firstDigit);
-                    const classInfo = ACCOUNT_CLASSES.find(c => c.value === ligne.classe);
-                    ligne.classe_libelle = classInfo ? classInfo.label.split(' - ')[1] : '';
+            // Validate Journal fields
+            const cellKey = `${rowIndex}-${field}`;
+            const errors = { ...validationErrors };
+
+            if (['debit', 'credit'].includes(field)) {
+                const error = validateNumericValue(value);
+                if (error) errors[cellKey] = error;
+                else delete errors[cellKey];
+            } else if (['numero_compte'].includes(field)) {
+                const error = validateAccountNumber(value);
+                if (error) errors[cellKey] = error;
+                else delete errors[cellKey];
+            } else if (['date', 'libelle'].includes(field)) {
+                const error = validateRequired(value, field === 'date' ? 'Date' : 'Libellé');
+                if (error) errors[cellKey] = error;
+                else delete errors[cellKey];
+            }
+
+            setValidationErrors(errors);
+        } else {
+            // Bilan / Compte Resultat logic
+            if (year !== null) {
+                ligne.valeurs = { ...ligne.valeurs, [year]: value };
+            } else {
+                ligne[field] = value;
+
+                // Auto-update classe based on numero_compte
+                if (field === 'numero_compte' && value) {
+                    const firstDigit = String(value).replace(/[^0-9]/g, '')[0];
+                    if (firstDigit && firstDigit >= '1' && firstDigit <= '7') {
+                        ligne.classe = parseInt(firstDigit);
+                        const classInfo = ACCOUNT_CLASSES.find(c => c.value === ligne.classe);
+                        ligne.classe_libelle = classInfo ? classInfo.label : '';
+                    }
                 }
             }
+
+            // Validate Bilan fields
+            const cellKey = year ? `${rowIndex}-${year}` : `${rowIndex}-${field}`;
+            const errors = { ...validationErrors };
+
+            if (field === 'numero_compte') {
+                const error = validateAccountNumber(value);
+                if (error) errors[cellKey] = error;
+                else delete errors[cellKey];
+            } else if (field === 'poste') {
+                const error = validateRequired(value, 'Poste');
+                if (error) errors[cellKey] = error;
+                else delete errors[cellKey];
+            } else if (year !== null) {
+                const error = validateNumericValue(value);
+                if (error) errors[cellKey] = error;
+                else delete errors[cellKey];
+            }
+            setValidationErrors(errors);
         }
 
         newData.lignes[rowIndex] = ligne;
@@ -76,52 +139,29 @@ const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
         const cellKey = year ? `${rowIndex}-${year}` : `${rowIndex}-${field}`;
         setModifiedCells(prev => new Set([...prev, cellKey]));
 
-        // Validate
-        const errors = { ...validationErrors };
-        if (field === 'numero_compte') {
-            const error = validateAccountNumber(value);
-            if (error) errors[cellKey] = error;
-            else delete errors[cellKey];
-        } else if (field === 'poste') {
-            const error = validatePoste(value);
-            if (error) errors[cellKey] = error;
-            else delete errors[cellKey];
-        } else if (year !== null) {
-            const error = validateNumericValue(value);
-            if (error) errors[cellKey] = error;
-            else delete errors[cellKey];
-        }
-        setValidationErrors(errors);
-
         onChange(newData);
-    }, [data, onChange, validationErrors]);
+    }, [data, onChange, validationErrors, isJournal]);
 
-    // Add new row
-    const handleAddRow = useCallback(() => {
-        const newData = { ...data };
-        const newRow = {
-            poste: '',
-            numero_compte: '',
-            classe: null,
-            classe_libelle: '',
-            valeurs: {}
-        };
-
-        // Initialize values for all years
-        data.annees.forEach(year => {
-            newRow.valeurs[year] = 0;
-        });
-
-        newData.lignes.push(newRow);
-        onChange(newData);
-    }, [data, onChange]);
-
-    // Remove row
     const handleRemoveRow = useCallback((rowIndex) => {
-        if (!window.confirm('Êtes-vous sûr de vouloir supprimer cette ligne ?')) return;
+        setRowToDelete(rowIndex);
+        setApplyToAll(false);
+        setDeleteModalOpen(true);
+    }, []);
 
-        const newData = { ...data };
-        newData.lignes.splice(rowIndex, 1);
+    const confirmDelete = () => {
+        const rowIndex = rowToDelete;
+
+        // Notify parent of the deletion, especially for global sync
+        if (onDeleteRow) {
+            onDeleteRow(rowIndex, applyToAll);
+        } else {
+            // Fallback to local deletion if onDeleteRow not provided
+            const newData = {
+                ...data,
+                lignes: data.lignes.filter((_, idx) => idx !== rowIndex)
+            };
+            onChange(newData);
+        }
 
         // Clean up modified cells and errors for this row
         const newModifiedCells = new Set();
@@ -142,8 +182,9 @@ const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
         });
         setValidationErrors(newErrors);
 
-        onChange(newData);
-    }, [data, onChange, modifiedCells, validationErrors]);
+        setDeleteModalOpen(false);
+        setRowToDelete(null);
+    };
 
     // Get cell class names
     const getCellClassName = (rowIndex, field, year = null) => {
@@ -166,7 +207,7 @@ const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
             className += 'ring-2 ring-blue-500 ';
         }
 
-        if (year !== null) {
+        if (year !== null || ['debit', 'credit'].includes(field)) {
             className += 'text-right ';
         }
 
@@ -174,15 +215,34 @@ const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
     };
 
     // Render editable cell
-    const renderEditableCell = (rowIndex, field, value, year = null) => {
+    const renderEditableCell = (rowIndex, field, value, year = null, type = 'text') => {
         const cellKey = year ? `${rowIndex}-${year}` : `${rowIndex}-${field}`;
         const isEditing = editingCell === cellKey;
         const error = validationErrors[cellKey];
 
+        const displayValue = (value !== null && value !== undefined) ? String(value) : '';
+
+        // Format dates from YYYY-MM-DD to DD/MM/YYYY for display
+        let finalValue = displayValue;
+        if (field === 'date' && displayValue && /^\d{4}-\d{2}-\d{2}$/.test(displayValue)) {
+            const [year, month, day] = displayValue.split('-');
+            finalValue = `${day}/${month}/${year}`;
+        }
+        // Clean account numbers (e.g. 512.0 -> 512) for display
+        else if ((field === 'numero_compte' || field === 'compte' || field === 'classe' || field === 'classe_libelle') && displayValue) {
+            if (displayValue.endsWith('.0')) {
+                finalValue = displayValue.slice(0, -2);
+            }
+            // Remove numeric prefix if present (e.g. "1 - Capitaux propres" -> "Capitaux propres")
+            if (typeof finalValue === 'string' && /^\d\s*-\s*/.test(finalValue)) {
+                finalValue = finalValue.replace(/^\d\s*-\s*/, '');
+            }
+        }
+
         if (readOnly) {
             return (
                 <td className={getCellClassName(rowIndex, field, year)}>
-                    {value !== null && value !== undefined ? String(value) : '-'}
+                    {finalValue || '-'}
                 </td>
             );
         }
@@ -200,14 +260,14 @@ const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
         };
 
         return (
-            <td 
+            <td
                 className={getCellClassName(rowIndex, field, year)}
                 onClick={() => !readOnly && setEditingCell(cellKey)}
                 title={error || ''}
             >
                 {isEditing ? (
                     <input
-                        type={year !== null ? 'number' : 'text'}
+                        type={type}
                         value={value || ''}
                         onChange={(e) => handleCellChange(rowIndex, field, e.target.value, year)}
                         onBlur={() => setEditingCell(null)}
@@ -216,8 +276,8 @@ const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
                         className="w-full px-2 py-1 border-0 focus:outline-none bg-transparent text-sm"
                     />
                 ) : (
-                    <div className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 px-2 py-1 rounded">
-                        {value !== null && value !== undefined ? String(value) : '-'}
+                    <div className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 px-2 py-1 rounded min-h-[1.5rem]">
+                        {displayValue || '-'}
                     </div>
                 )}
                 {error && (
@@ -229,77 +289,44 @@ const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
         );
     };
 
-    // Render classe dropdown
+    // Render classe cell (now a text input as requested)
     const renderClasseCell = (rowIndex, ligne) => {
-        const cellKey = `${rowIndex}-classe`;
-        const isEditing = editingCell === cellKey;
+        return renderEditableCell(rowIndex, 'classe_libelle', ligne.classe_libelle);
+    };
 
-        if (readOnly) {
-            return (
-                <td className={getCellClassName(rowIndex, 'classe')}>
-                    {ligne.classe && (
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                            ligne.classe === 1 ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
-                            ligne.classe === 2 ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200' :
-                            ligne.classe === 3 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                            ligne.classe === 4 ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200' :
-                            ligne.classe === 5 ? 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200' :
-                            ligne.classe === 6 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
-                            ligne.classe === 7 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                        }`}>
-                            {ligne.classe} - {ligne.classe_libelle}
-                        </span>
-                    )}
-                </td>
-            );
-        }
+    // Determine dominant journal type for the sheet
+    const sheetJournalType = useMemo(() => {
+        if (!isJournal || !data.lignes || data.lignes.length === 0) return 'OD';
 
-        return (
-            <td 
-                className={getCellClassName(rowIndex, 'classe')}
-                onClick={() => setEditingCell(cellKey)}
-            >
-                {isEditing ? (
-                    <select
-                        value={ligne.classe || ''}
-                        onChange={(e) => {
-                            const selectedClass = ACCOUNT_CLASSES.find(c => c.value === parseInt(e.target.value));
-                            handleCellChange(rowIndex, 'classe', parseInt(e.target.value));
-                            if (selectedClass) {
-                                handleCellChange(rowIndex, 'classe_libelle', selectedClass.label.split(' - ')[1]);
-                            }
-                            setEditingCell(null);
-                        }}
-                        onBlur={() => setEditingCell(null)}
-                        autoFocus
-                        className="w-full px-2 py-1 border-0 focus:outline-none bg-transparent text-sm"
-                    >
-                        <option value="">Sélectionner...</option>
-                        {ACCOUNT_CLASSES.map(c => (
-                            <option key={c.value} value={c.value}>{c.label}</option>
-                        ))}
-                    </select>
-                ) : (
-                    <div className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 px-2 py-1 rounded">
-                        {ligne.classe && (
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                ligne.classe === 1 ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
-                                ligne.classe === 2 ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200' :
-                                ligne.classe === 3 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                                ligne.classe === 4 ? 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200' :
-                                ligne.classe === 5 ? 'bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200' :
-                                ligne.classe === 6 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' :
-                                ligne.classe === 7 ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                                'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200'
-                            }`}>
-                                {ligne.classe} - {ligne.classe_libelle}
-                            </span>
-                        )}
-                    </div>
-                )}
-            </td>
-        );
+        // Count occurrences of each type
+        const counts = {};
+        let maxCount = 0;
+        let dominant = 'OD';
+
+        data.lignes.forEach(l => {
+            const type = (l.type_journal || 'OD').trim().toUpperCase();
+            if (type) {
+                counts[type] = (counts[type] || 0) + 1;
+                if (counts[type] > maxCount) {
+                    maxCount = counts[type];
+                    dominant = type;
+                }
+            }
+        });
+
+        return dominant;
+    }, [data, isJournal]);
+
+    // Handle global journal type change
+    const handleJournalTypeChange = (newType) => {
+        const newData = {
+            ...data,
+            lignes: data.lignes.map(l => ({
+                ...l,
+                type_journal: newType
+            }))
+        };
+        onChange(newData);
     };
 
     if (!data || !data.lignes || data.lignes.length === 0) {
@@ -311,35 +338,78 @@ const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
     }
 
     const hasErrors = Object.keys(validationErrors).length > 0;
+    const JOURNAL_TYPES = ['ACHAT', 'VENTE', 'BANQUE', 'CAISSE', 'OD', 'AN'];
 
     return (
         <div className="space-y-3">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <h6 className="font-bold text-sm text-gray-700 dark:text-gray-300">
-                        📊 Données Structurées
-                    </h6>
-                    <span className={`px-2 py-1 text-xs font-medium rounded ${
-                        data.type_document === 'BILAN'
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-                            : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                    }`}>
-                        {data.type_document}
-                    </span>
-                </div>
-                {!readOnly && (
+            {/* Header Actions */}
+            {!readOnly && (
+                <div className="flex justify-between items-center mb-2">
+                    {/* Journal Type Selector (only for Journal) */}
+                    {isJournal && (
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-700 dark:text-gray-300">Type de Journal :</span>
+                            <select
+                                value={sheetJournalType}
+                                onChange={(e) => handleJournalTypeChange(e.target.value)}
+                                className="px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 focus:ring-1 focus:ring-indigo-500 outline-none"
+                            >
+                                {JOURNAL_TYPES.includes(sheetJournalType) ? null : (
+                                    <option value={sheetJournalType}>{sheetJournalType}</option>
+                                )}
+                                {JOURNAL_TYPES.map(type => (
+                                    <option key={type} value={type}>{type}</option>
+                                ))}
+                            </select>
+                            <span className="text-[10px] text-gray-400 ml-1">(Appliqué à toutes les lignes)</span>
+                        </div>
+                    )}
+
+                    {/* Add Row Button */}
                     <button
-                        onClick={handleAddRow}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700 transition"
+                        onClick={() => {
+                            // Helper to ensure we pass the correct type when adding
+                            const newData = {
+                                ...data,
+                                lignes: [...data.lignes]
+                            };
+                            let newRow;
+
+                            if (isJournal) {
+                                newRow = {
+                                    date: new Date().toISOString().split('T')[0],
+                                    numero_piece: '',
+                                    numero_compte: '',
+                                    libelle: '',
+                                    debit: 0,
+                                    credit: 0,
+                                    type_journal: sheetJournalType // Use the sheet-level type
+                                };
+                            } else {
+                                newRow = {
+                                    poste: '',
+                                    numero_compte: '',
+                                    classe: null,
+                                    classe_libelle: '',
+                                    valeurs: {}
+                                };
+                                years.forEach(year => {
+                                    newRow.valeurs[year] = 0;
+                                });
+                            }
+
+                            newData.lignes.push(newRow);
+                            onChange(newData);
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700 transition ml-auto"
                     >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                         </svg>
                         Ajouter une ligne
                     </button>
-                )}
-            </div>
+                </div>
+            )}
 
             {/* Validation errors summary */}
             {hasErrors && (
@@ -350,61 +420,66 @@ const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
                 </div>
             )}
 
-            {/* Legend */}
-            {!readOnly && (
-                <div className="flex gap-4 text-xs text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center gap-1">
-                        <div className="w-4 h-4 bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 rounded"></div>
-                        <span>Modifié</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <div className="w-4 h-4 bg-red-100 dark:bg-red-900/30 border-2 border-red-500 rounded"></div>
-                        <span>Erreur</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <span>💡 Cliquez sur une cellule pour modifier</span>
-                    </div>
-                </div>
-            )}
-
-            {/* Table */}
+            {/* Table wrapper - Horizontal scroll only, vertical handled by parent */}
             <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-xs">
                         <thead className="bg-gray-50 dark:bg-gray-900 sticky top-0 z-10">
                             <tr>
-                                <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">
-                                    Poste
-                                </th>
-                                <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">
-                                    Compte
-                                </th>
-                                <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">
-                                    Classe
-                                </th>
-                                {data.annees.map(year => (
-                                    <th key={year} className="px-3 py-2 text-right text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">
-                                        {year}
-                                    </th>
-                                ))}
+                                {isJournal ? (
+                                    <>
+                                        <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Date</th>
+                                        <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Journal</th>
+                                        <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">N° Pièce</th>
+                                        <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Compte</th>
+                                        <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Libellé</th>
+                                        <th className="px-3 py-2 text-right text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Débit</th>
+                                        <th className="px-3 py-2 text-right text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Crédit</th>
+                                    </>
+                                ) : (
+                                    <>
+                                        <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Poste</th>
+                                        <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Compte</th>
+                                        <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Classe</th>
+                                        {years.map(year => (
+                                            <th key={year} className="px-3 py-2 text-right text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">
+                                                {String(year).match(/^\d{4}$/) ? 'Montant' : year}
+                                            </th>
+                                        ))}
+                                    </>
+                                )}
+
                                 {!readOnly && (
-                                    <th className="px-3 py-2 text-center text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">
-                                        Actions
-                                    </th>
+                                    <th className="px-3 py-2 text-center text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Actions</th>
                                 )}
                             </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700">
                             {data.lignes.map((ligne, rowIndex) => (
                                 <tr key={rowIndex} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    {renderEditableCell(rowIndex, 'poste', ligne.poste)}
-                                    {renderEditableCell(rowIndex, 'numero_compte', ligne.numero_compte)}
-                                    {renderClasseCell(rowIndex, ligne)}
-                                    {data.annees.map(year => (
-                                        <React.Fragment key={year}>
-                                            {renderEditableCell(rowIndex, 'valeurs', ligne.valeurs[year], year)}
-                                        </React.Fragment>
-                                    ))}
+                                    {isJournal ? (
+                                        <>
+                                            {renderEditableCell(rowIndex, 'date', ligne.date, null, 'date')}
+                                            {renderEditableCell(rowIndex, 'type_journal', ligne.type_journal)}
+                                            {renderEditableCell(rowIndex, 'numero_piece', ligne.numero_piece)}
+                                            {renderEditableCell(rowIndex, 'numero_compte', ligne.numero_compte)}
+                                            {renderEditableCell(rowIndex, 'libelle', ligne.libelle)}
+                                            {renderEditableCell(rowIndex, 'debit', ligne.debit, null, 'number')}
+                                            {renderEditableCell(rowIndex, 'credit', ligne.credit, null, 'number')}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {renderEditableCell(rowIndex, 'poste', ligne.poste)}
+                                            {renderEditableCell(rowIndex, 'numero_compte', ligne.numero_compte)}
+                                            {renderClasseCell(rowIndex, ligne)}
+                                            {years.map(year => (
+                                                <React.Fragment key={year}>
+                                                    {renderEditableCell(rowIndex, 'valeurs', ligne.valeurs[year], year, 'number')}
+                                                </React.Fragment>
+                                            ))}
+                                        </>
+                                    )}
+
                                     {!readOnly && (
                                         <td className="px-3 py-2 text-center">
                                             <button
@@ -429,6 +504,31 @@ const EditableDataGrid = ({ data, onChange, readOnly = false }) => {
             <div className="text-xs text-gray-500 dark:text-gray-400">
                 {data.lignes.length} ligne(s) • {modifiedCells.size} modification(s)
             </div>
+
+            <ConfirmationModal
+                isOpen={deleteModalOpen}
+                onClose={() => setDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                title="Supprimer la ligne ?"
+                message="Êtes-vous sûr de vouloir supprimer cette ligne de données ?"
+                confirmText="Supprimer"
+                isDanger={true}
+            >
+                {!isJournal && years.length > 0 && (
+                    <div className="flex items-center gap-2 mt-2 p-2 bg-gray-50 dark:bg-gray-700/30 rounded border border-gray-100 dark:border-gray-600">
+                        <input
+                            type="checkbox"
+                            id="apply-to-all"
+                            checked={applyToAll}
+                            onChange={(e) => setApplyToAll(e.target.checked)}
+                            className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                        />
+                        <label htmlFor="apply-to-all" className="text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+                            Appliquer à tous les exercices de cette feuille
+                        </label>
+                    </div>
+                )}
+            </ConfirmationModal>
         </div>
     );
 };

@@ -84,6 +84,8 @@ const TYPE_STYLES = {
     'PAIE': { color: 'border-green-500', badge: 'bg-green-500', bgCard: 'bg-green-50 dark:bg-green-900/20' },
     'OD': { color: 'border-orange-500', badge: 'bg-orange-500', bgCard: 'bg-orange-50 dark:bg-orange-900/20' },
     'CAISSE': { color: 'border-pink-500', badge: 'bg-pink-500', bgCard: 'bg-pink-50 dark:bg-pink-900/20' },
+    'État financier': { color: 'border-orange-500', badge: 'bg-orange-500', bgCard: 'bg-orange-50 dark:bg-orange-900/20' },
+    'Grand Journal': { color: 'border-orange-500', badge: 'bg-orange-500', bgCard: 'bg-orange-50 dark:bg-orange-900/20' },
 
     // Fallbacks pour les libellés de piece_type (utilisés dans DocumentCard)
     'Facture': { color: 'border-blue-500', badge: 'bg-blue-500', bgCard: 'bg-white dark:bg-gray-700 dark:text-white' },
@@ -116,7 +118,7 @@ const COLUMNS = [
     {
         key: 'autres',
         label: 'Autres',
-        types: ['OD', 'CAISSE', 'Autres', 'Chèque', 'Retrait', 'Dépôt'],
+        types: ['OD', 'CAISSE', 'Autres', 'Chèque', 'Retrait', 'Dépôt', 'Grand Journal', 'Journal', 'État financier'],
         badge: 'bg-orange-500'
     },
 ];
@@ -187,7 +189,8 @@ export default function GestionPiecesBoard() {
     const [selectedDocument, setSelectedDocument] = useState(null);
     const [dateDebut, setDateDebut] = useState(() => {
         const d = new Date();
-        d.setDate(1);
+        d.setMonth(0); // Janvier
+        d.setDate(1);  // 1er jour
         return d.toISOString().split('T')[0];
     });
     const [dateFin, setDateFin] = useState(() => new Date().toISOString().split('T')[0]);

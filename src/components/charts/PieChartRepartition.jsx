@@ -37,7 +37,7 @@ export default function PieChartRepartition({ data }) {
       return (
         <div className="bg-white dark:bg-gray-800 p-3 border border-gray-300 dark:border-gray-700 rounded shadow-lg">
           <p className="font-semibold text-gray-900 dark:text-gray-100">{name}</p>
-          <p className="text-blue-600 dark:text-blue-400">{Number(value).toLocaleString('fr-FR')} Ar</p>
+          <p className="text-blue-600 dark:text-blue-400">{Number(value).toLocaleString('fr-FR').replace(/\u202f/g, ' ').replace(/\u00a0/g, ' ')} Ar</p>
           <p className="text-gray-600 dark:text-gray-400 text-sm">{percent}%</p>
         </div>
       );

@@ -327,7 +327,7 @@ const OcrValidationForm = ({
 
                 {isExtracted ? (
                     <div className="relative bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-400 dark:border-amber-600 p-2 rounded-sm text-xs text-amber-900 dark:text-amber-200 mb-2">
-                        <p className="font-bold flex items-center">⚠️ Veuillez vérifier les informations extraites par l’OCR. En cas d’erreur, vous pouvez modifier les champs manuellement </p>
+                        <p className="font-bold flex items-center">⚠️ Veuillez vérifier les informations extraites. En cas d’erreur, vous pouvez modifier les champs manuellement </p>
                     </div>
                 ) : (
                     isDocumentLoaded && (

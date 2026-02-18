@@ -29,7 +29,7 @@ export const comptaApiSlice = createApi({
 
     saveBilanManual: builder.mutation({
       query: ({ data, project_id }) => ({
-        url: `compta/bilans/manual/?project_id=${project_id}`,
+        url: `bilans/manual/?project_id=${project_id}`,
         method: "POST",
         body: data,
       }),
@@ -38,7 +38,7 @@ export const comptaApiSlice = createApi({
 
     saveCompteResultatManual: builder.mutation({
       query: ({ data, project_id }) => ({
-        url: `compta/CompteResultats/manual/?project_id=${project_id}`,
+        url: `CompteResultats/manual/?project_id=${project_id}`,
         method: "POST",
         body: data,
       }),

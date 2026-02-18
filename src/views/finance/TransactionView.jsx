@@ -16,8 +16,14 @@ import {
     Columns2,
     Calendar,
     Search,
-    Sparkles
+    Sparkles,
+    Trash2,
+    Edit2,
+    Plus,
+    CheckSquare,
+    Square
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
 import { fetchWithReauth } from '../../utils/apiUtils';
 import { BASE_URL_API } from '../../constants/globalConstants';
@@ -150,7 +156,86 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     const [error, setError] = useState(null);
     const [totalItems, setTotalItems] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
+    const [selectedItems, setSelectedItems] = useState([]);
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingItem, setEditingItem] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState(null); // { id, isBulk }
+
     const projectId = useProjectId();
+
+    const currentItems = useMemo(() => selectedSection === 'bilan' ? bilanData : compteResultatData, [selectedSection, bilanData, compteResultatData]);
+
+    const toggleSelectItem = (id) => {
+        setSelectedItems(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedItems.length === paginatedDetails.length) {
+            setSelectedItems([]);
+        } else {
+            setSelectedItems(paginatedDetails.map(item => item.id));
+        }
+    };
+
+    const handleDeleteClick = (id) => {
+        setDeleteTarget({ id, isBulk: false });
+        setIsDeleteModalOpen(true);
+    };
+
+    const handleBulkDeleteClick = () => {
+        if (selectedItems.length === 0) return;
+        setDeleteTarget({ id: null, isBulk: true });
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
+
+        setIsDeleting(true);
+        try {
+            if (deleteTarget.isBulk) {
+                let successCount = 0;
+                for (const id of selectedItems) {
+                    const url = `${API_CONFIG[selectedSection === 'bilan' ? 'bilanUrl' : 'compteResultatUrl']}${id}/`;
+                    const response = await fetchWithReauth(url, {
+                        method: 'DELETE',
+                        headers: API_CONFIG.getHeaders()
+                    });
+                    if (response.ok) successCount++;
+                }
+                toast.success(`${successCount} lignes supprimées`);
+                setBilanData(prev => prev.filter(item => !selectedItems.includes(item.id)));
+                setCompteResultatData(prev => prev.filter(item => !selectedItems.includes(item.id)));
+                setSelectedItems([]);
+            } else {
+                const id = deleteTarget.id;
+                const url = `${API_CONFIG[selectedSection === 'bilan' ? 'bilanUrl' : 'compteResultatUrl']}${id}/`;
+                const response = await fetchWithReauth(url, {
+                    method: 'DELETE',
+                    headers: API_CONFIG.getHeaders()
+                });
+
+                if (response.ok) {
+                    toast.success("Ligne supprimée avec succès");
+                    setBilanData(prev => prev.filter(item => item.id !== id));
+                    setCompteResultatData(prev => prev.filter(item => item.id !== id));
+                    setSelectedItems(prev => prev.filter(item => item !== id));
+                } else {
+                    toast.error("Erreur lors de la suppression");
+                }
+            }
+        } catch (err) {
+            toast.error("Erreur réseau");
+        } finally {
+            setIsDeleting(false);
+            setIsDeleteModalOpen(false);
+            setDeleteTarget(null);
+        }
+    };
 
     // ANALYSE IA
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -228,6 +313,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     }, [selectedYear, periodMode, selectedSubPeriod]);
 
     const normalizeBilanData = (data) => data.map(item => ({
+        id: item.id,
         numero_compte: item.numero_compte || '',
         libelle: item.libelle || '',
         categorie: item.categorie || '',
@@ -236,6 +322,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     }));
 
     const normalizeCompteResultatData = (data) => data.map(item => ({
+        id: item.id,
         numero_compte: item.numero_compte || '',
         libelle: item.libelle || '',
         nature: item.nature || '',
@@ -374,7 +461,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     const handleAIAnalysis = async () => {
         setIsAnalyzing(true);
         setAnalysisError(null);
-        
+
         // Préparer les données pour l'analyse
         const analysisData = {
             view_type: selectedSection, // 'bilan' ou 'compteResultat'
@@ -556,11 +643,10 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                             <button
                                 onClick={handleAIAnalysis}
                                 disabled={isAnalyzing}
-                                className={`w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow-md ${
-                                    isAnalyzing 
-                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                className={`w-full sm:w-auto flex items-center justify-center space-x-2 px-6 py-2 rounded-lg text-sm font-bold transition-all duration-300 shadow-md ${isAnalyzing
+                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                     : 'bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white hover:shadow-purple-200 dark:hover:shadow-none transform hover:-translate-y-0.5 mt-2 sm:mt-0'
-                                }`}
+                                    }`}
                             >
                                 {isAnalyzing ? (
                                     <>
@@ -603,6 +689,31 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                     </div>
                     <button onClick={() => window.location.reload()} className="ml-4 px-3 py-1 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition">Réessayer</button>
                 </div>}
+
+                {/* Bulk Actions */}
+                {selectedItems.length > 0 && (
+                    <div className="mb-2 flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 p-2 rounded-lg border border-indigo-100 dark:border-indigo-800 animate-fadeIn">
+                        <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                            {selectedItems.length} ligne{selectedItems.length > 1 ? 's' : ''} sélectionnée{selectedItems.length > 1 ? 's' : ''}
+                        </span>
+                        <div className="flex space-x-2">
+                            <button
+                                onClick={handleBulkDeleteClick}
+                                disabled={isDeleting}
+                                className="flex items-center space-x-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded shadow transition-all disabled:opacity-50"
+                            >
+                                {isDeleting ? <Loader size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                <span>Supprimer la sélection</span>
+                            </button>
+                            <button
+                                onClick={() => setSelectedItems([])}
+                                className="px-3 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-bold rounded shadow transition-all"
+                            >
+                                Annuler
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* KPI Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1.5 mb-1 px-1">
@@ -691,14 +802,20 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                             <table className="w-full border-collapse text-xs sm:text-sm min-w-[800px] table-fixed">
                                 <thead className="sticky top-0 z-10">
                                     <tr className="bg-gray-800 dark:bg-gray-950 text-white">
-                                        <th className="w-[15%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Date</th>
+                                        <th className="w-[5%] px-2 py-2 text-center">
+                                            <button onClick={toggleSelectAll} className="hover:text-indigo-400 transition-colors">
+                                                {selectedItems.length === paginatedDetails.length && paginatedDetails.length > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
+                                            </button>
+                                        </th>
+                                        <th className="w-[10%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Date</th>
                                         <th className="w-[10%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Compte</th>
-                                        <th className="w-[40%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
+                                        <th className="w-[35%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
                                         {selectedSection === 'bilan' ?
-                                            <th className="w-[20%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Catégorie</th>
-                                            : <th className="w-[20%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Nature</th>
+                                            <th className="w-[15%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Catégorie</th>
+                                            : <th className="w-[15%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden md:table-cell">Nature</th>
                                         }
                                         <th className="w-[15%] px-2 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Montant</th>
+                                        <th className="w-[10%] px-2 py-2 sm:py-2.5 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wide">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white dark:bg-gray-800">
@@ -711,13 +828,18 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                             )}
                                         </tr>
                                     ) : paginatedDetails.map((item, idx) => (
-                                        <tr key={idx} className={`hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'}`}>
-                                            <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-gray-700 dark:text-gray-300 font-semibold">{formatDate(item.date)}</td>
+                                        <tr key={item.id || idx} className={`hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'} ${selectedItems.includes(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/10' : ''}`}>
+                                            <td className="w-[5%] border-b border-gray-100 dark:border-gray-700 px-2 text-center">
+                                                <button onClick={() => toggleSelectItem(item.id)} className={`${selectedItems.includes(item.id) ? 'text-indigo-600' : 'text-gray-400'} hover:text-indigo-500 transition-colors`}>
+                                                    {selectedItems.includes(item.id) ? <CheckSquare size={14} /> : <Square size={14} />}
+                                                </button>
+                                            </td>
+                                            <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-gray-700 dark:text-gray-300 font-semibold">{formatDate(item.date)}</td>
                                             <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs">
                                                 <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{item.numero_compte}</span>
                                             </td>
-                                            <td className="w-[40%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-gray-800 dark:text-gray-200 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
-                                            <td className="w-[20%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 hidden md:table-cell">
+                                            <td className="w-[35%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-gray-800 dark:text-gray-200 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
+                                            <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 hidden md:table-cell">
                                                 <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 inline-flex text-[10px] font-bold rounded-full ${selectedSection === 'bilan'
                                                     ? item.categorie?.toLowerCase().includes('actif')
                                                         ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
@@ -732,6 +854,25 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                                 </span>
                                             </td>
                                             <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-right font-bold text-gray-900 dark:text-gray-100">{formatCurrency(item.montant_ar)}</td>
+                                            <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 py-2 text-center">
+                                                <div className="flex items-center justify-center space-x-2">
+                                                    <button
+                                                        onClick={() => { setEditingItem(item); setIsEditing(true); }}
+                                                        disabled={selectedItems.length > 1}
+                                                        className={`p-1 rounded transition-colors ${selectedItems.length > 1 ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
+                                                        title={selectedItems.length > 1 ? "Désélectionnez pour modifier" : "Modifier"}
+                                                    >
+                                                        <Edit2 size={14} />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteClick(item.id)}
+                                                        className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                        title="Supprimer"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -756,7 +897,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                 </h3>
                                 <p className="text-[10px] sm:text-sm text-purple-600/70 dark:text-purple-400/70 font-medium">Interprétation pour {selectedSection === 'bilan' ? 'votre Bilan' : 'votre Compte de Résultat'}</p>
                             </div>
-                            <button 
+                            <button
                                 onClick={() => setIsAnalysisModalOpen(false)}
                                 className="p-2 hover:bg-white dark:hover:bg-gray-700 rounded-full transition-colors group"
                             >
@@ -771,7 +912,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                     <AlertCircle className="text-red-500 mb-3" size={48} />
                                     <h4 className="text-lg font-bold text-red-800 dark:text-red-300 mb-2">Une erreur est survenue</h4>
                                     <p className="text-red-600 dark:text-red-400 mb-4">{analysisError}</p>
-                                    <button 
+                                    <button
                                         onClick={handleAIAnalysis}
                                         className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-bold shadow-lg shadow-red-200 dark:shadow-none"
                                     >
@@ -881,11 +1022,10 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                                 {aiAnalysis.recommandations.map((rec, i) => (
                                                     <div key={i} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-purple-100 dark:border-purple-900/30 shadow-sm hover:shadow-lg transition-all border-t-4 border-t-purple-500 group">
                                                         <div className="flex justify-between items-start mb-2">
-                                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter ${
-                                                                rec.priorite === 'URGENT' ? 'bg-red-100 text-red-700' : 
-                                                                rec.priorite === 'IMPORTANT' ? 'bg-orange-100 text-orange-700' : 
-                                                                'bg-blue-100 text-blue-700'
-                                                            }`}>
+                                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter ${rec.priorite === 'URGENT' ? 'bg-red-100 text-red-700' :
+                                                                rec.priorite === 'IMPORTANT' ? 'bg-orange-100 text-orange-700' :
+                                                                    'bg-blue-100 text-blue-700'
+                                                                }`}>
                                                                 {rec.priorite}
                                                             </span>
                                                         </div>
@@ -906,7 +1046,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
 
                         {/* Footer Modale */}
                         <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end bg-gray-50/50 dark:bg-gray-900/20">
-                            <button 
+                            <button
                                 onClick={() => setIsAnalysisModalOpen(false)}
                                 className="px-5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm"
                             >
@@ -916,8 +1056,181 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                     </div>
                 </div>
             )}
+            {/* Edit Modal */}
+            {isEditing && editingItem && (
+                <EditEntryModal
+                    item={editingItem}
+                    type={selectedSection}
+                    onClose={() => { setIsEditing(false); setEditingItem(null); }}
+                    onSave={(updatedItem) => {
+                        if (selectedSection === 'bilan') {
+                            const normalized = normalizeBilanData([updatedItem])[0];
+                            setBilanData(prev => prev.map(it => it.id === normalized.id ? normalized : it));
+                        } else {
+                            const normalized = normalizeCompteResultatData([updatedItem])[0];
+                            setCompteResultatData(prev => prev.map(it => it.id === normalized.id ? normalized : it));
+                        }
+                        fetchKPIs(); // Re-calculer les totaux au sommet
+                        setIsEditing(false);
+                        setEditingItem(null);
+                        toast.success("Modification enregistrée");
+                    }}
+                />
+            )}
+            {/* Delete Confirmation Modal */}
+            {isDeleteModalOpen && (
+                <DeleteConfirmationModal
+                    count={deleteTarget?.isBulk ? selectedItems.length : 1}
+                    onClose={() => { setIsDeleteModalOpen(false); setDeleteTarget(null); }}
+                    onConfirm={confirmDelete}
+                    isLoading={isDeleting}
+                />
+            )}
+        </div>
+    );
+};
+
+const EditEntryModal = ({ item, type, onClose, onSave }) => {
+    const [formData, setFormData] = useState({ ...item });
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSaving(true);
+        try {
+            const url = `${API_CONFIG[type === 'bilan' ? 'bilanUrl' : 'compteResultatUrl']}${item.id}/`;
+            const response = await fetchWithReauth(url, {
+                method: 'PATCH',
+                headers: API_CONFIG.getHeaders(),
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                onSave(data);
+            } else {
+                toast.error("Erreur lors de l'enregistrement");
+            }
+        } catch (err) {
+            toast.error("Erreur réseau");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700 transition-all p-6">
+                <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
+                        <Edit2 size={18} className="mr-2 text-indigo-500" />
+                        Modifier l'entrée
+                    </h3>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                        <XCircle size={20} />
+                    </button>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Libellé</label>
+                        <input
+                            type="text"
+                            value={formData.libelle}
+                            onChange={(e) => setFormData(prev => ({ ...prev, libelle: e.target.value }))}
+                            className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Montant (Ar)</label>
+                        <input
+                            type="number"
+                            step="0.01"
+                            value={formData.montant_ar}
+                            onChange={(e) => setFormData(prev => ({ ...prev, montant_ar: e.target.value }))}
+                            className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white font-mono"
+                            required
+                        />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Compte</label>
+                            <input
+                                type="text"
+                                value={formData.numero_compte}
+                                onChange={(e) => setFormData(prev => ({ ...prev, numero_compte: e.target.value }))}
+                                className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white font-mono"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Date</label>
+                            <input
+                                type="date"
+                                value={formData.date}
+                                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                                className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end space-x-3 mt-8">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-sm font-bold rounded-lg hover:bg-gray-50 transition-all"
+                        >
+                            Annuler
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={isSaving}
+                            className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center space-x-2 disabled:opacity-50"
+                        >
+                            {isSaving ? <Loader size={16} className="animate-spin" /> : <span>Enregistrer</span>}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
+const DeleteConfirmationModal = ({ count, onClose, onConfirm, isLoading }) => {
+    return (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-red-100 dark:border-red-900/30 p-6 text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
+                    <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                    Confirmer la suppression
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium">
+                    Êtes-vous sûr de vouloir supprimer {count > 1 ? `ces ${count} lignes` : "cette ligne"} ? Cette action est irréversible.
+                </p>
+                <div className="flex flex-col space-y-2">
+                    <button
+                        onClick={onConfirm}
+                        disabled={isLoading}
+                        className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg shadow-red-200 dark:shadow-none transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+                    >
+                        {isLoading ? <Loader size={16} className="animate-spin" /> : <span>Supprimer définitivement</span>}
+                    </button>
+                    <button
+                        onClick={onClose}
+                        disabled={isLoading}
+                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-bold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-all"
+                    >
+                        Annuler
+                    </button>
+                </div>
+            </div>
         </div>
     );
 };
 
 export default TransactionView;
+

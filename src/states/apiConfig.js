@@ -68,7 +68,7 @@ const baseQueryWithReauth = async (args, api, extraOptions, baseQueryInstance) =
 
     if (result.error && result.error.status === 401) {
         console.warn(`[API] 401 Unauthorized for ${args?.url || args}. Attempting refresh...`);
-        
+
         // Prevent infinite loop for the refresh endpoint itself
         if (url === "/users/token/refresh/") {
             console.error("[API] Refresh token itself returned 401. Logging out.");
@@ -118,7 +118,7 @@ const baseQueryWithReauth = async (args, api, extraOptions, baseQueryInstance) =
             localStorage.removeItem("userInfo");
             localStorage.removeItem("selectedProjectId");
             localStorage.removeItem("selectedProjectName");
-            localStorage.removeItem("vulca_current_page");
+            localStorage.removeItem("rekapy_current_page");
 
             // Redirect to login if not already on an auth page
             if (typeof window !== "undefined" && !window.location.pathname.includes("/auth/")) {

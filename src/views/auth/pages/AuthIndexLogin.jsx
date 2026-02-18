@@ -86,7 +86,7 @@ export default function AuthIndexLogin() {
     return (
         <React.Fragment>
             <UtilsPageMeta
-                title={"Vulca | Login"}
+                title={"REKAPY | Login"}
                 description={"Authentication page."}
             />
             <LoginForm

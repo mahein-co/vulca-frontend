@@ -390,7 +390,7 @@ export default function IndexChatbotPage({ close }) {
             </div>
             <div className="min-w-0">
               <h3 className="text-sm md:text-base font-bold truncate leading-tight" style={{ color: textColor }}>Assistant</h3>
-              <p className="text-[8px] md:text-[10px] text-emerald-500 font-bold tracking-widest uppercase opacity-90">Vulca Smart Service</p>
+              <p className="text-[8px] md:text-[10px] text-emerald-500 font-bold tracking-widest uppercase opacity-90">REKAPY Smart Service</p>
             </div>
           </div>
 

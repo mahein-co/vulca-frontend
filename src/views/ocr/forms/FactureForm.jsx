@@ -49,6 +49,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
     }, [reset]);
 
     const [typeFacture, setTypeFacture] = useState('vente');
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [dataToGenerateJournal, setDataToGenerateJournal] = useState(null);
     const [header, setHeader] = useState(() => ({
         numeroFacture: '',
@@ -296,6 +297,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
         }
 
         setHeaderErrors({});
+        setIsSubmitting(true);
 
         const data = {
             piece_type: "Facture",
@@ -324,26 +326,19 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
             ref_file: header.numeroFacture,
         };
 
-        setDataToGenerateJournal(data);
-        actionSaveFacture({ data, project_id: projectId });
-    };
+        try {
+            // Étape 1 : Enregistrer la pièce
+            const responseSave = await actionSaveFacture({ data, project_id: projectId }).unwrap();
 
-    // Effects for API
-    useEffect(() => {
-        if (isSuccessSave && dataSave) {
+            // Étape 2 : Générer le journal
             const journalData = {
-                ...dataToGenerateJournal,
+                ...data,
                 file_source: null,
-                form_source: dataSave?.form_source?.id,
+                form_source: responseSave?.form_source?.id || responseSave?.id,
             };
-            actionGenerateJournal(journalData);
-        } else if (isErrorSave) {
-            toast.error("Erreur lors de l'enregistrement de la facture.");
-        }
-    }, [isSuccessSave, isErrorSave, dataSave, actionGenerateJournal, dataToGenerateJournal]);
+            await actionGenerateJournal(journalData).unwrap();
 
-    useEffect(() => {
-        if (isSuccessJournal) {
+            // Succès final
             toast.success("Enregistrement succès");
             setLignes([]);
             setHeader({
@@ -358,10 +353,14 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
             });
             resetNouvelleLigne();
             if (onSaveComplete) onSaveComplete();
-        } else if (isErrorJournal) {
-            toast.error(errorJournal?.data?.error || "Erreur lors de la génération du journal.");
+        } catch (error) {
+            console.error("Erreur lors de la soumission:", error);
+            const errorMessage = error?.data?.error || error?.data?.message || "Une erreur est survenue lors de l'enregistrement.";
+            toast.error(errorMessage);
+        } finally {
+            setIsSubmitting(false);
         }
-    }, [isSuccessJournal, isErrorJournal, errorJournal, onSaveComplete, resetNouvelleLigne]);
+    };
 
     const isSaveDisabled = !header.numeroFacture || !(typeFacture === 'vente' ? header.nomClient : header.nomFournisseur);
 
@@ -372,7 +371,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
     return (
         <>
             {/* Loading Overlay */}
-            {(isLoadingSave || isLoadingJournal) && (
+            {isSubmitting && (
                 <LoadingOverlay
                     message="Validation et enregistrement en cours..."
                 />
@@ -664,7 +663,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                                                     title="Modifier"
                                                                     disabled={ligneEnModification !== null}
                                                                 >
-                                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-9l7 7m-7-7v7h7" /></svg>
+                                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                                                 </button>
                                                                 <button
                                                                     onClick={() => supprimerLigne(ligne.id)}
@@ -704,7 +703,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                                         title="Modifier"
                                                         disabled={ligneEnModification !== null}
                                                     >
-                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-9l7 7m-7-7v7h7" /></svg>
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                                     </button>
                                                     <button
                                                         onClick={() => supprimerLigne(ligne.id)}
@@ -729,10 +728,10 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                 </div>
                                 <button
                                     onClick={enregistrerFacture}
-                                    disabled={isSaveDisabled || isLoadingSave || isLoadingJournal}
+                                    disabled={isSaveDisabled || isSubmitting}
                                     className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto justify-center"
                                 >
-                                    {(isLoadingSave || isLoadingJournal) ? (
+                                    {isSubmitting ? (
                                         <>
                                             <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                                             Traitement...

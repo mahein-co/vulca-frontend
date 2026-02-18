@@ -39,12 +39,12 @@ export const useCurrentProject = () => {
 
 export const useCurrentProjectName = () => {
     const [projectName, setProjectName] = React.useState(
-        localStorage.getItem('selectedProjectName') || 'Assistant Comptable'
+        localStorage.getItem('selectedProjectName') || 'REKAPY'
     );
 
     React.useEffect(() => {
         const handleStorageChange = () => {
-            setProjectName(localStorage.getItem('selectedProjectName') || 'Assistant Comptable');
+            setProjectName(localStorage.getItem('selectedProjectName') || 'REKAPY');
         };
 
         window.addEventListener('storage', handleStorageChange);

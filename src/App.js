@@ -163,11 +163,11 @@ function App() {
     const userAuth = useSelector((state) => state.user.userAuthenticated);
 
     const [currentPage, setCurrentPage] = useState(() => {
-        return localStorage.getItem('vulca_current_page') || 'dashboard';
+        return localStorage.getItem('rekapy_current_page') || 'dashboard';
     });
 
     useEffect(() => {
-        localStorage.setItem('vulca_current_page', currentPage);
+        localStorage.setItem('rekapy_current_page', currentPage);
     }, [currentPage]);
 
     const [currentFormType, setCurrentFormType] = useState(null);

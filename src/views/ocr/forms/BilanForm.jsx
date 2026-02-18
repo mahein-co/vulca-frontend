@@ -451,14 +451,6 @@ export default function BilanForm({ onSaisieCompleted }) {
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 mb-4 border-t-2 border-gray-300 dark:border-gray-700">
                         <h2 className="text-base font-semibold text-gray-700 dark:text-gray-200 mb-3 flex items-center justify-between">
                             <span>{ligneEnModification ? '✏️ Modification de la ligne' : '➕ Ajouter une nouvelle ligne'}</span>
-                            {lignes.length > 0 && (
-                                <button
-                                    onClick={handleDeleteAll}
-                                    className="ml-4 bg-red-100 hover:bg-red-200 dark:bg-red-900/40 dark:hover:bg-red-900/60 text-red-700 dark:text-red-300 px-3 py-1 rounded text-xs font-semibold transition-colors border border-red-200 dark:border-red-800"
-                                >
-                                    Tout supprimer
-                                </button>
-                            )}
                         </h2>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
@@ -610,7 +602,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                                                                 title="Modifier"
                                                                 disabled={ligneEnModification !== null}
                                                             >
-                                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-9l7 7m-7-7v7h7" /></svg>
+                                                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                                             </button>
                                                             <button
                                                                 onClick={() => supprimerLigne(ligne.id)}
@@ -657,7 +649,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                                                         title="Modifier"
                                                         disabled={ligneEnModification !== null}
                                                     >
-                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-9l7 7m-7-7v7h7" /></svg>
+                                                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                                                     </button>
                                                     <button
                                                         onClick={() => supprimerLigne(ligne.id)}

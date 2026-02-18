@@ -23,7 +23,7 @@ const UserProfileDropdown = ({ isOpen, onClose, userInfo, onOpenProfile, onOpenS
 
     const handleLogout = () => {
         localStorage.removeItem('userInfo');
-        localStorage.removeItem('vulca_current_page');
+        localStorage.removeItem('rekapy_current_page');
         localStorage.removeItem('selectedProjectId'); // Force new project selection on next login
         window.location.href = '/';
     };

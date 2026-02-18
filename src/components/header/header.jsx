@@ -88,7 +88,7 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu, hideNavigation }) =
                                 onClick={() => !hideNavigation && handleNavClick('dashboard')}
                             >
                                 {hideNavigation ? (
-                                    <span className="text-lg">Assistant Comptable</span>
+                                    <span className="text-lg">REKAPY</span>
                                 ) : (
                                     <>
                                         {projectName}

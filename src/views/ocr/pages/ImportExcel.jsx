@@ -240,7 +240,7 @@ const ExcelValidationForm = ({
                                             value={companyMetadata?.nom_entreprise || ""}
                                             onChange={(e) => onMetadataChange("nom_entreprise", e.target.value)}
                                             className="w-full px-2 py-1 text-xs border border-gray-200 dark:border-gray-700 rounded bg-white dark:bg-gray-800 focus:ring-1 focus:ring-indigo-500 outline-none"
-                                            placeholder="VULCA MENABE"
+                                            placeholder="REKAPY..."
                                         />
                                     </div>
                                     <div>

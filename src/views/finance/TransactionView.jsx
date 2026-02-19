@@ -858,16 +858,17 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                                 <div className="flex items-center justify-center space-x-2">
                                                     <button
                                                         onClick={() => { setEditingItem(item); setIsEditing(true); }}
-                                                        disabled={selectedItems.length > 1}
-                                                        className={`p-1 rounded transition-colors ${selectedItems.length > 1 ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
-                                                        title={selectedItems.length > 1 ? "Désélectionnez pour modifier" : "Modifier"}
+                                                        disabled={selectedItems.length > 1 || (selectedItems.length === 1 && !selectedItems.includes(item.id))}
+                                                        className={`p-1 rounded transition-colors ${(selectedItems.length > 1 || (selectedItems.length === 1 && !selectedItems.includes(item.id))) ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
+                                                        title={selectedItems.length > 1 ? "Désélectionnez pour modifier" : (selectedItems.length === 1 && !selectedItems.includes(item.id)) ? "Ligne non sélectionnée" : "Modifier"}
                                                     >
                                                         <Edit2 size={14} />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteClick(item.id)}
-                                                        className="p-1 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                                        title="Supprimer"
+                                                        disabled={selectedItems.length > 0}
+                                                        className={`p-1 rounded transition-colors ${selectedItems.length > 0 ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:bg-red-50'}`}
+                                                        title={selectedItems.length > 0 ? "Utilisez la suppression groupée" : "Supprimer"}
                                                     >
                                                         <Trash2 size={14} />
                                                     </button>

@@ -14,8 +14,8 @@ import {
 import { useProjectId } from "../../hooks/useProjectId";
 import Swal from "sweetalert2";
 import { useTheme } from "../../states/context/ThemeContext";
-import { useSelector } from 'react-redux';  // NOUVEAU
-import { selectFilteredData } from '../../states/dashboard/dashboardFilterSlice';  // NOUVEAU
+import { useSelector, useDispatch } from 'react-redux';  // MODIFIÉ
+import { selectFilteredData, setActiveFilter } from '../../states/dashboard/dashboardFilterSlice';  // MODIFIÉ
 
 export default function IndexChatbotPage({ close }) {
   const [messages, setMessages] = useState([]);
@@ -32,8 +32,8 @@ export default function IndexChatbotPage({ close }) {
   const [editingTitle, setEditingTitle] = useState("");
   const messagesRef = useRef(null);
 
-  // ✅ MULTI-TENANT: Get project_id for cache isolation
   const projectId = useProjectId();
+  const dispatch = useDispatch(); // NOUVEAU
   const filteredData = useSelector(selectFilteredData);  // NOUVEAU: Récupérer les données filtrées
 
   const { data: histories, isLoading: loadingHistories } = useGetHistoriesQuery(projectId);
@@ -169,7 +169,7 @@ export default function IndexChatbotPage({ close }) {
       console.log("📊 Données filtrées incluses:", filteredData ? "OUI" : "NON");
       if (filteredData) console.log("🔍 Détail données filtrées:", filteredData);
 
-      await sendMessage({
+      const response = await sendMessage({
         data: {
           user_input: userText,
           message_history: historyId,
@@ -178,6 +178,35 @@ export default function IndexChatbotPage({ close }) {
         },
         project_id: projectId
       }).unwrap();
+
+      // ✅ APPLICATION DU FILTRE SUGGÉRÉ (SI PRÉSENT)
+      if (response?.suggested_filter) {
+        console.log("🎯 Filtre suggéré détecté:", response.suggested_filter);
+        const { type, value, label } = response.suggest_filter || response.suggested_filter;
+        
+        // On importe dispatch et setActiveFilter (nécessite l'ajout en haut du fichier)
+        // dispatch(setActiveFilter({ filterType: type, filterValue: value, filterLabel: label, page: "dashboard" }));
+        
+        // NOTE: dispatch est déjà disponible via un hook que je vais ajouter plus haut
+        dispatch(setActiveFilter({ 
+          filterType: type, 
+          filterValue: value, 
+          filterLabel: label, 
+          page: "dashboard" 
+        }));
+
+        Swal.fire({
+          title: 'Filtre appliqué',
+          text: `Le tableau de bord a été filtré sur : ${label}`,
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          showConfirmButton: false,
+          timer: 3000,
+          background: isDarkMode ? '#1e293b' : '#fff',
+          color: isDarkMode ? '#fff' : '#1e293b'
+        });
+      }
     } catch (err) {
       console.error("Failed to send", err);
       setMessages(prev => [...prev, {

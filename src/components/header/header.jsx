@@ -13,7 +13,7 @@ import { useCurrentProjectName } from '../../hooks/useProjectId';
 const navItems = [
     { name: 'Pièces comptables', key: 'gestion-pieces', icon: '📝' },
     { name: 'Importer des fichiers', key: 'import-ocr', icon: '📎' },
-    { name: 'Saisie Facture', key: 'saisie-manuelle', icon: '✍️' },
+    { name: 'Saisie Manuelle', key: 'saisie-manuelle', icon: '✍️' },
     { name: 'États financiers', key: 'gestion-transactions-cr', icon: '📦' },
     { name: 'Gestion Utilisateurs', key: 'gestion-user', icon: '👤', adminOnly: true },
     { name: 'Tableau de bord', key: 'dashboard', icon: '📊' },
@@ -76,7 +76,7 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu, hideNavigation }) =
     const pendingCount = pendingRequests?.length || 0;
 
     return (
-        <header className="bg-white dark:bg-gray-800 shadow-md border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 w-full z-30">
+        <header className="bg-white dark:bg-gray-800 shadow-md border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 w-full z-[10010]">
             <div className="max-w-full mx-auto px-3 sm:px-4 lg:px-8">
                 <div className="flex items-center h-12 sm:h-14 font-sans justify-between">
 

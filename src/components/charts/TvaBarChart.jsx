@@ -22,51 +22,62 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd }) {
   const projectId = useProjectId();
 
   useEffect(() => {
-    // Utiliser AbortController pour éviter les double-fetches en dev mode
     const abortController = new AbortController();
 
-    // Calculer les 6 derniers mois à partir de la date MAX des factures
     const fetchTvaData = async () => {
       setLoading(true);
       try {
-        // 1. Récupérer la date max des factures depuis l'API
-        const dateRangeResponse = await fetchWithReauth(`/journals/date-range/`, {
-          signal: abortController.signal
-        });
-        const dateRangeData = await dateRangeResponse.json();
+        let dateStart, dateEnd;
 
-        // Utiliser la date max des factures, sinon la date de fin globale, sinon aujourd'hui
-        const maxDate = dateRangeData.max_date
-          ? new Date(dateRangeData.max_date)
-          : (globalDateEnd ? new Date(globalDateEnd) : new Date());
+        if (globalDateStart && globalDateEnd) {
+          dateStart = globalDateStart;
+          dateEnd = globalDateEnd;
+        } else {
+          // Fallback
+          const dateRangeResponse = await fetchWithReauth(`/journals/date-range/`, {
+            signal: abortController.signal
+          });
+          const dateRangeData = await dateRangeResponse.json();
+          const maxDate = dateRangeData.max_date ? new Date(dateRangeData.max_date) : new Date();
+          const startDateObj = new Date(maxDate);
+          startDateObj.setMonth(startDateObj.getMonth() - 5);
+          startDateObj.setDate(1);
+          dateStart = startDateObj.toISOString().split('T')[0];
+          dateEnd = maxDate.toISOString().split('T')[0];
+        }
 
-        // 2. Préparer toutes les requêtes pour les 6 derniers mois
+        const startObj = new Date(dateStart);
+        const endObj = new Date(dateEnd);
+
+        // Générer dynamiquement la liste des mois entre start et end
         const monthPromises = [];
+        let current = new Date(startObj.getFullYear(), startObj.getMonth(), 1);
 
-        for (let i = 5; i >= 0; i--) {
-          const monthEnd = new Date(maxDate.getFullYear(), maxDate.getMonth() - i + 1, 0);
-          const monthStart = new Date(maxDate.getFullYear(), maxDate.getMonth() - i, 1);
+        while (current <= endObj) {
+          const mStart = new Date(current.getFullYear(), current.getMonth(), 1);
+          const mEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0); // Dernier jour du mois
 
-          const dateStart = monthStart.toISOString().split('T')[0];
-          const dateEnd = monthEnd.toISOString().split('T')[0];
-          const monthName = monthStart.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+          const ds = mStart.toISOString().split('T')[0];
+          const de = mEnd.toISOString().split('T')[0];
+          const monthLabel = mStart.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
 
-          // Ajouter la promesse au tableau (exécution parallèle)
           monthPromises.push(
-            fetchWithReauth(`/tva/?date_start=${dateStart}&date_end=${dateEnd}`, {
+            fetchWithReauth(`/tva/?date_start=${ds}&date_end=${de}`, {
               signal: abortController.signal
             })
               .then(res => res.json())
               .then(data => ({
-                name: monthName,
+                name: monthLabel,
                 collected: Number(data.tva_collectee || 0),
                 deductible: Number(data.tva_deductible || 0),
                 net: Number(data.tva_nette || 0),
               }))
           );
+
+          // Passer au mois suivant
+          current.setMonth(current.getMonth() + 1);
         }
 
-        // 3. Exécuter toutes les requêtes en parallèle
         const monthsData = await Promise.all(monthPromises);
 
         if (!abortController.signal.aborted) {

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { 
-  setActiveFilter, 
-  clearActiveFilter, 
+import {
+  setActiveFilter,
+  clearActiveFilter,
   selectActiveFilter,
   selectActiveFilterJSON,
   setFilteredData,
@@ -13,21 +13,29 @@ import {
 import { fetchWithReauth } from '../../utils/apiUtils';
 import { BASE_URL_API } from '../../constants/globalConstants';
 
-const FilterManager = ({ page = "dashboard" }) => { 
+const FilterManager = ({ page = "dashboard", rightAction = null }) => {
   const dispatch = useDispatch();
-  
+
   // Synchroniser la page actuelle pour le chatbot
   React.useEffect(() => {
     dispatch(setCurrentPage(page));
   }, [page, dispatch]);
 
-  const activeFilter = useSelector(selectActiveFilter);
+  const activeFilter = useSelector(state => state.dashboardFilter[page]?.activeFilter);
   const activeFilterJSON = useSelector(selectActiveFilterJSON);
   const isLoadingData = useSelector(selectIsLoadingData);
-  
-  const currentYear = new Date().getFullYear();
-  const [dateStart, setDateStart] = useState(activeFilter?.value?.start || `${currentYear}-01-01`);
-  const [dateEnd, setDateEnd] = useState(activeFilter?.value?.end || new Date().toISOString().split('T')[0]);
+
+  // Calculer 6 mois glissants par défaut
+  const dStart = new Date();
+  // On recule de 6 mois par rapport à AUJOURD'HUI
+  dStart.setMonth(dStart.getMonth() - 6);
+  // On se cale au 1er du mois pour avoir une période propre
+  dStart.setDate(1);
+  const defaultDateStart = dStart.toISOString().split('T')[0];
+  const defaultDateEnd = new Date().toISOString().split('T')[0];
+
+  const [dateStart, setDateStart] = useState(activeFilter?.value?.start || defaultDateStart);
+  const [dateEnd, setDateEnd] = useState(activeFilter?.value?.end || defaultDateEnd);
 
   const handleApplyFilter = async (start, end) => {
     dispatch(setActiveFilter({
@@ -36,13 +44,13 @@ const FilterManager = ({ page = "dashboard" }) => {
       filterLabel: `${new Date(start).toLocaleDateString('fr-FR')} - ${new Date(end).toLocaleDateString('fr-FR')}`,
       page: page
     }));
-    
+
     dispatch(setLoadingData({ isLoading: true, page }));
     try {
       const url = `${BASE_URL_API}/filtered-data/?date_start=${start}&date_end=${end}`;
       const response = await fetchWithReauth(url);
       const data = await response.json();
-      
+
       if (!data.error) {
         dispatch(setFilteredData({ data, page }));
       }
@@ -95,9 +103,9 @@ const FilterManager = ({ page = "dashboard" }) => {
               className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
-          
+
           <div className="flex gap-2">
-            {/* Boutons d'action supprimés au profit de l'auto-apply */}
+            {rightAction}
           </div>
         </div>
       </div>

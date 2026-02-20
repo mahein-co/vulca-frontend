@@ -15,7 +15,7 @@ import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 import LoadingOverlay from '../layout/LoadingOverlay';
 
-export default function LineChartCAEvolution() {
+export default function LineChartCAEvolution({ globalDateStart, globalDateEnd }) {
   const { isDarkMode } = useTheme();
   const [evolutionData, setEvolutionData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,30 +29,39 @@ export default function LineChartCAEvolution() {
     const fetchEvolutionData = async () => {
       setLoading(true);
       try {
-        const dateRangeResponse = await fetchWithReauth(`/journals/date-range/`, {
-          signal: abortController.signal
-        });
-        const dateRangeData = await dateRangeResponse.json();
+        let dateStart, dateEnd;
 
-        // Si on a des filtres globaux (à implémenter si props), sinon on prend max date
-        const maxDate = dateRangeData.max_date
-          ? new Date(dateRangeData.max_date)
-          : new Date();
+        if (globalDateStart && globalDateEnd) {
+          dateStart = globalDateStart;
+          dateEnd = globalDateEnd;
+        } else {
+          // Fallback au cas où (ne devrait plus arriver avec Dashboard mis à jour)
+          const dateRangeResponse = await fetchWithReauth(`/journals/date-range/`, {
+            signal: abortController.signal
+          });
+          const dateRangeData = await dateRangeResponse.json();
 
-        const endDateObj = maxDate;
-        const startDateObj = new Date(maxDate);
-        startDateObj.setMonth(startDateObj.getMonth() - 5);
-        startDateObj.setDate(1); // 1er jour du mois d'il y a 6 mois
+          const maxDate = dateRangeData.max_date
+            ? new Date(dateRangeData.max_date)
+            : new Date();
 
-        const dateStart = startDateObj.toISOString().split('T')[0];
-        const dateEnd = endDateObj.toISOString().split('T')[0];
+          const endDateObj = maxDate;
+          const startDateObj = new Date(maxDate);
+          startDateObj.setMonth(startDateObj.getMonth() - 5);
+          startDateObj.setDate(1);
+
+          dateStart = startDateObj.toISOString().split('T')[0];
+          dateEnd = endDateObj.toISOString().split('T')[0];
+        }
 
         // Format date range for display
-        const startDateStr = startDateObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
-        const endDateStr = endDateObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+        const sObj = new Date(dateStart);
+        const eObj = new Date(dateEnd);
+        const startDateStr = sObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+        const endDateStr = eObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
         setDateRangeDisplay(`${startDateStr} - ${endDateStr}`);
 
-        // Fetch ONE call instead of 6
+        // Fetch evolution data
         const response = await fetchWithReauth(`/evolution-ca-resultat/?date_start=${dateStart}&date_end=${dateEnd}`, {
           signal: abortController.signal
         });
@@ -92,7 +101,7 @@ export default function LineChartCAEvolution() {
     return () => {
       abortController.abort();
     };
-  }, [projectId]);
+  }, [projectId, globalDateStart, globalDateEnd]);
 
   const formatCurrency = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(val).replace('MGA', 'Ar');
 
@@ -102,7 +111,6 @@ export default function LineChartCAEvolution() {
       {!loading && (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-3 sm:mb-6 pl-1 sm:pl-2">
           <div>
-            {/* Titre déjà affiché par le parent, on peut afficher la période ici ou rien */}
             <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-1">
               {dateRangeDisplay}
             </p>
@@ -118,8 +126,8 @@ export default function LineChartCAEvolution() {
               <p className="font-bold text-[10px] sm:text-sm text-gray-800 dark:text-gray-100">{formatCurrency(totals.charges)}</p>
             </div>
             <div>
-              <p className="text-[9px] sm:text-xs text-green-600 uppercase font-bold mb-0.5 sm:mb-1">Moyenne</p>
-              <p className="font-bold text-[10px] sm:text-sm text-gray-800 dark:text-gray-100">{formatCurrency(totals.moyenne)}</p>
+              <p className="text-[9px] sm:text-xs text-green-600 uppercase font-bold mb-0.5 sm:mb-1">Résultat</p>
+              <p className="font-bold text-[10px] sm:text-sm text-gray-800 dark:text-gray-100">{formatCurrency(totals.resultat)}</p>
             </div>
           </div>
         </div>
@@ -208,4 +216,3 @@ export default function LineChartCAEvolution() {
     </div>
   );
 }
-

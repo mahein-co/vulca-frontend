@@ -27,30 +27,36 @@ export default function BarCharts({ globalDateStart, globalDateEnd }) {
   const barColor = '#10b981'; // Un vert émeraude frais au lieu du bleu standard
 
   useEffect(() => {
-    // Calculate last 6 months
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - 5);
-    startDate.setDate(1); // First day of the month 6 months ago
+    let dateStart, dateEnd;
 
-    const dateStart = startDate.toISOString().split('T')[0];
-    const dateEnd = endDate.toISOString().split('T')[0];
+    if (globalDateStart && globalDateEnd) {
+      dateStart = globalDateStart;
+      dateEnd = globalDateEnd;
+    } else {
+      // Fallback
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setMonth(startDate.getMonth() - 5);
+      startDate.setDate(1);
+      dateStart = startDate.toISOString().split('T')[0];
+      dateEnd = endDate.toISOString().split('T')[0];
+    }
 
     // Format for display
-    const startDateStr = startDate.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
-    const endDateStr = endDate.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+    const sObj = new Date(dateStart);
+    const eObj = new Date(dateEnd);
+    const startDateStr = sObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+    const endDateStr = eObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
     const dateRangeStr = `${startDateStr} - ${endDateStr}`;
 
     setDateRange({ start: dateStart, end: dateEnd, display: dateRangeStr });
 
-    // Fetch top 10 accounts data with last 6 months
+    // Fetch top 10 accounts data with active range
     let url = `${BASE_URL_API}/top-comptes-mouvementes/?date_start=${dateStart}&date_end=${dateEnd}`;
 
+    setLoading(true);
     axios.get(url, { headers: getApiHeaders(), withCredentials: true })
       .then(res => {
-        // Map backend API response to chart data format
-        // Backend: { compte, libelle, mt_mvt }
-        // Chart: { account, label, movement }
         const formattedData = res.data.map(item => ({
           account: item.compte,
           label: item.libelle,
@@ -63,7 +69,7 @@ export default function BarCharts({ globalDateStart, globalDateEnd }) {
         console.error("Erreur lors de la récupération du Top 10 comptes", err);
         setLoading(false);
       });
-  }, [projectId]);
+  }, [projectId, globalDateStart, globalDateEnd]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 h-full border-t-2 border-gray-300 dark:border-gray-700 relative">

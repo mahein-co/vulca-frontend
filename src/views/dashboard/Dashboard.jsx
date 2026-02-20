@@ -319,9 +319,14 @@ const Dashboard = () => {
 
 
 
-  const currentYear = new Date().getFullYear();
-  const [globalDateStart, setGlobalDateStart] = useState(`${currentYear}-01-01`);
-  const [globalDateEnd, setGlobalDateEnd] = useState(new Date().toISOString().split('T')[0]);
+  // Calculer les 6 derniers mois par défaut (ex: Février -> Août)
+  const defaultEndDate = new Date();
+  const defaultStartDate = new Date();
+  defaultStartDate.setMonth(defaultStartDate.getMonth() - 6);
+  defaultStartDate.setDate(1);
+
+  const [globalDateStart, setGlobalDateStart] = useState(defaultStartDate.toISOString().split('T')[0]);
+  const [globalDateEnd, setGlobalDateEnd] = useState(defaultEndDate.toISOString().split('T')[0]);
   const projectId = useProjectId();
 
   // NOUVEAU: Synchroniser la page actuelle pour le chatbot
@@ -679,328 +684,338 @@ const Dashboard = () => {
   return (
     <div className="px-4 sm:px-0 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900 dark:to-gray-900 min-h-screen transition-colors duration-200">
 
-      {/* 1. Filtres pour le Chatbot (Isolé par page) */}
-      <FilterManager page="dashboard" />
 
-      {/* 2. Cartes de Résumé - identique au style des cartes Bilan & États */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 sm:gap-3 pb-2 mb-6">
-        {summaryCards.map((card, index) => {
-          const hasVariation = card.variation !== undefined && card.variation !== null;
-          const isPositive = hasVariation && card.variation >= 0;
-          const variationClass = card.invertColors
-            ? hasVariation && (card.variation < 0 ? 'text-green-600' : 'text-red-600')
-            : hasVariation && (card.variation >= 0 ? 'text-green-600' : 'text-red-600');
+      {/* Loader Global */}
+      {loadingIndicators && <LoadingOverlay message="Mise à jour du tableau de bord..." />}
 
-          return (
-            <div key={index}>
-              <div
-                className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 sm:p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[60px] ${card.action === 'openBalance' ? 'cursor-pointer hover:border-emerald-400' : ''
-                  }`}
-                onClick={card.action === 'openBalance' ? () => handleCardClick(card.action) : null}
-              >
-                <div className="flex items-start gap-2 w-full">
-                  <div className="p-1 rounded-full text-indigo-700 dark:text-indigo-400 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow group-hover:scale-110 transition-transform duration-200 flex items-center justify-center">
-                    <span className="text-sm sm:text-base">{card.icon}</span>
-                  </div>
+      <div className="relative z-[10001]">
+        <FilterManager
+          page="dashboard"
+          rightAction={
+            <button
+              onClick={() => setIsIndicatorsModalOpen(true)}
+              className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+              title="Analyser en détails"
+            >
+              <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              Analyse expert
+            </button>
+          }
+        />
+      </div>
 
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[9px] sm:text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wide mb-0.5 sm:truncate">
-                      {card.title}
-                    </p>
-                    <p className="text-[10px] sm:text-sm font-extrabold text-indigo-700 dark:text-indigo-400 mb-0.5 whitespace-normal break-words leading-tight">
-                      {card.value}
-                    </p>
-                  </div>
+      <div className="relative">
 
-                  {hasVariation && (
-                    <div className={`text-[9px] font-bold ${variationClass} flex-shrink-0 self-start mt-0.5 pl-1`}>
-                      <span className="inline-block whitespace-nowrap">
-                        {card.invertColors
-                          ? (card.variation < 0 ? '↓' : '↑')
-                          : (isPositive ? '↑' : '↓')}{' '}
-                        {Math.abs(card.variation).toFixed(1)}%
-                      </span>
+        {/* 2. Cartes de Résumé - identique au style des cartes Bilan & États */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 sm:gap-3 pb-2 mb-6">
+          {summaryCards.map((card, index) => {
+            const hasVariation = card.variation !== undefined && card.variation !== null;
+            const isPositive = hasVariation && card.variation >= 0;
+            const variationClass = card.invertColors
+              ? hasVariation && (card.variation < 0 ? 'text-green-600' : 'text-red-600')
+              : hasVariation && (card.variation >= 0 ? 'text-green-600' : 'text-red-600');
+
+            return (
+              <div key={index}>
+                <div
+                  className={`bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 sm:p-5 flex flex-col items-start shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.01] group h-full min-h-[60px] ${card.action === 'openBalance' ? 'cursor-pointer hover:border-emerald-400' : ''
+                    }`}
+                  onClick={card.action === 'openBalance' ? () => handleCardClick(card.action) : null}
+                >
+                  <div className="flex items-start gap-2 w-full">
+                    <div className="p-1 rounded-full text-indigo-700 dark:text-indigo-400 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 shadow group-hover:scale-110 transition-transform duration-200 flex items-center justify-center">
+                      <span className="text-sm sm:text-base">{card.icon}</span>
                     </div>
-                  )}
+
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] sm:text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wide mb-0.5 sm:truncate">
+                        {card.title}
+                      </p>
+                      <p className="text-[10px] sm:text-sm font-extrabold text-indigo-700 dark:text-indigo-400 mb-0.5 whitespace-normal break-words leading-tight">
+                        {card.value}
+                      </p>
+                    </div>
+
+                    {hasVariation && (
+                      <div className={`text-[9px] font-bold ${variationClass} flex-shrink-0 self-start mt-0.5 pl-1`}>
+                        <span className="inline-block whitespace-nowrap">
+                          {card.invertColors
+                            ? (card.variation < 0 ? '↓' : '↑')
+                            : (isPositive ? '↑' : '↓')}{' '}
+                          {Math.abs(card.variation).toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-
-
-      {/* 6. Autres indicateurs (Alertes & Risques + Rentabilité) */}
-      <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700 mb-4">
-        <div className="flex items-center mb-3">
-          <span className="text-2xl mr-3 text-gray-400">📊</span>
-          <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100">Autres indicateurs</h3>
+            );
+          })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Alertes & Risques */}
-          <div>
-            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-900/50">
-                  <tr className="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider">
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[10px] sm:text-xs">Indicateur</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-right text-[10px] sm:text-xs">Ratio</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-right text-[10px] sm:text-xs">Seuil</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-center text-[10px] sm:text-xs">État</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                  {/* ANNUITÉ / CAF */}
-                  <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">
-                      Annuité / CAF
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
-                      {indicators.ratios && indicators.ratios.annuite_caf ? Number(indicators.ratios.annuite_caf.value).toFixed(2) : "--"}
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-400 text-[9px] sm:text-xs text-right whitespace-nowrap">
-                      &lt; 0.50
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      {indicators.ratios && indicators.ratios.annuite_caf && indicators.ratios.annuite_caf.alerte ? (
-                        <span className="text-red-700 text-[10px] sm:text-xs font-bold">⚠ Alerte</span>
-                      ) : (
-                        <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
-                      )}
-                    </td>
-                  </tr>
 
-                  {/* DETTE / CAF */}
-                  <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Dette LMT / CAF</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
-                      {indicators.ratios && indicators.ratios.dette_caf ? Number(indicators.ratios.dette_caf.value).toFixed(2) : "--"}
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
-                      &lt; 3.50
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      {indicators.ratios && indicators.ratios.dette_caf && indicators.ratios.dette_caf.alerte ? (
-                        <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
-                      ) : (
-                        <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
-                      )}
-                    </td>
-                  </tr>
+        {/* 6. Autres indicateurs (Alertes & Risques + Rentabilité) */}
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700 mb-4">
+          <div className="flex items-center mb-3">
+            <span className="text-2xl mr-3 text-gray-400">📊</span>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100">Autres indicateurs</h3>
+          </div>
 
-                  {/* RESULTAT NET / CA (Marge Nette) */}
-                  <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">
-                      R. Net / CA
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
-                      {indicators.ratios && indicators.ratios.marge_nette ? Number(indicators.ratios.marge_nette.value).toFixed(2) + "%" : "--"}
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
-                      ≥ 10%
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      {indicators.ratios && indicators.ratios.marge_nette ? (
-                        Number(indicators.ratios.marge_nette.value) < 5 ? (
-                          <span className="text-red-700 text-[10px] sm:text-xs font-bold">Faible</span>
-                        ) : Number(indicators.ratios.marge_nette.value) < 10 ? (
-                          <span className="text-yellow-700 text-[10px] sm:text-xs font-bold">Correct</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Alertes & Risques */}
+            <div>
+              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-900/50">
+                    <tr className="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[10px] sm:text-xs">Indicateur</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-right text-[10px] sm:text-xs">Ratio</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-right text-[10px] sm:text-xs">Seuil</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-center text-[10px] sm:text-xs">État</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                    {/* ANNUITÉ / CAF */}
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">
+                        Annuité / CAF
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
+                        {indicators.ratios && indicators.ratios.annuite_caf ? Number(indicators.ratios.annuite_caf.value).toFixed(2) : "--"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-400 text-[9px] sm:text-xs text-right whitespace-nowrap">
+                        &lt; 0.50
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
+                        {indicators.ratios && indicators.ratios.annuite_caf && indicators.ratios.annuite_caf.alerte ? (
+                          <span className="text-red-700 text-[10px] sm:text-xs font-bold">⚠ Alerte</span>
                         ) : (
-                          <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">Excel.</span>
-                        )
-                      ) : (
-                        <span className="text-gray-500 text-[10px] sm:text-xs font-bold">N/A</span>
-                      )}
-                    </td>
-                  </tr>
+                          <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
+                        )}
+                      </td>
+                    </tr>
 
-                  {/* CHARGE FINANCIERE / EBE */}
-                  <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">
-                      Ch. Fi. / EBE
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
-                      {indicators.ratios && indicators.ratios.fi_ebe ? Number(indicators.ratios.fi_ebe.value).toFixed(2) : "--"}
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
-                      &lt; 0.30
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      {indicators.ratios && indicators.ratios.fi_ebe && indicators.ratios.fi_ebe.alerte ? (
-                        <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
-                      ) : (
-                        <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
-                      )}
-                    </td>
-                  </tr>
+                    {/* DETTE / CAF */}
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Dette LMT / CAF</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
+                        {indicators.ratios && indicators.ratios.dette_caf ? Number(indicators.ratios.dette_caf.value).toFixed(2) : "--"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
+                        &lt; 3.50
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
+                        {indicators.ratios && indicators.ratios.dette_caf && indicators.ratios.dette_caf.alerte ? (
+                          <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
+                        ) : (
+                          <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
+                        )}
+                      </td>
+                    </tr>
 
-                  {/* CHARGE FI / CA */}
-                  <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Ch. Fi. / CA</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
-                      {indicators.ratios && indicators.ratios.fi_ca ? (Number(indicators.ratios.fi_ca.value) * 100).toFixed(2) + "%" : "--"}
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">&lt; 5%</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      {indicators.ratios && indicators.ratios.fi_ca && indicators.ratios.fi_ca.alerte ? (
-                        <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
-                      ) : (
-                        <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
-                      )}
-                    </td>
-                  </tr>
+                    {/* RESULTAT NET / CA (Marge Nette) */}
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">
+                        R. Net / CA
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
+                        {indicators.ratios && indicators.ratios.marge_nette ? Number(indicators.ratios.marge_nette.value).toFixed(2) + "%" : "--"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
+                        ≥ 10%
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
+                        {indicators.ratios && indicators.ratios.marge_nette ? (
+                          Number(indicators.ratios.marge_nette.value) < 5 ? (
+                            <span className="text-red-700 text-[10px] sm:text-xs font-bold">Faible</span>
+                          ) : Number(indicators.ratios.marge_nette.value) < 10 ? (
+                            <span className="text-yellow-700 text-[10px] sm:text-xs font-bold">Correct</span>
+                          ) : (
+                            <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">Excel.</span>
+                          )
+                        ) : (
+                          <span className="text-gray-500 text-[10px] sm:text-xs font-bold">N/A</span>
+                        )}
+                      </td>
+                    </tr>
 
-                  {/* GEARING (Dette CMLT / Fonds Propres) */}
-                  <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Gearing</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
-                      {indicators.ratios && indicators.ratios.gearing ? Number(indicators.ratios.gearing.value).toFixed(2) : "--"}
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
-                      &lt; 1.3
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      {indicators.ratios && indicators.ratios.gearing && indicators.ratios.gearing.alerte ? (
-                        <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
-                      ) : (
-                        <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
-                      )}
-                    </td>
-                  </tr>
+                    {/* CHARGE FINANCIERE / EBE */}
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">
+                        Ch. Fi. / EBE
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
+                        {indicators.ratios && indicators.ratios.fi_ebe ? Number(indicators.ratios.fi_ebe.value).toFixed(2) : "--"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
+                        &lt; 0.30
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
+                        {indicators.ratios && indicators.ratios.fi_ebe && indicators.ratios.fi_ebe.alerte ? (
+                          <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
+                        ) : (
+                          <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
+                        )}
+                      </td>
+                    </tr>
 
-                  {/* LEVERAGE BRUT (Dette / EBE) */}
-                  <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Leverage Brut</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
-                      {indicators.ratios && indicators.ratios.leverage ? Number(indicators.ratios.leverage.value).toFixed(2) : "--"}
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
-                      &lt; 3.5
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                      {indicators.ratios && indicators.ratios.leverage && indicators.ratios.leverage.alerte ? (
-                        <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
-                      ) : (
-                        <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
-                      )}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+                    {/* CHARGE FI / CA */}
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Ch. Fi. / CA</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
+                        {indicators.ratios && indicators.ratios.fi_ca ? (Number(indicators.ratios.fi_ca.value) * 100).toFixed(2) + "%" : "--"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">&lt; 5%</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
+                        {indicators.ratios && indicators.ratios.fi_ca && indicators.ratios.fi_ca.alerte ? (
+                          <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
+                        ) : (
+                          <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
+                        )}
+                      </td>
+                    </tr>
+
+                    {/* GEARING (Dette CMLT / Fonds Propres) */}
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Gearing</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
+                        {indicators.ratios && indicators.ratios.gearing ? Number(indicators.ratios.gearing.value).toFixed(2) : "--"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
+                        &lt; 1.3
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
+                        {indicators.ratios && indicators.ratios.gearing && indicators.ratios.gearing.alerte ? (
+                          <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
+                        ) : (
+                          <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
+                        )}
+                      </td>
+                    </tr>
+
+                    {/* LEVERAGE BRUT (Dette / EBE) */}
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Leverage Brut</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
+                        {indicators.ratios && indicators.ratios.leverage ? Number(indicators.ratios.leverage.value).toFixed(2) : "--"}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
+                        &lt; 3.5
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
+                        {indicators.ratios && indicators.ratios.leverage && indicators.ratios.leverage.alerte ? (
+                          <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
+                        ) : (
+                          <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Rentabilité */}
+            <div>
+              <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-900/50">
+                    <tr className="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider">
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[10px] sm:text-xs">Indicateur</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-right text-[10px] sm:text-xs">Valeur</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-right text-[10px] sm:text-xs">Variation</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Current Ratio</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-900 dark:text-gray-100 font-bold text-right text-[10px] sm:text-sm">
+                        {currentRatioData.current_ratio !== null ? Number(currentRatioData.current_ratio).toFixed(2) : '--'}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-[10px] sm:text-sm">
+                        {currentRatioData.variation !== null ? (
+                          <span className={currentRatioData.variation >= 0 ? 'text-emerald-600' : 'text-red-600'}>
+                            {currentRatioData.variation >= 0 ? '↗' : '↘'} {currentRatioData.variation >= 0 ? '+' : ''}{Number(currentRatioData.variation).toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">--</span>
+                        )}
+                      </td>
+                    </tr>
+
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Quick Ratio</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-900 dark:text-gray-100 font-bold text-right text-[10px] sm:text-sm">
+                        {quickRatioData.quick_ratio !== null ? Number(quickRatioData.quick_ratio).toFixed(2) : '--'}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-[10px] sm:text-sm">
+                        {quickRatioData.variation !== null ? (
+                          <span className={quickRatioData.variation >= 0 ? 'text-emerald-600' : 'text-red-600'}>
+                            {quickRatioData.variation >= 0 ? '↗' : '↘'} {quickRatioData.variation >= 0 ? '+' : ''}{Number(quickRatioData.variation).toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">--</span>
+                        )}
+                      </td>
+                    </tr>
+
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Gearing</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-900 dark:text-gray-100 font-bold text-right text-[10px] sm:text-sm">
+                        {gearingData.gearing !== null ? `${Number(gearingData.gearing).toFixed(2)}%` : '--'}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-[10px] sm:text-sm">
+                        {gearingData.variation !== null ? (
+                          <span className={gearingData.variation >= 0 ? 'text-red-600' : 'text-emerald-600'}>
+                            {gearingData.variation >= 0 ? '↗' : '↘'} {gearingData.variation >= 0 ? '+' : ''}{Number(gearingData.variation).toFixed(2)}%
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">--</span>
+                        )}
+                      </td>
+                    </tr>
+
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
-          {/* Rentabilité */}
-          <div>
-            <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-gray-50 dark:bg-gray-900/50">
-                  <tr className="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider">
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[10px] sm:text-xs">Indicateur</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-right text-[10px] sm:text-xs">Valeur</th>
-                    <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-right text-[10px] sm:text-xs">Variation</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
-                  <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Current Ratio</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-900 dark:text-gray-100 font-bold text-right text-[10px] sm:text-sm">
-                      {currentRatioData.current_ratio !== null ? Number(currentRatioData.current_ratio).toFixed(2) : '--'}
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-[10px] sm:text-sm">
-                      {currentRatioData.variation !== null ? (
-                        <span className={currentRatioData.variation >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                          {currentRatioData.variation >= 0 ? '↗' : '↘'} {currentRatioData.variation >= 0 ? '+' : ''}{Number(currentRatioData.variation).toFixed(2)}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">--</span>
-                      )}
-                    </td>
-                  </tr>
+        </div>
+        {/* 3. Graphique d'Évolution du Chiffre d'Affaires */}
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300 dark:border-gray-700">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Évolution du Chiffre d'Affaires</h3>
+          <LineChartCAEvolution globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+        </div>
 
-                  <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Quick Ratio</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-900 dark:text-gray-100 font-bold text-right text-[10px] sm:text-sm">
-                      {quickRatioData.quick_ratio !== null ? Number(quickRatioData.quick_ratio).toFixed(2) : '--'}
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-[10px] sm:text-sm">
-                      {quickRatioData.variation !== null ? (
-                        <span className={quickRatioData.variation >= 0 ? 'text-emerald-600' : 'text-red-600'}>
-                          {quickRatioData.variation >= 0 ? '↗' : '↘'} {quickRatioData.variation >= 0 ? '+' : ''}{Number(quickRatioData.variation).toFixed(2)}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">--</span>
-                      )}
-                    </td>
-                  </tr>
+        {/* 3b. Graphique d'Évolution des Métriques Financières (Catégorisé) */}
+        <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300 dark:border-gray-700">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Évolution des Métriques Financières</h3>
+          <LineChartCategorized globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+        </div>
 
-                  <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Gearing</td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-900 dark:text-gray-100 font-bold text-right text-[10px] sm:text-sm">
-                      {gearingData.gearing !== null ? `${Number(gearingData.gearing).toFixed(2)}%` : '--'}
-                    </td>
-                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-[10px] sm:text-sm">
-                      {gearingData.variation !== null ? (
-                        <span className={gearingData.variation >= 0 ? 'text-red-600' : 'text-emerald-600'}>
-                          {gearingData.variation >= 0 ? '↗' : '↘'} {gearingData.variation >= 0 ? '+' : ''}{Number(gearingData.variation).toFixed(2)}%
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">--</span>
-                      )}
-                    </td>
-                  </tr>
-
-                </tbody>
-              </table>
-            </div>
+        {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
+        {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
+          <div className="w-full">
+            <BarCharts globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+          </div>
+          <div className="w-full">
+            <TvaBarChart globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
           </div>
         </div>
+        {/* 5. Trois Camemberts: Produits, Charges, et Comparaison */}
+        <ThreePieCharts globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
 
-        {/* Bouton Analyser en bas */}
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={() => setIsIndicatorsModalOpen(true)}
-            className="inline-flex items-center px-4 py-2.5 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            Analyser en détails
-          </button>
-        </div>
+        {/* 8. Répartition par Journal */}
+        {/* 8. Répartition par Journal */}
+        <JournalRepartition
+          globalStartDate={globalDateStart}
+          globalEndDate={globalDateEnd}
+        />
       </div>
-      {/* 3. Graphique d'Évolution du Chiffre d'Affaires */}
-      <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300 dark:border-gray-700">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Évolution du Chiffre d'Affaires</h3>
-        <LineChartCAEvolution />
-      </div>
-
-      {/* 3b. Graphique d'Évolution des Métriques Financières (Catégorisé) */}
-      <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300 dark:border-gray-700">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Évolution des Métriques Financières</h3>
-        <LineChartCategorized globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
-      </div>
-
-      {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
-      {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
-        <div className="w-full">
-          <BarCharts globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
-        </div>
-        <div className="w-full">
-          <TvaBarChart globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
-        </div>
-      </div>
-      {/* 5. Trois Camemberts: Produits, Charges, et Comparaison */}
-      <ThreePieCharts globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
-
-      {/* 8. Répartition par Journal */}
-      {/* 8. Répartition par Journal */}
-      <JournalRepartition
-        globalStartDate={globalDateStart}
-        globalEndDate={globalDateEnd}
-      />
 
       {/* La modale de la Balance */}
       <BalanceModal
@@ -1337,7 +1352,7 @@ const Dashboard = () => {
           </div>
         </div>
       )}
-    </div >
+    </div>
   );
 };
 

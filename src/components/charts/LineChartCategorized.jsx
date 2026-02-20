@@ -10,7 +10,6 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { BASE_URL_API } from '../../constants/globalConstants';
 import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
@@ -18,17 +17,17 @@ import LoadingOverlay from '../../components/layout/LoadingOverlay';
 // Configuration des catégories et métriques
 const METRICS_CONFIG = {
   'Rentabilité': [
-    { key: 'roe', name: 'ROE', endpoint: '/evolution-roe/', color: '#3b82f6', dataKey: 'roe', unit: '%', useGlobalDates: false },
-    { key: 'roa', name: 'ROA', endpoint: '/evolution-roa/', color: '#10b981', dataKey: 'roa', unit: '%', useGlobalDates: false },
-    { key: 'marge_op', name: 'Marge Opérationnelle', endpoint: '/evolution-marge-operationnelle/', color: '#ec4899', dataKey: 'marge_op', unit: '%', useGlobalDates: false },
+    { key: 'roe', name: 'ROE', endpoint: '/evolution-roe/', color: '#3b82f6', dataKey: 'roe', unit: '%', useGlobalDates: true },
+    { key: 'roa', name: 'ROA', endpoint: '/evolution-roa/', color: '#10b981', dataKey: 'roa', unit: '%', useGlobalDates: true },
+    { key: 'marge_op', name: 'Marge Opérationnelle', endpoint: '/evolution-marge-operationnelle/', color: '#ec4899', dataKey: 'marge_op', unit: '%', useGlobalDates: true },
   ],
   'Trésorerie': [
-    { key: 'tresorerie', name: 'Trésorerie', endpoint: '/evolution-tresorerie/', color: '#06b6d4', dataKey: 'montant', unit: 'Ar', useGlobalDates: false },
-    { key: 'caf', name: 'CAF', endpoint: '/evolution-caf/', color: '#10b981', dataKey: 'montant', unit: 'Ar', useGlobalDates: false },
+    { key: 'tresorerie', name: 'Trésorerie', endpoint: '/evolution-tresorerie/', color: '#06b6d4', dataKey: 'montant', unit: 'Ar', useGlobalDates: true },
+    { key: 'caf', name: 'CAF', endpoint: '/evolution-caf/', color: '#10b981', dataKey: 'montant', unit: 'Ar', useGlobalDates: true },
   ],
   'Marges': [
-    { key: 'marge_brute', name: 'Marge Brute', endpoint: '/evolution-marges/', color: '#f97316', dataKey: 'marge_brute', unit: '%', useGlobalDates: false },
-    { key: 'marge_nette', name: 'Marge Nette', endpoint: '/evolution-marges/', color: '#a855f7', dataKey: 'marge_nette', unit: '%', useGlobalDates: false },
+    { key: 'marge_brute', name: 'Marge Brute', endpoint: '/evolution-marges/', color: '#f97316', dataKey: 'marge_brute', unit: '%', useGlobalDates: true },
+    { key: 'marge_nette', name: 'Marge Nette', endpoint: '/evolution-marges/', color: '#a855f7', dataKey: 'marge_nette', unit: '%', useGlobalDates: true },
   ],
   'Activité': [
     { key: 'delais_clients', name: 'Délais Clients', endpoint: '/evolution-delais-clients/', color: '#3b82f6', dataKey: 'delais_jours', unit: 'j', useGlobalDates: true },
@@ -47,6 +46,7 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
   const [selectedMetrics, setSelectedMetrics] = useState(['roe', 'roa', 'marge_op']);
   const [evolutionData, setEvolutionData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dateRangeDisplay, setDateRangeDisplay] = useState('');
   const projectId = useProjectId();
 
   // Récupérer les métriques de la catégorie sélectionnée
@@ -70,7 +70,7 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
 
         // Récupérer les données pour chaque métrique en parallèle
         const promises = metricsToFetch.map(metric => {
-          let url = `${BASE_URL_API}${metric.endpoint}`;
+          let url = metric.endpoint;
 
           // Si la métrique utilise les dates globales, les ajouter à l'URL
           if (metric.useGlobalDates && globalDateStart && globalDateEnd) {
@@ -112,6 +112,15 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
           });
 
           setEvolutionData(combined);
+
+          // Formater la plage de dates pour l'affichage
+          if (globalDateStart && globalDateEnd) {
+            const sObj = new Date(globalDateStart);
+            const eObj = new Date(globalDateEnd);
+            const startDateStr = sObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+            const endDateStr = eObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+            setDateRangeDisplay(`${startDateStr} - ${endDateStr}`);
+          }
         }
       } catch (error) {
         if (error.name !== 'AbortError') {
@@ -162,6 +171,15 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
 
   return (
     <div className="w-full">
+      {/* Date Range Display */}
+      {!loading && dateRangeDisplay && (
+        <div className="mb-3 pl-1 sm:pl-2">
+          <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
+            {dateRangeDisplay}
+          </p>
+        </div>
+      )}
+
       {/* Sélection de catégorie */}
       {/* Sélection de catégorie */}
       <div className="mb-2 sm:mb-4 flex gap-1 sm:gap-2 flex-wrap justify-center sm:justify-start">

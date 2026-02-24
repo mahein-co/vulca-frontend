@@ -183,16 +183,16 @@ export default function IndexChatbotPage({ close }) {
       if (response?.suggested_filter) {
         console.log("🎯 Filtre suggéré détecté:", response.suggested_filter);
         const { type, value, label } = response.suggest_filter || response.suggested_filter;
-        
+
         // On importe dispatch et setActiveFilter (nécessite l'ajout en haut du fichier)
         // dispatch(setActiveFilter({ filterType: type, filterValue: value, filterLabel: label, page: "dashboard" }));
-        
+
         // NOTE: dispatch est déjà disponible via un hook que je vais ajouter plus haut
-        dispatch(setActiveFilter({ 
-          filterType: type, 
-          filterValue: value, 
-          filterLabel: label, 
-          page: "dashboard" 
+        dispatch(setActiveFilter({
+          filterType: type,
+          filterValue: value,
+          filterLabel: label,
+          page: "dashboard"
         }));
 
         Swal.fire({
@@ -296,10 +296,10 @@ export default function IndexChatbotPage({ close }) {
 
   // EXPLICIT STYLING - Robust for all devices
   const containerStyle = isFullScreen
-    ? "fixed inset-0 z-[900] flex flex-col md:flex-row shadow-2xl overflow-hidden"
+    ? "fixed inset-0 z-[10005] flex flex-col md:flex-row shadow-2xl overflow-hidden"
     : isMobile
-      ? "fixed inset-0 z-[900] flex flex-col overflow-hidden shadow-2xl h-[100vh]"
-      : "fixed bottom-20 right-6 z-[900] w-[420px] max-w-[calc(100vw-3rem)] h-[80vh] max-h-[800px] flex flex-col rounded-2xl border overflow-hidden shadow-2xl transition-all duration-300";
+      ? "fixed inset-0 z-[10005] flex flex-col overflow-hidden shadow-2xl h-[100vh]"
+      : "fixed bottom-20 right-6 z-[10005] w-[420px] max-w-[calc(100vw-3rem)] h-[80vh] max-h-[800px] flex flex-col rounded-2xl border overflow-hidden shadow-2xl transition-all duration-300";
 
   const bgColor = isDarkMode ? "#0f172a" : "#ffffff";
   const textColor = isDarkMode ? "#f8fafc" : "#1e293b";

@@ -61,10 +61,16 @@ const FilterManager = ({ page = "dashboard", rightAction = null }) => {
     }
   };
 
-  // NOUVEAU: Auto-Apply quand les dates changent
+  // Ref pour tracker les dernières dates appliquées et éviter les rechargements inutiles
+  const lastAppliedRef = React.useRef({ start: null, end: null, page: null });
+
+  // Auto-Apply UNIQUEMENT si les dates ont vraiment changé (pas sur simple re-render parent)
   React.useEffect(() => {
+    const last = lastAppliedRef.current;
+    if (last.start === dateStart && last.end === dateEnd && last.page === page) return;
+    lastAppliedRef.current = { start: dateStart, end: dateEnd, page };
     handleApplyFilter(dateStart, dateEnd);
-  }, [dateStart, dateEnd, page]); // Se déclenche au changement de n'importe quelle date
+  }, [dateStart, dateEnd, page]);
 
   const handleClearFilter = () => {
     dispatch(clearActiveFilter(page));

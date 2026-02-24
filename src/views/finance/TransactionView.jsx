@@ -656,7 +656,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                 ) : (
                                     <>
                                         <Sparkles size={16} />
-                                        <span>Analyser</span>
+                                        <span>Analyse IA</span>
                                     </>
                                 )}
                             </button>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { selectActiveFilter, setActiveFilter, setCurrentPage } from '../../states/dashboard/dashboardFilterSlice';
+import { useDispatch } from 'react-redux';
+import { setCurrentPage } from '../../states/dashboard/dashboardFilterSlice';
 import BalanceModal from '../balance/BalanceModal';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
 import FilterManager from '../../components/dashboard/FilterManager';
@@ -358,16 +358,6 @@ const Dashboard = () => {
 
   const [loadingIndicators, setLoadingIndicators] = useState(true);
 
-  // NOUVEAU: Écouter le filtre Redux pour mettre à jour les graphiques locaux
-  const activeFilter = useSelector(selectActiveFilter);
-
-  useEffect(() => {
-    if (activeFilter?.type === 'date' && activeFilter.value) {
-      if (activeFilter.value.start) setGlobalDateStart(activeFilter.value.start);
-      if (activeFilter.value.end) setGlobalDateEnd(activeFilter.value.end);
-    }
-  }, [activeFilter]);
-
   // État pour le ROE
   const [roeData, setRoeData] = useState({
     roe: null,
@@ -700,7 +690,7 @@ const Dashboard = () => {
               <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
-              Analyse expert
+              Analyse IA
             </button>
           }
         />
@@ -1079,7 +1069,7 @@ const Dashboard = () => {
                 <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 sm:p-6 rounded-lg border-2 border-purple-300 dark:border-purple-700 shadow-lg">
                   <h4 className="text-lg sm:text-xl font-bold text-purple-800 dark:text-purple-300 mb-2 flex items-center">
                     <span className="text-2xl mr-2">📊</span>
-                    Analyse Expert-Comptable
+                    Analyse IA
                   </h4>
 
                   {/* Affichage de la période analysée */}

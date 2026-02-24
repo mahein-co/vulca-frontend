@@ -143,6 +143,17 @@ const FormModal = ({ children, onClose }) => (
     </div>
 );
 
+// ContentWrapper sorti en dehors de App pour éviter la création d'un nouveau composant à chaque render
+const ContentWrapper = ({ children }) => (
+    <div className="pt-14 p-4 max-w-full mx-auto">{children}</div>
+);
+
+// Chatbot rendu dans un composant séparé pour isoler le useSelector de isChatModalOpen
+const ChatbotContainer = React.memo(({ handleCloseChat }) => {
+    const isChatModalOpen = useSelector((state) => state.chatbot.isChatModalOpen);
+    return isChatModalOpen ? <IndexChatbotPage close={handleCloseChat} /> : null;
+});
+
 
 
 
@@ -157,7 +168,6 @@ function App() {
     });
 
     const dispatch = useDispatch();
-    const isChatModalOpen = useSelector((state) => state.chatbot.isChatModalOpen);
 
     // Subscribe to Redux auth state
     const userAuth = useSelector((state) => state.user.userAuthenticated);
@@ -312,11 +322,6 @@ function App() {
     };
 
     const renderPage = () => {
-        // Wrapper par défaut avec padding pour les vues internes qui ne gèrent pas le Header fixe
-        const ContentWrapper = ({ children }) => (
-            <div className="pt-14 p-4 max-w-full mx-auto">{children}</div>
-        );
-
         switch (currentPage) {
             case 'dashboard':
                 return <ContentWrapper><Dashboard /></ContentWrapper>;
@@ -410,10 +415,8 @@ function App() {
                 </div>
             )}
 
-            {/* CHATBOT MODAL */}
-            {isChatModalOpen && (
-                <IndexChatbotPage close={handleCloseChat} />
-            )}
+            {/* CHATBOT MODAL - dans un composant isolé pour ne pas re-rendre App */}
+            <ChatbotContainer handleCloseChat={handleCloseChat} />
         </div>
     );
 }

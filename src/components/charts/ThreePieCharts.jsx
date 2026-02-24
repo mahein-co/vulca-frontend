@@ -137,7 +137,7 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
     if (!data || data.length === 0) return null;
 
     const total = data.reduce((sum, item) => sum + item.value, 0);
-    const formatCurrency = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(val).replace('MGA', 'Ar');
+    const formatCurrency = (val) => new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(val).replace(/\u202f/g, ' ').replace(/\u00a0/g, ' ') + ' Ar';
 
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col h-full w-full relative overflow-hidden">

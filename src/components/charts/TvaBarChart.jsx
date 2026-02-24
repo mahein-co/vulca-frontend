@@ -15,7 +15,7 @@ import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 import LoadingOverlay from '../layout/LoadingOverlay';
 
-export default function TvaBarChart({ globalDateStart, globalDateEnd }) {
+export default function TvaBarChart({ globalDateStart, globalDateEnd, onLoad }) {
   const { isDarkMode } = useTheme();
   const [tvaData, setTvaData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +90,7 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd }) {
       } finally {
         if (!abortController.signal.aborted) {
           setLoading(false);
+          if (onLoad) onLoad(false);
         }
       }
     };

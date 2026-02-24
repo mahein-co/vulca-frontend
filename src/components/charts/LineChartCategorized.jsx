@@ -40,7 +40,7 @@ const METRICS_CONFIG = {
   ]
 };
 
-export default function LineChartCategorized({ globalDateStart, globalDateEnd }) {
+export default function LineChartCategorized({ globalDateStart, globalDateEnd, onLoad }) {
   const { isDarkMode } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState('Rentabilité');
   const [selectedMetrics, setSelectedMetrics] = useState(['roe', 'roa', 'marge_op']);
@@ -129,6 +129,7 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd })
       } finally {
         if (!abortController.signal.aborted) {
           setLoading(false);
+          if (onLoad) onLoad(false);
         }
       }
     };

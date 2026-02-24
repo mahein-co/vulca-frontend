@@ -19,7 +19,7 @@ const COLORS_PRODUITS = ['#10b981', '#059669', '#047857', '#065f46', '#064e3b'];
 const COLORS_CHARGES = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d'];
 const COLORS_COMPARISON = ['#3b82f6', '#ef4444']; // Bleu pour Produits, Rouge pour Charges
 
-export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
+export default function ThreePieCharts({ globalDateStart, globalDateEnd, onLoad }) {
   const { isDarkMode } = useTheme();
   const [produitsData, setProduitsData] = useState([]);
   const [chargesData, setChargesData] = useState([]);
@@ -33,6 +33,9 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
   const COLORS_COMPARISON_NEW = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b']; // Bleu, Rouge, Vert, Orange
 
   useEffect(() => {
+    // Reset loading state on filter change
+    setLoading(true);
+
     // Construire l'URL avec les filtres de date
     let params = '?';
     if (globalDateStart) params += `date_start=${globalDateStart}&`;
@@ -113,10 +116,12 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
         setChargesData(charges);
         setComparisonData(comparison);
         setLoading(false);
+        if (onLoad) onLoad(false);
       })
       .catch(err => {
         console.error("Erreur lors du chargement des répartitions", err);
         setLoading(false);
+        if (onLoad) onLoad(false);
       });
   }, [globalDateStart, globalDateEnd, projectId]);
 
@@ -216,11 +221,18 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd }) {
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300 dark:border-gray-700">
-      <div className="flex items-center mb-6">
-        <span className="text-2xl mr-3">📊</span>
-        <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100">
-          Répartitions Financières
-        </h3>
+      <div className="mb-6">
+        <div>
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center">
+            <span className="text-2xl mr-3">📊</span>
+            Répartitions Financières
+          </h3>
+          {globalDateStart && globalDateEnd && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-11">
+              {new Date(globalDateStart).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} - {new Date(globalDateEnd).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className={`grid ${gridClass} gap-6`}>

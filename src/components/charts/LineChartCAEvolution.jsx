@@ -15,7 +15,7 @@ import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 import LoadingOverlay from '../layout/LoadingOverlay';
 
-export default function LineChartCAEvolution({ globalDateStart, globalDateEnd }) {
+export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, onLoad }) {
   const { isDarkMode } = useTheme();
   const [evolutionData, setEvolutionData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,6 +92,7 @@ export default function LineChartCAEvolution({ globalDateStart, globalDateEnd })
       } finally {
         if (!abortController.signal.aborted) {
           setLoading(false);
+          if (onLoad) onLoad(false);
         }
       }
     };

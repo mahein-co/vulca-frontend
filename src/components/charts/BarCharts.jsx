@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 import LoadingOverlay from '../layout/LoadingOverlay';
 
-export default function BarCharts({ globalDateStart, globalDateEnd }) {
+export default function BarCharts({ globalDateStart, globalDateEnd, onLoad }) {
   const { isDarkMode } = useTheme();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,10 +64,12 @@ export default function BarCharts({ globalDateStart, globalDateEnd }) {
         }));
         setData(formattedData);
         setLoading(false);
+        if (onLoad) onLoad(false);
       })
       .catch(err => {
         console.error("Erreur lors de la récupération du Top 10 comptes", err);
         setLoading(false);
+        if (onLoad) onLoad(false);
       });
   }, [projectId, globalDateStart, globalDateEnd]);
 

@@ -30,7 +30,7 @@ const formatCurrencyHelper = (amount, decimals = 2) => {
 
 // --- 2. Composants de Support ---
 
-const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
+const JournalRepartition = ({ globalStartDate, globalEndDate, onLoad }) => {
   const [totalFormatted, setTotalFormatted] = useState('0 Ar');
   const [totalGlobal, setTotalGlobal] = useState(0);
   const [journals, setJournals] = useState([]);
@@ -62,7 +62,10 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
         setTotalGlobal(data.total_global || 0);
         setTotalFormatted(`${formatCurrencyHelper(data.total_global || 0)} Ar`);
       })
-      .catch(err => console.error("Erreur chargement répartition journaux:", err));
+      .catch(err => console.error("Erreur chargement répartition journaux:", err))
+      .finally(() => {
+        if (onLoad) onLoad(false);
+      });
   }, [globalStartDate, globalEndDate, projectId]);
 
   // 2. Charger le DÉTAIL quand un journal est sélectionné (avec pagination, date et recherche)
@@ -95,8 +98,15 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
   const totalPages = Math.ceil(totalEntriesCount / itemsPerPage);
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700">
-      <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">Répartition par journal</h3>
+    <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700 h-full">
+      <div className="mb-4">
+        <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100">Répartition par journal</h3>
+        {globalStartDate && globalEndDate && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            {new Date(globalStartDate).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} - {new Date(globalEndDate).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+          </p>
+        )}
+      </div>
       {journals.map((journal) => {
         // Mapping des couleurs du backend vers les classes Tailwind
         const colorMap = {
@@ -316,6 +326,34 @@ const Dashboard = () => {
   const dispatch = useDispatch(); // NOUVEAU: Indispensable pour Redux
   const activeFilter = useSelector(selectActiveFilter);
 
+  // --- NOUVEAU: Orchestration du chargement global ---
+  const [loadingStates, setLoadingStates] = useState({
+    main: true,
+    ca: true,
+    metrics: true,
+    bar: true,
+    tva: true,
+    pie: true,
+    journals: true
+  });
+
+  const isGlobalLoading = Object.values(loadingStates).some(v => v);
+
+  const handleLoadStatus = (key) => (isLoading) => {
+    setLoadingStates(prev => ({ ...prev, [key]: isLoading }));
+  };
+
+  // Helper pour adapter la taille de police des grands nombres
+  const getAdaptiveFontSize = (value) => {
+    if (!value) return "text-[10px] sm:text-base";
+    const valStr = String(value);
+    const len = valStr.length;
+    if (len > 22) return "text-[8px] sm:text-[10px]";
+    if (len > 18) return "text-[9px] sm:text-xs";
+    if (len > 14) return "text-[10px] sm:text-sm";
+    return "text-[10px] sm:text-base";
+  };
+
 
 
 
@@ -329,6 +367,13 @@ const Dashboard = () => {
   const [globalDateStart, setGlobalDateStart] = useState(defaultStartDate.toISOString().split('T')[0]);
   const [globalDateEnd, setGlobalDateEnd] = useState(defaultEndDate.toISOString().split('T')[0]);
   const projectId = useProjectId();
+
+  // Reset loading states on date change
+  useEffect(() => {
+    setLoadingStates({
+      main: true, ca: true, metrics: true, bar: true, tva: true, pie: true, journals: true
+    });
+  }, [globalDateStart, globalDateEnd]);
 
   // NOUVEAU: Synchroniser la page actuelle pour le chatbot
   useEffect(() => {
@@ -365,7 +410,7 @@ const Dashboard = () => {
     }
   });
 
-  const [loadingIndicators, setLoadingIndicators] = useState(true);
+
 
   // État pour le ROE
   const [roeData, setRoeData] = useState({
@@ -438,7 +483,7 @@ const Dashboard = () => {
 
   // CHARGEMENT OPTIMISÉ (APPEL UNIQUE AU BACKEND)
   useEffect(() => {
-    setLoadingIndicators(true);
+    setLoadingStates(prev => ({ ...prev, main: true }));
 
     let url = `/dashboard/indicators/?`;
     if (globalDateStart) url += `date_start=${globalDateStart}&`;
@@ -483,7 +528,7 @@ const Dashboard = () => {
       .catch(err => {
         console.error("Erreur chargement indicateurs dashboard:", err);
       })
-      .finally(() => setLoadingIndicators(false));
+      .finally(() => setLoadingStates(prev => ({ ...prev, main: false })));
   }, [globalDateStart, globalDateEnd, projectId]);
 
 
@@ -684,8 +729,10 @@ const Dashboard = () => {
     <div className="px-4 sm:px-0 bg-gradient-to-br from-gray-50 to-slate-50 dark:from-gray-900 dark:to-gray-900 min-h-screen transition-colors duration-200">
 
 
-      {/* Loader Global */}
-      {loadingIndicators && <LoadingOverlay message="Mise à jour du tableau de bord..." />}
+      {/* Loader Global Syncé */}
+      {isGlobalLoading && (
+        <LoadingOverlay message="Mise à jour du tableau de bord..." />
+      )}
 
       <div className="relative z-[10001]">
         <FilterManager
@@ -732,7 +779,7 @@ const Dashboard = () => {
                       <p className="text-[9px] sm:text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wide mb-0.5 sm:truncate">
                         {card.title}
                       </p>
-                      <p className="text-[10px] sm:text-sm font-extrabold text-indigo-700 dark:text-indigo-400 mb-0.5 whitespace-normal break-words leading-tight">
+                      <p className={`${getAdaptiveFontSize(card.value)} font-extrabold text-indigo-700 dark:text-indigo-400 mb-0.5 whitespace-normal break-words leading-tight`}>
                         {card.value}
                       </p>
                     </div>
@@ -986,33 +1033,52 @@ const Dashboard = () => {
         {/* 3. Graphique d'Évolution du Chiffre d'Affaires */}
         <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300 dark:border-gray-700">
           <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Évolution du Chiffre d'Affaires</h3>
-          <LineChartCAEvolution globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+          <LineChartCAEvolution
+            globalDateStart={globalDateStart}
+            globalDateEnd={globalDateEnd}
+            onLoad={handleLoadStatus('ca')}
+          />
         </div>
 
         {/* 3b. Graphique d'Évolution des Métriques Financières (Catégorisé) */}
         <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300 dark:border-gray-700">
           <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 mb-3">Évolution des Métriques Financières</h3>
-          <LineChartCategorized globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+          <LineChartCategorized
+            globalDateStart={globalDateStart}
+            globalDateEnd={globalDateEnd}
+            onLoad={handleLoadStatus('metrics')}
+          />
         </div>
 
-        {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
         {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
           <div className="w-full">
-            <BarCharts globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+            <BarCharts
+              globalDateStart={globalDateStart}
+              globalDateEnd={globalDateEnd}
+              onLoad={handleLoadStatus('bar')}
+            />
           </div>
           <div className="w-full">
-            <TvaBarChart globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+            <TvaBarChart
+              globalDateStart={globalDateStart}
+              globalDateEnd={globalDateEnd}
+              onLoad={handleLoadStatus('tva')}
+            />
           </div>
         </div>
         {/* 5. Trois Camemberts: Produits, Charges, et Comparaison */}
-        <ThreePieCharts globalDateStart={globalDateStart} globalDateEnd={globalDateEnd} />
+        <ThreePieCharts
+          globalDateStart={globalDateStart}
+          globalDateEnd={globalDateEnd}
+          onLoad={handleLoadStatus('pie')}
+        />
 
-        {/* 8. Répartition par Journal */}
         {/* 8. Répartition par Journal */}
         <JournalRepartition
           globalStartDate={globalDateStart}
           globalEndDate={globalDateEnd}
+          onLoad={handleLoadStatus('journals')}
         />
       </div>
 

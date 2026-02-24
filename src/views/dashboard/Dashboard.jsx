@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { setCurrentPage } from '../../states/dashboard/dashboardFilterSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { setCurrentPage, selectActiveFilter } from '../../states/dashboard/dashboardFilterSlice';
 import BalanceModal from '../balance/BalanceModal';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
 import FilterManager from '../../components/dashboard/FilterManager';
@@ -314,6 +314,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate }) => {
 
 const Dashboard = () => {
   const dispatch = useDispatch(); // NOUVEAU: Indispensable pour Redux
+  const activeFilter = useSelector(selectActiveFilter);
 
 
 
@@ -333,6 +334,14 @@ const Dashboard = () => {
   useEffect(() => {
     dispatch(setCurrentPage("dashboard"));
   }, [dispatch]);
+
+  // RÉTABLISSEMENT : Synchroniser les dates quand le filtre change dans le header (Redux)
+  useEffect(() => {
+    if (activeFilter?.type === 'date' && activeFilter.value) {
+      if (activeFilter.value.start) setGlobalDateStart(activeFilter.value.start);
+      if (activeFilter.value.end) setGlobalDateEnd(activeFilter.value.end);
+    }
+  }, [activeFilter]);
 
   // Chargement automatique de la plage de dates disponible (Min/Max des journaux)
 

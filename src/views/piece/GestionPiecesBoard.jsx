@@ -350,7 +350,7 @@ export default function GestionPiecesBoard() {
                    MOBILE : flex-row + overflow-x-auto + snap-x (Carrousel horizontal)
                    DESKTOP : flex-row + overflow-x-auto (Reste similaire mais plus large)
                 */}
-                <div className="flex flex-row items-stretch space-x-4 h-full overflow-x-auto overflow-y-hidden snap-x snap-mandatory pb-6">
+                <div className="flex flex-row items-stretch gap-4 h-full overflow-x-auto overflow-y-hidden pb-6">
                     {COLUMNS.map((column) => {
                         const pieces = groupedDocuments[column.key] || [];
                         const piecesCount = pieces.length;
@@ -358,7 +358,7 @@ export default function GestionPiecesBoard() {
                         return (
                             <div
                                 key={column.key}
-                                className="flex-shrink-0 w-[85vw] sm:w-[350px] bg-gray-100/50 dark:bg-gray-800/50 rounded-2xl p-4 flex flex-col h-full border border-gray-200/60 dark:border-gray-700 snap-center"
+                                className="flex-1 min-w-[250px] bg-gray-100/50 dark:bg-gray-800/50 rounded-2xl p-4 flex flex-col h-full border border-gray-200/60 dark:border-gray-700"
                             >
                                 <div className={`flex items-center justify-between pb-3 mb-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0`}>
                                     <h3 className="text-sm font-bold text-gray-700 dark:text-gray-300 uppercase tracking-tight">{column.label}</h3>

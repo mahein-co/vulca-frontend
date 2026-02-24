@@ -78,7 +78,6 @@ const FilterManager = ({ page = "dashboard", rightAction = null }) => {
           <div className="flex items-center gap-2">
             <span className="text-lg">📊</span>
             <p className="font-semibold text-gray-800 dark:text-gray-100">Tableau de bord</p>
-            {isLoadingData && <span className="text-xs text-blue-500 animate-pulse">⏳ Calcul...</span>}
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400">Période d'exercice</p>
         </div>

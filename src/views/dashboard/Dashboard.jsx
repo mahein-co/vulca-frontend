@@ -1027,7 +1027,7 @@ const Dashboard = () => {
 
       {/* Modale d'Analyse des Indicateurs */}
       {isIndicatorsModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex justify-center items-start p-2 sm:p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-[10010] flex justify-center items-start p-2 sm:p-4">
           <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl my-4 sm:my-8 flex flex-col border-t-2 border-emerald-500 dark:border-emerald-600">
 
             {/* En-tête */}

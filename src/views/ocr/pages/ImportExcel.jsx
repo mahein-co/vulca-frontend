@@ -104,7 +104,7 @@ const ExcelDocumentViewer = ({ file, onFileDrop, isDragActive, onFileSelect, onR
                         </svg>
                     </div>
                     <p className="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-200 mb-1">
-                        Glissez vos fichiers pour analyse par IA
+                        Glissez vos fichiers Excel ici
                     </p>
                     <p className="text-sm sm:text-md text-gray-500 dark:text-gray-400 mt-1 px-2">
                         ou <span className="text-gray-700 dark:text-gray-300 font-bold hover:underline">cliquez pour parcourir</span>

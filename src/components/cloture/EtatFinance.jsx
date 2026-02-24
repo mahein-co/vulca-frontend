@@ -80,9 +80,9 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio }) => {
         <div className={`p-1 rounded-full ${cardText} bg-white border ${cardBorder} shadow group-hover:scale-110 transition-transform duration-200`}>
           <Icon size={16} />
         </div>
-        <div className="flex-1">
-          <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wide mb-0.5">{title}</p>
-          <p className={`text-xs font-extrabold ${cardText} mb-0.5`}>{value}</p>
+        <div className="flex-1 min-w-0">
+          <p className="text-[8px] sm:text-[9px] text-gray-500 font-bold uppercase tracking-tight mb-0.5 whitespace-normal leading-tight">{title}</p>
+          <p className={`text-[10px] sm:text-xs font-extrabold ${cardText} mb-0.5 whitespace-normal break-words leading-tight`}>{value}</p>
         </div>
       </div>
       {title === 'Résultat Net' && variationMessage && (

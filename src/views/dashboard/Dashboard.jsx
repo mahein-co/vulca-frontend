@@ -11,6 +11,27 @@ import PieChartRepartition from '../../components/charts/PieChartRepartition';
 import LineChartCAEvolution from '../../components/charts/LineChartCAEvolution';
 import LineChartCategorized from '../../components/charts/LineChartCategorized';
 import ThreePieCharts from '../../components/charts/ThreePieCharts';
+import {
+  Sparkles,
+  TrendingUp,
+  BarChart3,
+  BarChart2,
+  PieChart,
+  Calendar,
+  AlertCircle,
+  XCircle,
+  Loader,
+  LayoutDashboard,
+  Target,
+  Zap,
+  CheckCircle,
+  Briefcase,
+  DollarSign,
+  Droplets,
+  Activity,
+  ChevronRight,
+  ChevronLeft
+} from 'lucide-react';
 import { fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 
@@ -1092,46 +1113,24 @@ const Dashboard = () => {
 
       {/* Modale d'Analyse des Indicateurs */}
       {isIndicatorsModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-[10010] flex justify-center items-start p-2 sm:p-4">
-          <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-6xl my-4 sm:my-8 flex flex-col border-t-2 border-emerald-500 dark:border-emerald-600">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10010] flex justify-center items-center p-2 sm:p-4 animate-fadeIn">
+          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden border border-purple-100 dark:border-purple-900/30">
 
-            {/* En-tête */}
-            <div className="flex-none p-4 sm:p-5 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-white dark:bg-gray-800 rounded-t-lg sticky top-0 z-10">
-              <div className="flex items-center">
-                <span className="text-2xl sm:text-3xl mr-3">📊</span>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">Analyse des Indicateurs Financiers</h3>
+            {/* En-tête Modale - Style TransactionView */}
+            <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
+              <div>
+                <h3 className="text-lg sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 flex items-center">
+                  <Sparkles className="mr-2 sm:mr-3 text-purple-600 dark:text-purple-400 shrink-0" size={24} />
+                  <span className="truncate">Analyse des Indicateurs Financiers</span>
+                </h3>
+                <p className="text-[10px] sm:text-sm text-purple-600/70 dark:text-purple-400/70 font-medium">Auto-analyse intelligente de votre performance</p>
               </div>
               <div className="flex items-center gap-2">
-                {/* Bouton Analyser avec IA */}
-                <button
-                  onClick={handleAIAnalysis}
-                  disabled={isAnalyzing}
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Analyse en cours...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                      Analyser
-                    </>
-                  )}
-                </button>
                 <button
                   onClick={() => setIsIndicatorsModalOpen(false)}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full p-2 transition-all"
+                  className="p-2 hover:bg-white dark:hover:bg-gray-700 rounded-full transition-colors group"
                 >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <XCircle className="text-gray-400 group-hover:text-red-500 transition-colors" size={24} />
                 </button>
               </div>
             </div>
@@ -1139,277 +1138,274 @@ const Dashboard = () => {
             {/* Corps scrollable */}
             <div className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-6">
 
-              {/* Section: Analyse IA */}
-              {aiAnalysis && (
-                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-4 sm:p-6 rounded-lg border-2 border-purple-300 dark:border-purple-700 shadow-lg">
-                  <h4 className="text-lg sm:text-xl font-bold text-purple-800 dark:text-purple-300 mb-2 flex items-center">
-                    <span className="text-2xl mr-2">📊</span>
-                    Analyse IA
-                  </h4>
+                  {/* Section: Analyse IA */}
+                  {aiAnalysis && (
+                    <div className="space-y-6 animate-fadeIn">
+                      {/* Période Analysée */}
+                      {globalDateStart && globalDateEnd && (
+                        <div className="bg-purple-50 dark:bg-purple-900/20 px-4 py-2 rounded-lg border border-purple-100 dark:border-purple-800 inline-flex items-center space-x-2">
+                          <Calendar size={14} className="text-purple-600 dark:text-purple-400" />
+                          <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
+                            Analyse du {new Date(globalDateStart).toLocaleDateString('fr-FR')} au {new Date(globalDateEnd).toLocaleDateString('fr-FR')}
+                          </span>
+                        </div>
+                      )}
 
-                  {/* Affichage de la période analysée */}
-                  {globalDateStart && globalDateEnd && (
-                    <div className="mb-4 px-3 py-2 bg-white dark:bg-gray-800 rounded-md border border-purple-200 dark:border-purple-700">
-                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
-                        <span className="font-semibold">📅 Période analysée :</span> {new Date(globalDateStart).toLocaleDateString('fr-FR')} - {new Date(globalDateEnd).toLocaleDateString('fr-FR')}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Vue d'ensemble */}
-                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg mb-4 border border-purple-200 dark:border-purple-700">
-                    <h5 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center">
-                      <span className="text-lg mr-2">📋</span>
-                      Vue d'Ensemble
-                    </h5>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{aiAnalysis.vue_ensemble}</p>
-                  </div>
-
-                  {/* Analyse des Indicateurs Principaux */}
-                  {aiAnalysis.indicateurs_principaux && (
-                    <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-4 sm:p-5 rounded-xl mb-4 border border-blue-200 dark:border-blue-700">
-                      <h5 className="font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center text-sm sm:text-base">
-                        <span className="text-xl mr-2">💼</span>
-                        Indicateurs Principaux
-                      </h5>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {aiAnalysis.indicateurs_principaux.ca && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-blue-100 dark:border-blue-800 transition-hover hover:shadow-sm">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-xs sm:text-sm">
-                              <span className="mr-2">📊</span> CA
-                            </h6>
-                            <p className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.indicateurs_principaux.ca}</p>
-                          </div>
-                        )}
-                        {aiAnalysis.indicateurs_principaux.caf && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-blue-100 dark:border-blue-800 transition-hover hover:shadow-sm">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-xs sm:text-sm">
-                              <span className="mr-2">🏦</span> CAF
-                            </h6>
-                            <p className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.indicateurs_principaux.caf}</p>
-                          </div>
-                        )}
-                        {aiAnalysis.indicateurs_principaux.ebe && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-blue-100 dark:border-blue-800 transition-hover hover:shadow-sm">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-xs sm:text-sm">
-                              <span className="mr-2">💰</span> EBE
-                            </h6>
-                            <p className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.indicateurs_principaux.ebe}</p>
-                          </div>
-                        )}
-                        {aiAnalysis.indicateurs_principaux.bfr && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-blue-100 dark:border-blue-800 transition-hover hover:shadow-sm">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-xs sm:text-sm">
-                              <span className="mr-2">💵</span> BFR
-                            </h6>
-                            <p className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.indicateurs_principaux.bfr}</p>
-                          </div>
-                        )}
-                        {aiAnalysis.indicateurs_principaux.tresorerie && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-blue-100 dark:border-blue-800 transition-hover hover:shadow-sm">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-xs sm:text-sm">
-                              <span className="mr-2">🏦</span> Trésorerie
-                            </h6>
-                            <p className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.indicateurs_principaux.tresorerie}</p>
-                          </div>
-                        )}
+                      {/* Vue d'ensemble */}
+                      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/10 dark:to-indigo-900/10 p-5 rounded-xl border-l-4 border-purple-500 shadow-sm transition-all hover:shadow-md">
+                        <h4 className="font-bold text-purple-900 dark:text-purple-300 mb-3 flex items-center">
+                          <LayoutDashboard className="mr-2 text-purple-600" size={18} /> Vue d'Ensemble
+                        </h4>
+                        <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 italic leading-relaxed font-medium">
+                          "{aiAnalysis.vue_ensemble}"
+                        </p>
                       </div>
-                    </div>
-                  )}
 
-                  {/* Analyse des Ratios */}
-                  {aiAnalysis.ratios && (
-                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-4 sm:p-5 rounded-xl mb-4 border border-emerald-200 dark:border-emerald-700">
-                      <h5 className="font-bold text-emerald-800 dark:text-emerald-300 mb-3 flex items-center text-sm sm:text-base">
-                        <span className="text-xl mr-2">📈</span>
-                        Ratios Financiers
-                      </h5>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {aiAnalysis.ratios.rentabilite && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800 transition-hover hover:shadow-sm">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-xs sm:text-sm">
-                              <span className="mr-2">📈</span> Rentabilité
-                            </h6>
-                            <p className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">{aiAnalysis.ratios.rentabilite}</p>
-                          </div>
-                        )}
-                        {aiAnalysis.ratios.liquidite && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800 transition-hover hover:shadow-sm">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-xs sm:text-sm">
-                              <span className="mr-2">💧</span> Liquidité
-                            </h6>
-                            <p className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">{aiAnalysis.ratios.liquidite}</p>
-                          </div>
-                        )}
-                        {aiAnalysis.ratios.endettement && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800 transition-hover hover:shadow-sm">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-xs sm:text-sm">
-                              <span className="mr-2">⚠️</span> Endettement
-                            </h6>
-                            <p className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">{aiAnalysis.ratios.endettement}</p>
-                          </div>
-                        )}
-                        {aiAnalysis.ratios.activite && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-emerald-100 dark:border-emerald-800 transition-hover hover:shadow-sm">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-xs sm:text-sm">
-                              <span className="mr-2">🔄</span> Activité
-                            </h6>
-                            <p className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">{aiAnalysis.ratios.activite}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Analyse des Graphiques et Visualisations */}
-                  {aiAnalysis.graphiques && (
-                    <div className="bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 p-4 rounded-lg mb-4 border border-violet-200 dark:border-violet-700">
-                      <h5 className="font-bold text-violet-800 dark:text-violet-300 mb-3 flex items-center">
-                        <span className="text-lg mr-2">📊</span>
-                        Analyse des Graphiques et Visualisations
-                      </h5>
-                      <div className="space-y-3">
-                        {aiAnalysis.graphiques.tendances && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-violet-100 dark:border-violet-800">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
-                              <span className="mr-2">📈</span>
-                              Analyse des Tendances
-                            </h6>
-                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.graphiques.tendances}</p>
-                          </div>
-                        )}
-                        {aiAnalysis.graphiques.repartition && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-violet-100 dark:border-violet-800">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
-                              <span className="mr-2">🥧</span>
-                              Analyse de la Répartition
-                            </h6>
-                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.graphiques.repartition}</p>
-                          </div>
-                        )}
-                        {aiAnalysis.graphiques.insights_visuels && (
-                          <div className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-violet-100 dark:border-violet-800">
-                            <h6 className="font-semibold text-gray-800 dark:text-gray-100 mb-1 flex items-center text-sm">
-                              <span className="mr-2">💡</span>
-                              Insights Visuels
-                            </h6>
-                            <p className="text-xs text-gray-700 dark:text-gray-300">{aiAnalysis.graphiques.insights_visuels}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Points Forts et Faibles */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    {/* Points Forts */}
-                    {aiAnalysis.points_forts && aiAnalysis.points_forts.length > 0 && (
-                      <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 transition-all hover:shadow-sm">
-                        <h5 className="font-bold text-emerald-800 dark:text-emerald-300 mb-2 flex items-center text-xs sm:text-sm uppercase tracking-wider">
-                          <span className="text-lg mr-2">✅</span>
-                          Points Forts
-                        </h5>
-                        <ul className="space-y-1.5">
-                          {aiAnalysis.points_forts.map((point, idx) => (
-                            <li key={idx} className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 flex items-start leading-tight">
-                              <span className="text-emerald-600 mr-2 shrink-0 opacity-70">•</span>
-                              <span>{point}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    {/* Points Faibles */}
-                    {aiAnalysis.points_faibles && aiAnalysis.points_faibles.length > 0 && (
-                      <div className="bg-red-50/50 dark:bg-red-900/10 p-4 rounded-xl border border-red-100 dark:border-red-800 transition-all hover:shadow-sm">
-                        <h5 className="font-bold text-red-800 dark:text-red-300 mb-2 flex items-center text-xs sm:text-sm uppercase tracking-wider">
-                          <span className="text-lg mr-2">⚠️</span>
-                          Points Faibles
-                        </h5>
-                        <ul className="space-y-1.5">
-                          {aiAnalysis.points_faibles.map((point, idx) => (
-                            <li key={idx} className="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 flex items-start leading-tight">
-                              <span className="text-red-600 mr-2 shrink-0 opacity-70">•</span>
-                              <span>{point}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Insights et Corrélations */}
-                  {aiAnalysis.correlations_insights && aiAnalysis.correlations_insights.length > 0 && (
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg mb-4 border border-purple-200 dark:border-purple-700">
-                      <h5 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center">
-                        <span className="text-lg mr-2">💡</span>
-                        Insights et Corrélations
-                      </h5>
-                      <ul className="space-y-2">
-                        {aiAnalysis.correlations_insights.map((insight, idx) => (
-                          <li key={idx} className="text-sm text-gray-700 dark:text-gray-300 flex items-start">
-                            <span className="text-purple-600 mr-2 mt-0.5 font-bold">{idx + 1}.</span>
-                            <span>{insight}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Recommandations */}
-                  {aiAnalysis.recommandations && aiAnalysis.recommandations.length > 0 && (
-                    <div className="space-y-4 pt-2">
-                      <h5 className="font-bold text-gray-800 dark:text-gray-100 px-1 text-sm sm:text-base flex items-center border-l-4 border-purple-500 pl-3">
-                        <span className="mr-2">🚀</span>
-                        Recommandations Stratégiques
-                      </h5>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {aiAnalysis.recommandations.map((rec, idx) => {
-                          const priorityColors = {
-                            'URGENT': 'border-t-red-500 bg-red-50/30 dark:bg-red-900/10',
-                            'IMPORTANT': 'border-t-orange-500 bg-orange-50/30 dark:bg-orange-900/10',
-                            'SOUHAITABLE': 'border-t-blue-500 bg-blue-50/30 dark:bg-blue-900/10'
-                          };
-                          const priorityClass = priorityColors[rec.priorite] || priorityColors['SOUHAITABLE'];
-
-                          return (
-                            <div key={idx} className={`bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm transition-all hover:shadow-md border-t-4 ${priorityClass}`}>
-                              <div className="flex items-center justify-between mb-2">
-                                <h6 className="font-bold text-gray-900 dark:text-gray-100 text-xs sm:text-sm">{rec.action}</h6>
-                                <span className="text-[8px] sm:text-[10px] px-1.5 py-0.5 rounded-full bg-white/50 dark:bg-black/20 font-bold uppercase tracking-tighter">
-                                  {rec.priorite}
-                                </span>
+                      {/* Analyse des Indicateurs Principaux */}
+                      {aiAnalysis.indicateurs_principaux && (
+                        <div className="bg-blue-50/30 dark:bg-blue-900/5 p-4 sm:p-5 rounded-xl border border-blue-200/50 dark:border-blue-800/30">
+                          <h5 className="font-bold text-blue-800 dark:text-blue-300 mb-4 flex items-center uppercase text-xs tracking-widest">
+                            <BarChart3 className="mr-2 text-blue-600" size={16} /> Indicateurs Principaux
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {aiAnalysis.indicateurs_principaux.ca && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-blue-100 dark:border-blue-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <BarChart2 size={14} className="mr-2 text-blue-500" /> CA
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.indicateurs_principaux.ca}</p>
                               </div>
-                              <p className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 leading-relaxed italic line-clamp-3 hover:line-clamp-none">
-                                {rec.justification}
-                              </p>
-                            </div>
-                          );
-                        })}
+                            )}
+                            {aiAnalysis.indicateurs_principaux.caf && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-blue-100 dark:border-blue-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <Briefcase size={14} className="mr-2 text-blue-500" /> CAF
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.indicateurs_principaux.caf}</p>
+                              </div>
+                            )}
+                            {aiAnalysis.indicateurs_principaux.ebe && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-blue-100 dark:border-blue-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <DollarSign size={14} className="mr-2 text-blue-500" /> EBE
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.indicateurs_principaux.ebe}</p>
+                              </div>
+                            )}
+                            {aiAnalysis.indicateurs_principaux.bfr && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-blue-100 dark:border-blue-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <Activity size={14} className="mr-2 text-blue-500" /> BFR
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.indicateurs_principaux.bfr}</p>
+                              </div>
+                            )}
+                            {aiAnalysis.indicateurs_principaux.tresorerie && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-blue-100 dark:border-blue-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <Droplets size={14} className="mr-2 text-blue-500" /> Trésorerie
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.indicateurs_principaux.tresorerie}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Analyse des Ratios */}
+                      {aiAnalysis.ratios && (
+                        <div className="bg-emerald-50/30 dark:bg-emerald-900/5 p-4 sm:p-5 rounded-xl border border-emerald-200/50 dark:border-emerald-800/30">
+                          <h5 className="font-bold text-emerald-800 dark:text-emerald-300 mb-4 flex items-center uppercase text-xs tracking-widest">
+                            <TrendingUp className="mr-2 text-emerald-600" size={16} /> Ratios Financiers
+                          </h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {aiAnalysis.ratios.rentabilite && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <Activity size={14} className="mr-2 text-emerald-500" /> Rentabilité
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">{aiAnalysis.ratios.rentabilite}</p>
+                              </div>
+                            )}
+                            {aiAnalysis.ratios.liquidite && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <Droplets size={14} className="mr-2 text-emerald-500" /> Liquidité
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">{aiAnalysis.ratios.liquidite}</p>
+                              </div>
+                            )}
+                            {aiAnalysis.ratios.endettement && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <AlertCircle size={14} className="mr-2 text-emerald-500" /> Endettement
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">{aiAnalysis.ratios.endettement}</p>
+                              </div>
+                            )}
+                            {aiAnalysis.ratios.activite && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <TrendingUp size={14} className="mr-2 text-emerald-500" /> Activité
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed font-medium">{aiAnalysis.ratios.activite}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Analyse des Graphiques et Visualisations */}
+                      {aiAnalysis.graphiques && (
+                        <div className="bg-slate-50 dark:bg-slate-900/30 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center uppercase text-xs tracking-widest">
+                            <PieChart className="mr-2 text-slate-500" size={16} /> Visualisations & Tendances
+                          </h4>
+                          <div className="space-y-4">
+                            {aiAnalysis.graphiques.tendances && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <BarChart3 size={14} className="mr-2 text-indigo-500" /> Analyse des Tendances
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.graphiques.tendances}</p>
+                              </div>
+                            )}
+                            {aiAnalysis.graphiques.repartition && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <PieChart size={14} className="mr-2 text-indigo-500" /> Répartition
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.graphiques.repartition}</p>
+                              </div>
+                            )}
+                            {aiAnalysis.graphiques.insights_visuels && (
+                              <div className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                                <h6 className="font-bold text-gray-800 dark:text-gray-100 mb-2 flex items-center text-xs">
+                                  <Sparkles size={14} className="mr-2 text-indigo-500" /> Insights Visuels
+                                </h6>
+                                <p className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed">{aiAnalysis.graphiques.insights_visuels}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Points Forts et Faibles */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Points Forts */}
+                        {aiAnalysis.points_forts && aiAnalysis.points_forts.length > 0 && (
+                          <div className="bg-emerald-50/30 dark:bg-emerald-900/5 p-4 rounded-xl border border-emerald-200/50 dark:border-emerald-800/30 transition-all">
+                            <h5 className="font-bold text-emerald-800 dark:text-emerald-400 mb-3 flex items-center text-xs sm:text-sm uppercase tracking-widest">
+                              <CheckCircle className="mr-2" size={16} /> Points Forts
+                            </h5>
+                            <ul className="space-y-2">
+                              {aiAnalysis.points_forts.map((point, idx) => (
+                                <li key={idx} className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 flex items-start leading-tight">
+                                  <span className="text-emerald-500 mr-2 shrink-0">•</span>
+                                  <span>{point}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* Points Faibles */}
+                        {aiAnalysis.points_faibles && aiAnalysis.points_faibles.length > 0 && (
+                          <div className="bg-red-50/30 dark:bg-red-900/5 p-4 rounded-xl border border-red-200/50 dark:border-red-800/30 transition-all">
+                            <h5 className="font-bold text-red-800 dark:text-red-400 mb-3 flex items-center text-xs sm:text-sm uppercase tracking-widest">
+                              <AlertCircle className="mr-2" size={16} /> Risques & Faiblesses
+                            </h5>
+                            <ul className="space-y-2">
+                              {aiAnalysis.points_faibles.map((point, idx) => (
+                                <li key={idx} className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 flex items-start leading-tight">
+                                  <span className="text-red-500 mr-2 shrink-0">•</span>
+                                  <span>{point}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Insights et Corrélations */}
+                      {aiAnalysis.correlations_insights && aiAnalysis.correlations_insights.length > 0 && (
+                        <div className="bg-slate-50 dark:bg-slate-900/20 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                          <h4 className="font-bold text-gray-800 dark:text-gray-100 mb-4 flex items-center uppercase text-xs tracking-widest">
+                            <Zap className="mr-2 text-indigo-500" size={16} /> Insights & Synthèse
+                          </h4>
+                          <ul className="space-y-3">
+                            {aiAnalysis.correlations_insights.map((insight, idx) => (
+                              <li key={idx} className="text-sm text-gray-700 dark:text-gray-300 flex items-start leading-relaxed">
+                                <span className="text-indigo-600 dark:text-indigo-400 mr-3 mt-0.5 font-bold">{idx + 1}.</span>
+                                <span>{insight}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Recommandations */}
+                      {aiAnalysis.recommandations && aiAnalysis.recommandations.length > 0 && (
+                        <div className="space-y-4">
+                          <h4 className="font-bold text-gray-800 dark:text-gray-100 flex items-center px-1 uppercase text-xs tracking-widest">
+                            <Target className="mr-2 text-purple-600" size={16} /> Plan d'Action Recommandé
+                          </h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {aiAnalysis.recommandations.map((rec, idx) => {
+                              const priorityColors = {
+                                'URGENT': 'border-t-red-500 bg-red-50/30 dark:bg-red-900/10',
+                                'IMPORTANT': 'border-t-orange-500 bg-orange-50/30 dark:bg-orange-900/10',
+                                'SOUHAITABLE': 'border-t-blue-500 bg-blue-50/30 dark:bg-blue-900/10'
+                              };
+                              const priorityClass = priorityColors[rec.priorite] || priorityColors['SOUHAITABLE'];
+
+                              return (
+                                <div key={idx} className={`bg-white dark:bg-gray-800 p-5 rounded-2xl border border-purple-100 dark:border-purple-900/30 shadow-sm transition-all hover:shadow-lg border-t-4 group ${priorityClass}`}>
+                                  <div className="flex justify-between items-start mb-2">
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter ${rec.priorite === 'URGENT' ? 'bg-red-100 text-red-700' :
+                                      rec.priorite === 'IMPORTANT' ? 'bg-orange-100 text-orange-700' :
+                                        'bg-blue-100 text-blue-700'
+                                      }`}>
+                                      {rec.priorite}
+                                    </span>
+                                  </div>
+                                  <h6 className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                                    {rec.action}
+                                  </h6>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed font-medium capitalize">
+                                    {rec.justification}
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
-              )}
 
-              {/* Erreur d'analyse */}
-              {analysisError && (
-                <div className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-700">
-                  <h5 className="font-bold text-red-800 dark:text-red-300 mb-2 flex items-center">
-                    <span className="text-lg mr-2">❌</span>
-                    Erreur d'Analyse
-                  </h5>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">{analysisError}</p>
-                </div>
-              )}
+                  {/* Erreur d'analyse */}
+                  {analysisError && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-8 rounded-2xl flex flex-col items-center text-center animate-shake">
+                      <AlertCircle className="text-red-500 mb-4" size={56} />
+                      <h4 className="text-xl font-bold text-red-800 dark:text-red-300 mb-2">Analyse Interrompue</h4>
+                      <p className="text-red-600 dark:text-red-400 mb-6 max-w-md">{analysisError}</p>
+                      <button
+                        onClick={handleAIAnalysis}
+                        className="px-8 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-bold shadow-xl shadow-red-200 dark:shadow-none active:scale-95 flex items-center space-x-2"
+                      >
+                        <Sparkles size={18} />
+                        <span>Relancer l'Analyse</span>
+                      </button>
+                    </div>
+                  )}
             </div>
 
-            {/* Footer */}
-            <div className="flex-none p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 rounded-b-lg">
+            {/* Footer Modale */}
+            <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end bg-gray-50/50 dark:bg-gray-900/20">
               <button
                 onClick={() => setIsIndicatorsModalOpen(false)}
-                className="w-full px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+                className="w-full sm:w-auto px-10 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-emerald-200 dark:hover:shadow-none active:scale-95"
               >
                 Fermer
               </button>

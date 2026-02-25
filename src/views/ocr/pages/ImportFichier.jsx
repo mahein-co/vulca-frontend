@@ -641,8 +641,24 @@ export default function ImportFichier({ onSaisieCompleted }) {
     const [isBatchExtracting, setIsBatchExtracting] = useState(false);
 
     // Fonction pour afficher une notification d'erreur
-    const showErrorNotification = useCallback((message) => {
+    const showErrorNotification = useCallback((err) => {
+        let message = "Une erreur est survenue.";
+
+        if (typeof err === 'string') {
+            message = err;
+        } else if (err?.data?.error) {
+            message = err.data.error;
+        } else if (err?.data?.detail) {
+            message = err.data.detail;
+        } else if (err?.message) {
+            message = err.message;
+        }
+
+        // setErrorNotification(message); // On n'utilise plus ce bloc
         toast.error(message);
+        setTimeout(() => {
+            setErrorNotification(null);
+        }, 5000);
     }, []);
 
     // --- Logique Métier ---
@@ -786,7 +802,7 @@ export default function ImportFichier({ onSaisieCompleted }) {
 
         } catch (err) {
             console.error(err);
-            showErrorNotification("Echec de l'extraction, vérifiez le fichier.");
+            showErrorNotification(err);
         }
     };
 
@@ -914,7 +930,7 @@ export default function ImportFichier({ onSaisieCompleted }) {
 
         } catch (error) {
             console.error("Erreur validation:", error);
-            showErrorNotification(error.message || "Erreur inconnue lors de la validation.");
+            showErrorNotification(error);
         } finally {
             setIsSaving(false);
         }
@@ -932,22 +948,10 @@ export default function ImportFichier({ onSaisieCompleted }) {
                 />
             )}
 
-            {errorNotification && (
-                <div className="fixed top-40 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-md
-                    bg-red-500 text-white p-4 rounded-lg shadow-2xl border border-red-600
-                    animate-fadeIn flex items-start gap-3">
-                    <svg className="w-6 h-6 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <div className="flex-1">
-                        <p className="font-bold text-base mb-1">Erreur</p>
-                        <p className="text-sm leading-snug whitespace-pre-line">{errorNotification}</p>
-                    </div>
-                </div>
-            )}
+
 
             {notification && (
-                <div className={`fixed top-40 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-sm shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-out animate-[slideIn_0.3s_ease-out]
+                <div className={`fixed top-40 left-1/2 -translate-x-1/2 z-[10030] w-[90%] max-w-sm shadow-lg rounded-lg pointer-events-auto flex ring-1 ring-black ring-opacity-5 overflow-hidden transform transition-all duration-300 ease-out animate-[slideIn_0.3s_ease-out]
                     ${notification.type === 'success' ? 'bg-white dark:bg-gray-800 border-l-4 border-green-500' :
                         notification.type === 'warning' ? 'bg-white dark:bg-gray-800 border-l-4 border-yellow-500' :
                             'bg-white dark:bg-gray-800 border-l-4 border-red-500'}`}>

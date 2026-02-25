@@ -391,6 +391,9 @@ function App() {
             <Toaster
                 position="top-right"
                 reverseOrder={false}
+                containerStyle={{
+                    zIndex: 10020,
+                }}
                 toastOptions={{
                     style: { duration: 5000, fontSize: "0.85rem", borderRadius: "8px", padding: "12px 16px", background: '#fff', color: '#1f2937' },
                     success: { style: { background: '#ecfdf5', color: '#064e3b' } },

@@ -552,8 +552,6 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     return (
         <div className="bg-gray-50 dark:bg-gray-900 transition-colors duration-200 min-h-screen no-scrollbar">
             <main className="flex flex-col p-1 sm:p-2 gap-2">
-                {/* Période d'exercice */}
-                {/* Période d'exercice */}
                 {/* 1. PÉRIODE D'EXERCICE - Style GestionPiecesBoard */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 bg-white dark:bg-gray-800 p-2 sm:p-3 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700">
                     <div className="mb-2 sm:mb-0">
@@ -664,433 +662,441 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                     </div>
                 </div>
 
-                {/* 2. BARRE DE RECHERCHE */}
-                <div className="bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 mb-1">
-                    <div className="flex items-center space-x-2">
-                        <div className="pl-2">
-                            <Search className="h-4 w-4 text-gray-400" />
-                        </div>
-                        <input
-                            type="text"
-                            placeholder="Rechercher par compte, libellé..."
-                            value={recherche}
-                            onChange={(e) => setRecherche(e.target.value)}
-                            className="w-full p-1.5 border-0 focus:ring-0 text-xs placeholder-gray-400 dark:placeholder-gray-500 bg-transparent dark:text-gray-100"
-                        />
-                    </div>
-                </div>
+                {/* Content Area with Loading Overlay */}
+                <div className="relative flex-1 flex flex-col min-h-0 min-w-0">
+                    {loading && <LoadingOverlay message="Chargement des données..." fullScreen={false} className="!justify-start pt-40" />}
 
-                {error && <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-md flex items-start">
-                    <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={24} />
-                    <div className="ml-3 flex-1">
-                        <h3 className="text-base font-bold text-red-800 dark:text-red-300 mb-1">Erreur de chargement</h3>
-                        <p className="text-sm text-red-700 dark:text-red-200">{error}</p>
-                    </div>
-                    <button onClick={() => window.location.reload()} className="ml-4 px-3 py-1 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition">Réessayer</button>
-                </div>}
-
-                {/* Bulk Actions */}
-                {selectedItems.length > 0 && (
-                    <div className="mb-2 flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 p-2 rounded-lg border border-indigo-100 dark:border-indigo-800 animate-fadeIn">
-                        <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
-                            {selectedItems.length} ligne{selectedItems.length > 1 ? 's' : ''} sélectionnée{selectedItems.length > 1 ? 's' : ''}
-                        </span>
-                        <div className="flex space-x-2">
-                            <button
-                                onClick={handleBulkDeleteClick}
-                                disabled={isDeleting}
-                                className="flex items-center space-x-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded shadow transition-all disabled:opacity-50"
-                            >
-                                {isDeleting ? <Loader size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                                <span>Supprimer la sélection</span>
-                            </button>
-                            <button
-                                onClick={() => setSelectedItems([])}
-                                className="px-3 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-bold rounded shadow transition-all"
-                            >
-                                Annuler
-                            </button>
+                    {/* 2. BARRE DE RECHERCHE */}
+                    <div className="bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 mb-1">
+                        <div className="flex items-center space-x-2">
+                            <div className="pl-2">
+                                <Search className="h-4 w-4 text-gray-400" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Rechercher par compte, libellé..."
+                                value={recherche}
+                                onChange={(e) => setRecherche(e.target.value)}
+                                className="w-full p-1.5 border-0 focus:ring-0 text-xs placeholder-gray-400 dark:placeholder-gray-500 bg-transparent dark:text-gray-100"
+                            />
                         </div>
                     </div>
-                )}
 
-                {/* KPI Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-1.5 mb-1 px-1">
-                    {loading ? [...Array(7)].map((_, i) => <div key={i} className="min-w-full h-[80px] bg-gray-200 rounded-xl animate-pulse"></div>) :
-                        cards.map(([title, value, change, isRatio, Icon, description], idx) => {
-                            // Calcul du pourcentage d'évolution pour les montants (si non ratio)
-                            let changeLabel = null;
-                            let numericChange = parseFloat(change);
-                            const changeIcon = numericChange > 0 ? '↑' : numericChange < 0 ? '↓' : '•';
+                    {error && <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-4 rounded-xl shadow-md flex items-start">
+                        <AlertCircle className="text-red-600 flex-shrink-0 mt-0.5" size={24} />
+                        <div className="ml-3 flex-1">
+                            <h3 className="text-base font-bold text-red-800 dark:text-red-300 mb-1">Erreur de chargement</h3>
+                            <p className="text-sm text-red-700 dark:text-red-200">{error}</p>
+                        </div>
+                        <button onClick={() => window.location.reload()} className="ml-4 px-3 py-1 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition">Réessayer</button>
+                    </div>}
 
-                            if (isRatio) {
-                                // Pour les ratios, "change" est déjà une différence en points
-                                // On affiche ex: + 1.2 %
-                                changeLabel = !isNaN(numericChange) ? `${changeIcon} ${Math.abs(numericChange).toFixed(1)} %` : '-';
-                            } else {
-                                // Pour les montants, on calcule le % d'évolution
-                                // Valeur précédente = Valeur actuelle - Variation
-                                const previousValue = value - numericChange;
+                    {/* Bulk Actions */}
+                    {selectedItems.length > 0 && (
+                        <div className="mb-2 flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 p-2 rounded-lg border border-indigo-100 dark:border-indigo-800 animate-fadeIn">
+                            <span className="text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                                {selectedItems.length} ligne{selectedItems.length > 1 ? 's' : ''} sélectionnée{selectedItems.length > 1 ? 's' : ''}
+                            </span>
+                            <div className="flex space-x-2">
+                                <button
+                                    onClick={handleBulkDeleteClick}
+                                    disabled={isDeleting}
+                                    className="flex items-center space-x-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded shadow transition-all disabled:opacity-50"
+                                >
+                                    {isDeleting ? <Loader size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                    <span>Supprimer la sélection</span>
+                                </button>
+                                <button
+                                    onClick={() => setSelectedItems([])}
+                                    className="px-3 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-xs font-bold rounded shadow transition-all"
+                                >
+                                    Annuler
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
-                                if (previousValue === 0) {
-                                    // Si précédent était 0
-                                    if (numericChange === 0) changeLabel = `${changeIcon} 0 %`;
-                                    else changeLabel = `${changeIcon} 100 %`; // Ou N/A
+                    {/* KPI Cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-1.5 mb-1 px-1">
+                        {loading ? [...Array(7)].map((_, i) => <div key={i} className="min-w-full h-[80px] bg-gray-200 rounded-xl animate-pulse"></div>) :
+                            cards.map(([title, value, change, isRatio, Icon, description], idx) => {
+                                // Calcul du pourcentage d'évolution pour les montants (si non ratio)
+                                let changeLabel = null;
+                                let numericChange = parseFloat(change);
+                                const changeIcon = numericChange > 0 ? '↑' : numericChange < 0 ? '↓' : '•';
+
+                                if (isRatio) {
+                                    // Pour les ratios, "change" est déjà une différence en points
+                                    // On affiche ex: + 1.2 %
+                                    changeLabel = !isNaN(numericChange) ? `${changeIcon} ${Math.abs(numericChange).toFixed(1)} %` : '-';
                                 } else {
-                                    const percent = (numericChange / previousValue) * 100;
-                                    changeLabel = `${changeIcon} ${Math.abs(percent).toFixed(1)} %`;
+                                    // Pour les montants, on calcule le % d'évolution
+                                    // Valeur précédente = Valeur actuelle - Variation
+                                    const previousValue = value - numericChange;
+
+                                    if (previousValue === 0) {
+                                        // Si précédent était 0
+                                        if (numericChange === 0) changeLabel = `${changeIcon} 0 %`;
+                                        else changeLabel = `${changeIcon} 100 %`; // Ou N/A
+                                    } else {
+                                        const percent = (numericChange / previousValue) * 100;
+                                        changeLabel = `${changeIcon} ${Math.abs(percent).toFixed(1)} %`;
+                                    }
                                 }
-                            }
 
-                            return (
-                                <MetricCard
-                                    key={idx}
-                                    title={title}
-                                    value={isRatio ? value.toFixed(1) + '%' : formatCurrency(value)}
-                                    icon={Icon}
-                                    change={numericChange} // On garde change numérique pour la couleur
-                                    changeLabel={changeLabel} // On passe le label formaté
-                                    isRatio={isRatio}
-                                    description={description}
-                                />
-                            );
-                        })
-                    }
-                </div>
-
-                {/* Bilan & Compte Résultat */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2 px-2">
-                    <div onClick={() => { setSelectedSection('bilan'); setCurrentPage(1); }}
-                        className={`p-2.5 bg-white dark:bg-gray-800 rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'bilan' ? 'border-t-4 border-indigo-500 scale-[1.005]' : 'border-t-2 border-gray-300 dark:border-gray-600 hover:border-indigo-300 dark:hover:border-indigo-500'}`}>
-                        <div className="flex items-center space-x-2 mb-1.5">
-                            <div className="p-1 rounded-lg bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600">
-                                <Scale size={10} />
-                            </div>
-                            <h3 className="text-xs font-bold text-gray-800 dark:text-gray-100">Bilan</h3>
-                            <div className="ml-auto">
-                                {calculations.bilanEquilibre ? <CheckCircle size={12} className="text-emerald-500" /> : <XCircle size={12} className="text-red-500" />}
-                            </div>
-                        </div>
-                        <p className="text-[9px] text-gray-500 dark:text-gray-400 mb-1.5 ml-1 leading-tight">Situation financière (Actifs = Passifs + CP).</p>
-                        <div className='text-[9px] sm:text-[10px] space-y-0.5 text-gray-700 dark:text-gray-300 px-1'>
-                            <p className="flex justify-between flex-wrap"><span>Actif :</span> <span className="font-bold text-indigo-700 dark:text-indigo-400">{formatCurrency(calculations.totalActif)}</span></p>
-                            <p className="flex justify-between flex-wrap"><span>Passif+CP :</span> <span className="font-bold text-indigo-700 dark:text-indigo-400">{formatCurrency(calculations.totalPassif)}</span></p>
-                        </div>
-                    </div>
-                    <div onClick={() => { setSelectedSection('compteResultat'); setCurrentPage(1); }}
-                        className={`p-2.5 bg-white dark:bg-gray-800 rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'compteResultat' ? 'border-t-4 border-emerald-500 scale-[1.005]' : 'border-t-2 border-gray-300 dark:border-gray-600 hover:border-emerald-300 dark:hover:border-emerald-500'}`}>
-                        <div className="flex items-center space-x-2 mb-2">
-                            <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600">
-                                <DollarSign size={10} />
-                            </div>
-                            <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Compte de Résultat</h3>
-                            <div className="ml-auto">
-                                <CheckCircle size={14} className="text-emerald-500" />
-                            </div>
-                        </div>
-                        <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-2 ml-1 leading-tight">Produits et charges.</p>
-                        <div className='text-[10px] sm:text-xs space-y-1 text-gray-700 dark:text-gray-300 px-1'>
-                            <p className="flex justify-between flex-wrap"><span>Produits :</span> <span className="font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(calculations.produits)}</span></p>
-                            <p className="flex justify-between flex-wrap"><span>Charges :</span> <span className="font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(calculations.charges)}</span></p>
-                            <p className="flex justify-between flex-wrap border-t border-gray-100 dark:border-gray-700 pt-1"><span>Résultat net :</span> <span className={`font-bold ${calculations.resultatNet >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>{formatCurrency(calculations.resultatNet)}</span></p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Table des détails */}
-                <div className="px-2 relative">
-                    {loading && <LoadingOverlay message="Chargement des données..." fullScreen={false} />}
-                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
-                        <div className="overflow-auto min-h-0 no-scrollbar">
-                            <table className="w-full border-collapse text-xs sm:text-sm min-w-[800px] table-fixed">
-                                <thead className="sticky top-0 z-10">
-                                    <tr className="bg-gray-800 dark:bg-gray-950 text-white">
-                                        <th className="w-[8%] sm:w-[5%] px-2 py-2 text-center">
-                                            <button onClick={toggleSelectAll} className="hover:text-indigo-400 transition-colors">
-                                                {selectedItems.length === paginatedDetails.length && paginatedDetails.length > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
-                                            </button>
-                                        </th>
-                                        <th className="w-[15%] sm:w-[10%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Date</th>
-                                        <th className="w-[15%] sm:w-[10%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Compte</th>
-                                        <th className="w-[35%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
-                                        {selectedSection === 'bilan' ?
-                                            <th className="w-[15%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden lg:table-cell">Catégorie</th>
-                                            : <th className="w-[15%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden lg:table-cell">Nature</th>
-                                        }
-                                        <th className="w-[20%] sm:w-[15%] px-2 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Montant</th>
-                                        <th className="w-[10%] px-2 py-2 sm:py-2.5 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wide">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white dark:bg-gray-800">
-                                    {loading ? [...Array(ITEMS_PER_PAGE)].map((_, i) =>
-                                        <tr key={i} className="animate-pulse">
-                                            {[...Array(5)].map((_, j) =>
-                                                <td key={j} className="border-b border-gray-100 dark:border-gray-700 px-3 py-2.5">
-                                                    <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-                                                </td>
-                                            )}
-                                        </tr>
-                                    ) : paginatedDetails.map((item, idx) => (
-                                        <tr key={item.id || idx} className={`hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'} ${selectedItems.includes(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/10' : ''}`}>
-                                            <td className="w-[5%] border-b border-gray-100 dark:border-gray-700 px-2 text-center">
-                                                <button onClick={() => toggleSelectItem(item.id)} className={`${selectedItems.includes(item.id) ? 'text-indigo-600' : 'text-gray-400'} hover:text-indigo-500 transition-colors`}>
-                                                    {selectedItems.includes(item.id) ? <CheckSquare size={14} /> : <Square size={14} />}
-                                                </button>
-                                            </td>
-                                            <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-gray-700 dark:text-gray-300 font-semibold">{formatDate(item.date)}</td>
-                                            <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs">
-                                                <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{item.numero_compte}</span>
-                                            </td>
-                                            <td className="w-[35%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-gray-800 dark:text-gray-200 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
-                                            <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 hidden lg:table-cell">
-                                                <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 inline-flex text-[10px] font-bold rounded-full ${selectedSection === 'bilan'
-                                                    ? item.categorie?.toLowerCase().includes('actif')
-                                                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                                                        : item.categorie?.toLowerCase().includes('passif') || item.categorie?.toLowerCase().includes('capitaux')
-                                                            ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
-                                                            : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                                                    : item.nature?.toLowerCase().includes('produit')
-                                                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-                                                        : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
-                                                    }`}>
-                                                    {(item.categorie || item.nature || '').replace(/_/g, ' ')}
-                                                </span>
-                                            </td>
-                                            <td className="w-[20%] sm:w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-right font-bold text-gray-900 dark:text-gray-100">{formatCurrency(item.montant_ar)}</td>
-                                            <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 py-2 text-center">
-                                                <div className="flex items-center justify-center space-x-2">
-                                                    <button
-                                                        onClick={() => { setEditingItem(item); setIsEditing(true); }}
-                                                        disabled={selectedItems.length > 1 || (selectedItems.length === 1 && !selectedItems.includes(item.id))}
-                                                        className={`p-1 rounded transition-colors ${(selectedItems.length > 1 || (selectedItems.length === 1 && !selectedItems.includes(item.id))) ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
-                                                        title={selectedItems.length > 1 ? "Désélectionnez pour modifier" : (selectedItems.length === 1 && !selectedItems.includes(item.id)) ? "Ligne non sélectionnée" : "Modifier"}
-                                                    >
-                                                        <Edit2 size={14} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteClick(item.id)}
-                                                        disabled={selectedItems.length > 0}
-                                                        className={`p-1 rounded transition-colors ${selectedItems.length > 0 ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:bg-red-50'}`}
-                                                        title={selectedItems.length > 0 ? "Utilisez la suppression groupée" : "Supprimer"}
-                                                    >
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                        <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} setCurrentPage={setCurrentPage} />
-                    </div>
-                </div>
-
-            </main>
-
-            {/* AI ANALYSIS MODAL */}
-            {isAnalysisModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-purple-100 dark:border-purple-900/30">
-                        {/* Header Modale */}
-                        <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20">
-                            <div>
-                                <h3 className="text-lg sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400 flex items-center">
-                                    <Sparkles className="mr-2 sm:mr-3 text-indigo-600 dark:text-indigo-400 shrink-0" size={20} />
-                                    <span className="truncate">Analyse Expert-Comptable</span>
-                                </h3>
-                                <p className="text-[10px] sm:text-sm text-purple-600/70 dark:text-purple-400/70 font-medium">Interprétation pour {selectedSection === 'bilan' ? 'votre Bilan' : 'votre Compte de Résultat'}</p>
-                            </div>
-                            <button
-                                onClick={() => setIsAnalysisModalOpen(false)}
-                                className="p-2 hover:bg-white dark:hover:bg-gray-700 rounded-full transition-colors group"
-                            >
-                                <XCircle className="text-gray-400 group-hover:text-red-500 transition-colors" size={24} />
-                            </button>
-                        </div>
-
-                        {/* Corps Modale */}
-                        <div className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-6 no-scrollbar">
-                            {analysisError ? (
-                                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-6 rounded-xl flex flex-col items-center text-center">
-                                    <AlertCircle className="text-red-500 mb-3" size={48} />
-                                    <h4 className="text-lg font-bold text-red-800 dark:text-red-300 mb-2">Une erreur est survenue</h4>
-                                    <p className="text-red-600 dark:text-red-400 mb-4">{analysisError}</p>
-                                    <button
-                                        onClick={handleAIAnalysis}
-                                        className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-bold shadow-lg shadow-red-200 dark:shadow-none"
-                                    >
-                                        Réessayer l'analyse
-                                    </button>
-                                </div>
-                            ) : aiAnalysis ? (
-                                <>
-                                    {/* Période Analysée */}
-                                    <div className="bg-purple-50 dark:bg-purple-900/20 px-4 py-2 rounded-lg border border-purple-100 dark:border-purple-800 inline-flex items-center space-x-2">
-                                        <Calendar size={14} className="text-purple-600 dark:text-purple-400" />
-                                        <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
-                                            Période: {selectedYear} {selectedSubPeriod ? `(${selectedSubPeriod})` : '(Annuel)'}
-                                        </span>
-                                    </div>
-
-                                    {/* Vue d'Ensemble */}
-                                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/10 dark:to-indigo-900/10 p-5 rounded-xl border-l-4 border-purple-500 shadow-sm transition-all hover:shadow-md">
-                                        <h4 className="font-bold text-purple-900 dark:text-purple-300 mb-3 flex items-center">
-                                            <span className="text-xl mr-2">📊</span> Vue d'Ensemble
-                                        </h4>
-                                        <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 italic leading-relaxed font-medium">
-                                            "{aiAnalysis.vue_ensemble}"
-                                        </p>
-                                    </div>
-
-                                    {/* Analyse Détaillée */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
-                                            <h5 className="font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center uppercase text-xs tracking-widest">
-                                                {selectedSection === 'bilan' ? '📦 Analyse des Actifs' : '↗️ Analyse des Produits'}
-                                            </h5>
-                                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                                                {aiAnalysis.analyse_detaillee?.produits_ou_actifs}
-                                            </p>
-                                        </div>
-                                        <div className="bg-orange-50/50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-100 dark:border-orange-800">
-                                            <h5 className="font-bold text-orange-800 dark:text-orange-300 mb-2 flex items-center uppercase text-xs tracking-widest">
-                                                {selectedSection === 'bilan' ? '🛡️ Analyse des Passifs' : '↘️ Analyse des Charges'}
-                                            </h5>
-                                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                                                {aiAnalysis.analyse_detaillee?.charges_ou_passifs}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {/* Rentabilité / Équilibre */}
-                                    <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-5 rounded-xl border-t-2 border-emerald-500 shadow-sm transition-all hover:shadow-md">
-                                        <h4 className="font-bold text-emerald-900 dark:text-emerald-300 mb-2 flex items-center">
-                                            <Sparkles size={18} className="mr-2 text-emerald-600" />
-                                            {selectedSection === 'bilan' ? 'Équilibre et Solvabilité' : 'Performance et Rentabilité'}
-                                        </h4>
-                                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                                            {aiAnalysis.analyse_detaillee?.performance_ou_equilibre}
-                                        </p>
-                                    </div>
-
-                                    {/* Transactions Remarquables */}
-                                    <div className="bg-slate-50 dark:bg-slate-900/30 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
-                                        <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center uppercase text-xs tracking-widest">
-                                            ✍️ Analyse des Transactions
-                                        </h4>
-                                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                                            {aiAnalysis.transactions_remarquables}
-                                        </p>
-                                    </div>
-
-                                    {/* Points Forts & Faibles */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {aiAnalysis.points_forts && (
-                                            <div className="bg-emerald-50/30 dark:bg-emerald-900/5 p-4 rounded-xl border border-emerald-200/50 dark:border-emerald-800/30">
-                                                <h5 className="font-bold text-emerald-800 dark:text-emerald-400 mb-3 flex items-center text-xs sm:text-sm">
-                                                    ✅ Points Forts
-                                                </h5>
-                                                <ul className="space-y-2">
-                                                    {aiAnalysis.points_forts.map((pt, i) => (
-                                                        <li key={i} className="flex items-start text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                                            <span className="text-emerald-500 mr-2 shrink-0">•</span> <span>{pt}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                        {aiAnalysis.points_faibles && (
-                                            <div className="bg-red-50/30 dark:bg-red-900/5 p-4 rounded-xl border border-red-200/50 dark:border-red-800/30">
-                                                <h5 className="font-bold text-red-800 dark:text-red-400 mb-3 flex items-center text-xs sm:text-sm">
-                                                    ⚠️ Points Faibles / Risques
-                                                </h5>
-                                                <ul className="space-y-2">
-                                                    {aiAnalysis.points_faibles.map((pt, i) => (
-                                                        <li key={i} className="flex items-start text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                                                            <span className="text-red-500 mr-2 shrink-0">•</span> <span>{pt}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* RECOMMANDATIONS */}
-                                    {aiAnalysis.recommandations && (
-                                        <div className="space-y-4">
-                                            <h4 className="font-bold text-gray-800 dark:text-gray-100 flex items-center px-1">
-                                                🚀 Plan d'Action Recommandé
-                                            </h4>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                                {aiAnalysis.recommandations.map((rec, i) => (
-                                                    <div key={i} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-purple-100 dark:border-purple-900/30 shadow-sm hover:shadow-lg transition-all border-t-4 border-t-purple-500 group">
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter ${rec.priorite === 'URGENT' ? 'bg-red-100 text-red-700' :
-                                                                rec.priorite === 'IMPORTANT' ? 'bg-orange-100 text-orange-700' :
-                                                                    'bg-blue-100 text-blue-700'
-                                                                }`}>
-                                                                {rec.priorite}
-                                                            </span>
-                                                        </div>
-                                                        <h6 className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                                                            {rec.action}
-                                                        </h6>
-                                                        <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed font-medium capitalize">
-                                                            {rec.justification}
-                                                        </p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </>
-                            ) : null}
-                        </div>
-
-                        {/* Footer Modale */}
-                        <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end bg-gray-50/50 dark:bg-gray-900/20">
-                            <button
-                                onClick={() => setIsAnalysisModalOpen(false)}
-                                className="px-5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm"
-                            >
-                                Fermer
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-            {/* Edit Modal */}
-            {isEditing && editingItem && (
-                <EditEntryModal
-                    item={editingItem}
-                    type={selectedSection}
-                    onClose={() => { setIsEditing(false); setEditingItem(null); }}
-                    onSave={(updatedItem) => {
-                        if (selectedSection === 'bilan') {
-                            const normalized = normalizeBilanData([updatedItem])[0];
-                            setBilanData(prev => prev.map(it => it.id === normalized.id ? normalized : it));
-                        } else {
-                            const normalized = normalizeCompteResultatData([updatedItem])[0];
-                            setCompteResultatData(prev => prev.map(it => it.id === normalized.id ? normalized : it));
+                                return (
+                                    <MetricCard
+                                        key={idx}
+                                        title={title}
+                                        value={isRatio ? value.toFixed(1) + '%' : formatCurrency(value)}
+                                        icon={Icon}
+                                        change={numericChange} // On garde change numérique pour la couleur
+                                        changeLabel={changeLabel} // On passe le label formaté
+                                        isRatio={isRatio}
+                                        description={description}
+                                    />
+                                );
+                            })
                         }
-                        fetchKPIs(); // Re-calculer les totaux au sommet
-                        setIsEditing(false);
-                        setEditingItem(null);
-                        toast.success("Modification enregistrée");
-                    }}
-                />
-            )}
+                    </div>
+
+                    {/* Bilan & Compte Résultat */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-2 px-2">
+                        <div onClick={() => { setSelectedSection('bilan'); setCurrentPage(1); }}
+                            className={`p-2.5 bg-white dark:bg-gray-800 rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'bilan' ? 'border-t-4 border-indigo-500 scale-[1.005]' : 'border-t-2 border-gray-300 dark:border-gray-600 hover:border-indigo-300 dark:hover:border-indigo-500'}`}>
+                            <div className="flex items-center space-x-2 mb-1.5">
+                                <div className="p-1 rounded-lg bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-600">
+                                    <Scale size={10} />
+                                </div>
+                                <h3 className="text-xs font-bold text-gray-800 dark:text-gray-100">Bilan</h3>
+                                <div className="ml-auto">
+                                    {calculations.bilanEquilibre ? <CheckCircle size={12} className="text-emerald-500" /> : <XCircle size={12} className="text-red-500" />}
+                                </div>
+                            </div>
+                            <p className="text-[9px] text-gray-500 dark:text-gray-400 mb-1.5 ml-1 leading-tight">Situation financière (Actifs = Passifs + CP).</p>
+                            <div className='text-[9px] sm:text-[10px] space-y-0.5 text-gray-700 dark:text-gray-300 px-1'>
+                                <p className="flex justify-between flex-wrap"><span>Actif :</span> <span className="font-bold text-indigo-700 dark:text-indigo-400">{formatCurrency(calculations.totalActif)}</span></p>
+                                <p className="flex justify-between flex-wrap"><span>Passif+CP :</span> <span className="font-bold text-indigo-700 dark:text-indigo-400">{formatCurrency(calculations.totalPassif)}</span></p>
+                            </div>
+                        </div>
+                        <div onClick={() => { setSelectedSection('compteResultat'); setCurrentPage(1); }}
+                            className={`p-2.5 bg-white dark:bg-gray-800 rounded-lg shadow-md cursor-pointer transition-all duration-300 hover:shadow-xl ${selectedSection === 'compteResultat' ? 'border-t-4 border-emerald-500 scale-[1.005]' : 'border-t-2 border-gray-300 dark:border-gray-600 hover:border-emerald-300 dark:hover:border-emerald-500'}`}>
+                            <div className="flex items-center space-x-2 mb-2">
+                                <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-50 to-teal-50 text-emerald-600">
+                                    <DollarSign size={10} />
+                                </div>
+                                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">Compte de Résultat</h3>
+                                <div className="ml-auto">
+                                    <CheckCircle size={14} className="text-emerald-500" />
+                                </div>
+                            </div>
+                            <p className="text-[10px] text-gray-500 dark:text-gray-400 mb-2 ml-1 leading-tight">Produits et charges.</p>
+                            <div className='text-[10px] sm:text-xs space-y-1 text-gray-700 dark:text-gray-300 px-1'>
+                                <p className="flex justify-between flex-wrap"><span>Produits :</span> <span className="font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(calculations.produits)}</span></p>
+                                <p className="flex justify-between flex-wrap"><span>Charges :</span> <span className="font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(calculations.charges)}</span></p>
+                                <p className="flex justify-between flex-wrap border-t border-gray-100 dark:border-gray-700 pt-1"><span>Résultat net :</span> <span className={`font-bold ${calculations.resultatNet >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>{formatCurrency(calculations.resultatNet)}</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Table des détails */}
+                    <div className="px-2 flex-1 flex flex-col min-h-0">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+                            <div className="overflow-auto min-h-0 no-scrollbar">
+                                <table className="w-full border-collapse text-xs sm:text-sm min-w-[800px] table-fixed">
+                                    <thead className="sticky top-0 z-10">
+                                        <tr className="bg-gray-800 dark:bg-gray-950 text-white">
+                                            <th className="w-[8%] sm:w-[5%] px-2 py-2 text-center">
+                                                <button onClick={toggleSelectAll} className="hover:text-indigo-400 transition-colors">
+                                                    {selectedItems.length === paginatedDetails.length && paginatedDetails.length > 0 ? <CheckSquare size={16} /> : <Square size={16} />}
+                                                </button>
+                                            </th>
+                                            <th className="w-[15%] sm:w-[10%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Date</th>
+                                            <th className="w-[15%] sm:w-[10%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Compte</th>
+                                            <th className="w-[35%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide">Libellé</th>
+                                            {selectedSection === 'bilan' ?
+                                                <th className="w-[15%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden lg:table-cell">Catégorie</th>
+                                                : <th className="w-[15%] px-2 py-2 sm:py-2.5 text-left text-[10px] sm:text-xs font-bold uppercase tracking-wide hidden lg:table-cell">Nature</th>
+                                            }
+                                            <th className="w-[20%] sm:w-[15%] px-2 py-2 sm:py-2.5 text-right text-[10px] sm:text-xs font-bold uppercase tracking-wide">Montant</th>
+                                            <th className="w-[10%] px-2 py-2 sm:py-2.5 text-center text-[10px] sm:text-xs font-bold uppercase tracking-wide">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white dark:bg-gray-800">
+                                        {loading ? [...Array(ITEMS_PER_PAGE)].map((_, i) =>
+                                            <tr key={i} className="animate-pulse">
+                                                {[...Array(5)].map((_, j) =>
+                                                    <td key={j} className="border-b border-gray-100 dark:border-gray-700 px-3 py-2.5">
+                                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                                                    </td>
+                                                )}
+                                            </tr>
+                                        ) : paginatedDetails.map((item, idx) => (
+                                            <tr key={item.id || idx} className={`hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'} ${selectedItems.includes(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/10' : ''}`}>
+                                                <td className="w-[5%] border-b border-gray-100 dark:border-gray-700 px-2 text-center">
+                                                    <button onClick={() => toggleSelectItem(item.id)} className={`${selectedItems.includes(item.id) ? 'text-indigo-600' : 'text-gray-400'} hover:text-indigo-500 transition-colors`}>
+                                                        {selectedItems.includes(item.id) ? <CheckSquare size={14} /> : <Square size={14} />}
+                                                    </button>
+                                                </td>
+                                                <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-gray-700 dark:text-gray-300 font-semibold">{formatDate(item.date)}</td>
+                                                <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs">
+                                                    <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{item.numero_compte}</span>
+                                                </td>
+                                                <td className="w-[35%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-gray-800 dark:text-gray-200 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
+                                                <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 hidden lg:table-cell">
+                                                    <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 inline-flex text-[10px] font-bold rounded-full ${selectedSection === 'bilan'
+                                                        ? item.categorie?.toLowerCase().includes('actif')
+                                                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                                            : item.categorie?.toLowerCase().includes('passif') || item.categorie?.toLowerCase().includes('capitaux')
+                                                                ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                                        : item.nature?.toLowerCase().includes('produit')
+                                                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                                                            : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                                                        }`}>
+                                                        {(item.categorie || item.nature || '').replace(/_/g, ' ')}
+                                                    </span>
+                                                </td>
+                                                <td className="w-[20%] sm:w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-right font-bold text-gray-900 dark:text-gray-100">{formatCurrency(item.montant_ar)}</td>
+                                                <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 py-2 text-center">
+                                                    <div className="flex items-center justify-center space-x-2">
+                                                        <button
+                                                            onClick={() => { setEditingItem(item); setIsEditing(true); }}
+                                                            disabled={selectedItems.length > 1 || (selectedItems.length === 1 && !selectedItems.includes(item.id))}
+                                                            className={`p-1 rounded transition-colors ${(selectedItems.length > 1 || (selectedItems.length === 1 && !selectedItems.includes(item.id))) ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
+                                                            title={selectedItems.length > 1 ? "Désélectionnez pour modifier" : (selectedItems.length === 1 && !selectedItems.includes(item.id)) ? "Ligne non sélectionnée" : "Modifier"}
+                                                        >
+                                                            <Edit2 size={14} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteClick(item.id)}
+                                                            disabled={selectedItems.length > 0}
+                                                            className={`p-1 rounded transition-colors ${selectedItems.length > 0 ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:bg-red-50'}`}
+                                                            title={selectedItems.length > 0 ? "Utilisez la suppression groupée" : "Supprimer"}
+                                                        >
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <PaginationControls currentPage={currentPage} totalPages={totalPages} totalItems={totalItems} setCurrentPage={setCurrentPage} />
+                        </div>
+                    </div>
+                </div>
+            </main>
+            {/* AI ANALYSIS MODAL */}
+            {
+                isAnalysisModalOpen && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-purple-100 dark:border-purple-900/30">
+                            {/* Header Modale */}
+                            <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20">
+                                <div>
+                                    <h3 className="text-lg sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400 flex items-center">
+                                        <Sparkles className="mr-2 sm:mr-3 text-indigo-600 dark:text-indigo-400 shrink-0" size={20} />
+                                        <span className="truncate">Analyse Expert-Comptable</span>
+                                    </h3>
+                                    <p className="text-[10px] sm:text-sm text-purple-600/70 dark:text-purple-400/70 font-medium">Interprétation pour {selectedSection === 'bilan' ? 'votre Bilan' : 'votre Compte de Résultat'}</p>
+                                </div>
+                                <button
+                                    onClick={() => setIsAnalysisModalOpen(false)}
+                                    className="p-2 hover:bg-white dark:hover:bg-gray-700 rounded-full transition-colors group"
+                                >
+                                    <XCircle className="text-gray-400 group-hover:text-red-500 transition-colors" size={24} />
+                                </button>
+                            </div>
+
+                            {/* Corps Modale */}
+                            <div className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-6 no-scrollbar">
+                                {analysisError ? (
+                                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-6 rounded-xl flex flex-col items-center text-center">
+                                        <AlertCircle className="text-red-500 mb-3" size={48} />
+                                        <h4 className="text-lg font-bold text-red-800 dark:text-red-300 mb-2">Une erreur est survenue</h4>
+                                        <p className="text-red-600 dark:text-red-400 mb-4">{analysisError}</p>
+                                        <button
+                                            onClick={handleAIAnalysis}
+                                            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-bold shadow-lg shadow-red-200 dark:shadow-none"
+                                        >
+                                            Réessayer l'analyse
+                                        </button>
+                                    </div>
+                                ) : aiAnalysis ? (
+                                    <>
+                                        {/* Période Analysée */}
+                                        <div className="bg-purple-50 dark:bg-purple-900/20 px-4 py-2 rounded-lg border border-purple-100 dark:border-purple-800 inline-flex items-center space-x-2">
+                                            <Calendar size={14} className="text-purple-600 dark:text-purple-400" />
+                                            <span className="text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wider">
+                                                Période: {selectedYear} {selectedSubPeriod ? `(${selectedSubPeriod})` : '(Annuel)'}
+                                            </span>
+                                        </div>
+
+                                        {/* Vue d'Ensemble */}
+                                        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/10 dark:to-indigo-900/10 p-5 rounded-xl border-l-4 border-purple-500 shadow-sm transition-all hover:shadow-md">
+                                            <h4 className="font-bold text-purple-900 dark:text-purple-300 mb-3 flex items-center">
+                                                <span className="text-xl mr-2">📊</span> Vue d'Ensemble
+                                            </h4>
+                                            <p className="text-sm sm:text-base text-gray-700 dark:text-gray-300 italic leading-relaxed font-medium">
+                                                "{aiAnalysis.vue_ensemble}"
+                                            </p>
+                                        </div>
+
+                                        {/* Analyse Détaillée */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-xl border border-blue-100 dark:border-blue-800">
+                                                <h5 className="font-bold text-blue-800 dark:text-blue-300 mb-2 flex items-center uppercase text-xs tracking-widest">
+                                                    {selectedSection === 'bilan' ? '📦 Analyse des Actifs' : '↗️ Analyse des Produits'}
+                                                </h5>
+                                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                    {aiAnalysis.analyse_detaillee?.produits_ou_actifs}
+                                                </p>
+                                            </div>
+                                            <div className="bg-orange-50/50 dark:bg-orange-900/10 p-4 rounded-xl border border-orange-100 dark:border-orange-800">
+                                                <h5 className="font-bold text-orange-800 dark:text-orange-300 mb-2 flex items-center uppercase text-xs tracking-widest">
+                                                    {selectedSection === 'bilan' ? '🛡️ Analyse des Passifs' : '↘️ Analyse des Charges'}
+                                                </h5>
+                                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                    {aiAnalysis.analyse_detaillee?.charges_ou_passifs}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Rentabilité / Équilibre */}
+                                        <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-5 rounded-xl border-t-2 border-emerald-500 shadow-sm transition-all hover:shadow-md">
+                                            <h4 className="font-bold text-emerald-900 dark:text-emerald-300 mb-2 flex items-center">
+                                                <Sparkles size={18} className="mr-2 text-emerald-600" />
+                                                {selectedSection === 'bilan' ? 'Équilibre et Solvabilité' : 'Performance et Rentabilité'}
+                                            </h4>
+                                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                {aiAnalysis.analyse_detaillee?.performance_ou_equilibre}
+                                            </p>
+                                        </div>
+
+                                        {/* Transactions Remarquables */}
+                                        <div className="bg-slate-50 dark:bg-slate-900/30 p-5 rounded-xl border border-slate-200 dark:border-slate-700">
+                                            <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-3 flex items-center uppercase text-xs tracking-widest">
+                                                ✍️ Analyse des Transactions
+                                            </h4>
+                                            <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                                {aiAnalysis.transactions_remarquables}
+                                            </p>
+                                        </div>
+
+                                        {/* Points Forts & Faibles */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {aiAnalysis.points_forts && (
+                                                <div className="bg-emerald-50/30 dark:bg-emerald-900/5 p-4 rounded-xl border border-emerald-200/50 dark:border-emerald-800/30">
+                                                    <h5 className="font-bold text-emerald-800 dark:text-emerald-400 mb-3 flex items-center text-xs sm:text-sm">
+                                                        ✅ Points Forts
+                                                    </h5>
+                                                    <ul className="space-y-2">
+                                                        {aiAnalysis.points_forts.map((pt, i) => (
+                                                            <li key={i} className="flex items-start text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                                                <span className="text-emerald-500 mr-2 shrink-0">•</span> <span>{pt}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                            {aiAnalysis.points_faibles && (
+                                                <div className="bg-red-50/30 dark:bg-red-900/5 p-4 rounded-xl border border-red-200/50 dark:border-red-800/30">
+                                                    <h5 className="font-bold text-red-800 dark:text-red-400 mb-3 flex items-center text-xs sm:text-sm">
+                                                        ⚠️ Points Faibles / Risques
+                                                    </h5>
+                                                    <ul className="space-y-2">
+                                                        {aiAnalysis.points_faibles.map((pt, i) => (
+                                                            <li key={i} className="flex items-start text-xs sm:text-sm text-gray-700 dark:text-gray-300">
+                                                                <span className="text-red-500 mr-2 shrink-0">•</span> <span>{pt}</span>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* RECOMMANDATIONS */}
+                                        {aiAnalysis.recommandations && (
+                                            <div className="space-y-4">
+                                                <h4 className="font-bold text-gray-800 dark:text-gray-100 flex items-center px-1">
+                                                    🚀 Plan d'Action Recommandé
+                                                </h4>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                                    {aiAnalysis.recommandations.map((rec, i) => (
+                                                        <div key={i} className="bg-white dark:bg-gray-800 p-4 rounded-xl border border-purple-100 dark:border-purple-900/30 shadow-sm hover:shadow-lg transition-all border-t-4 border-t-purple-500 group">
+                                                            <div className="flex justify-between items-start mb-2">
+                                                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter ${rec.priorite === 'URGENT' ? 'bg-red-100 text-red-700' :
+                                                                    rec.priorite === 'IMPORTANT' ? 'bg-orange-100 text-orange-700' :
+                                                                        'bg-blue-100 text-blue-700'
+                                                                    }`}>
+                                                                    {rec.priorite}
+                                                                </span>
+                                                            </div>
+                                                            <h6 className="font-bold text-gray-900 dark:text-gray-100 text-sm mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                                                                {rec.action}
+                                                            </h6>
+                                                            <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed font-medium capitalize">
+                                                                {rec.justification}
+                                                            </p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : null}
+                            </div>
+
+                            {/* Footer Modale */}
+                            <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end bg-gray-50/50 dark:bg-gray-900/20">
+                                <button
+                                    onClick={() => setIsAnalysisModalOpen(false)}
+                                    className="px-5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm"
+                                >
+                                    Fermer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+            {/* Edit Modal */}
+            {
+                isEditing && editingItem && (
+                    <EditEntryModal
+                        item={editingItem}
+                        type={selectedSection}
+                        onClose={() => { setIsEditing(false); setEditingItem(null); }}
+                        onSave={(updatedItem) => {
+                            if (selectedSection === 'bilan') {
+                                const normalized = normalizeBilanData([updatedItem])[0];
+                                setBilanData(prev => prev.map(it => it.id === normalized.id ? normalized : it));
+                            } else {
+                                const normalized = normalizeCompteResultatData([updatedItem])[0];
+                                setCompteResultatData(prev => prev.map(it => it.id === normalized.id ? normalized : it));
+                            }
+                            fetchKPIs(); // Re-calculer les totaux au sommet
+                            setIsEditing(false);
+                            setEditingItem(null);
+                            toast.success("Modification enregistrée");
+                        }}
+                    />
+                )
+            }
             {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && (
-                <DeleteConfirmationModal
-                    count={deleteTarget?.isBulk ? selectedItems.length : 1}
-                    onClose={() => { setIsDeleteModalOpen(false); setDeleteTarget(null); }}
-                    onConfirm={confirmDelete}
-                    isLoading={isDeleting}
-                />
-            )}
-        </div>
+            {
+                isDeleteModalOpen && (
+                    <DeleteConfirmationModal
+                        count={deleteTarget?.isBulk ? selectedItems.length : 1}
+                        onClose={() => { setIsDeleteModalOpen(false); setDeleteTarget(null); }}
+                        onConfirm={confirmDelete}
+                        isLoading={isDeleting}
+                    />
+                )
+            }
+        </div >
     );
 };
 

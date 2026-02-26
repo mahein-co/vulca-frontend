@@ -259,7 +259,7 @@ export default function ProjectSelection() {
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 pt-20">
-                <LoadingSpinner />
+                <LoadingSpinner size="w-12 h-12" />
             </div>
         );
     }

@@ -89,7 +89,7 @@ const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
   const currentData = filteredData.slice(startIndex, startIndex + itemsPerPage);
 
   return (
-    <div className="fixed inset-0 bg-black/50 overflow-y-auto h-full w-full z-50 flex justify-center items-center p-2 sm:p-4">
+    <div className="fixed inset-0 bg-black/50 overflow-y-auto h-full w-full z-[10010] flex justify-center items-center p-2 sm:p-4">
 
       <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-5xl h-[95vh] sm:h-[90vh] lg:h-[85vh] flex flex-col border-t-2 border-gray-300 dark:border-gray-700">
 

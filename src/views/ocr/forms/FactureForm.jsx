@@ -6,6 +6,8 @@ import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice"
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
 import { useProjectId } from '../../../hooks/useProjectId';
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
+import LoadingOverlay from '../../../components/layout/LoadingOverlay';
+import ButtonSpinner from '../../../components/ui/ButtonSpinner';
 
 const TAUX_TVA_DEFAULT = 20;
 
@@ -20,19 +22,7 @@ const BackToFormsPage = ({ onClick }) => (
     </button>
 );
 
-// Composant Overlay de Chargement
-const LoadingOverlay = ({ message }) => (
-    <div className="fixed inset-0 bg-white/70 dark:bg-gray-900/80 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
-        <div className="flex flex-col items-center max-w-sm w-full text-center">
-            {/* Spinner style iOS/moderne */}
-            <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-                <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-            </div>
-            <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100 animate-pulse px-4">{message}</p>
-        </div>
-    </div>
-);
+
 
 
 
@@ -602,10 +592,21 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                         onClick={ajouterLigne}
                                         className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 text-white font-semibold text-sm py-1.5 px-4 rounded-lg shadow-md transition duration-200 flex items-center"
                                     >
-                                        <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={ligneEnModification ? "M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" : "M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"} />
-                                        </svg>
-                                        {ligneEnModification ? 'Valider modif.' : 'Ajouter ligne'}
+                                        {ligneEnModification ? (
+                                            <div className="flex items-center min-w-[100px] justify-center">
+                                                <svg className="w-4 h-4 mr-1 transition-transform group-hover:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span>Valider modif.</span>
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center min-w-[100px] justify-center">
+                                                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <span>Ajouter ligne</span>
+                                            </div>
+                                        )}
                                     </button>
                                 </div>
 
@@ -733,7 +734,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                 >
                                     {isSubmitting ? (
                                         <>
-                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                            <ButtonSpinner className="mr-3" />
                                             Traitement...
                                         </>
                                     ) : (
@@ -766,6 +767,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                     : "Êtes-vous sûr de vouloir supprimer cette ligne de facture ?"}
                 confirmText={isDeleteAll ? "Tout supprimer" : "Supprimer"}
                 isDanger={true}
+                isLoading={false}
             />
         </>
     );

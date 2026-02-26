@@ -6,6 +6,8 @@ import { getTodayISO } from '../../../utils/dateUtils';
 import { useSaveCompteResultatManualMutation } from "../../../states/compta/comptaApiSlice";
 import { useProjectId } from '../../../hooks/useProjectId';
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
+import LoadingOverlay from '../../../components/layout/LoadingOverlay';
+import ButtonSpinner from '../../../components/ui/ButtonSpinner';
 
 const BackToFormsPage = ({ onClick }) => (
     <button onClick={onClick} className="text-indigo-500 hover:text-indigo-700 text-xs font-medium flex items-center transition duration-150" title="Retour au menu de saisie">
@@ -14,17 +16,7 @@ const BackToFormsPage = ({ onClick }) => (
     </button>
 );
 
-const LoadingOverlay = ({ message }) => (
-    <div className="fixed inset-0 bg-white/60 dark:bg-black/80 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
-        <div className="flex flex-col items-center max-w-sm w-full text-center">
-            <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-                <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-            </div>
-            <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 animate-pulse px-4">{message}</p>
-        </div>
-    </div>
-);
+
 
 const PCG_MAPPING = {
     '60': { 'libelle': 'Achats de marchandises', 'nature': 'CHARGE' },
@@ -429,9 +421,18 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
 
                     {lignes.length > 0 && (
                         <div className="mt-0 p-4 flex justify-end items-center bg-white dark:bg-gray-800 border-t dark:border-gray-700 rounded-lg shadow-lg">
-                            <button onClick={enregistrerCompteResultat} disabled={lignes.length === 0} className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto justify-center">
-                                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Valider
+                            <button onClick={enregistrerCompteResultat} disabled={isLoading || lignes.length === 0} className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto justify-center">
+                                {isLoading ? (
+                                    <>
+                                        <ButtonSpinner className="mr-2" />
+                                        <span>Traitement...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        Valider
+                                    </>
+                                )}
                             </button>
                         </div>
                     )}

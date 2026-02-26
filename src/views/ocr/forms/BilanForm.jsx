@@ -6,6 +6,8 @@ import { getTodayISO } from '../../../utils/dateUtils';
 import { useSaveBilanManualMutation } from "../../../states/compta/comptaApiSlice";
 import { useProjectId } from '../../../hooks/useProjectId';
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
+import LoadingOverlay from '../../../components/layout/LoadingOverlay';
+import ButtonSpinner from '../../../components/ui/ButtonSpinner';
 
 const BackToFormsPage = ({ onClick }) => (
     <button
@@ -18,17 +20,7 @@ const BackToFormsPage = ({ onClick }) => (
     </button>
 );
 
-const LoadingOverlay = ({ message }) => (
-    <div className="fixed inset-0 bg-white/60 dark:bg-black/80 backdrop-blur-sm z-[10000] flex flex-col items-center justify-center p-4">
-        <div className="flex flex-col items-center max-w-sm w-full text-center">
-            <div className="relative w-12 h-12 sm:w-16 sm:h-16 mb-4">
-                <div className="absolute inset-0 border-4 border-gray-200 dark:border-gray-700 rounded-full"></div>
-                <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
-            </div>
-            <p className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-200 animate-pulse px-4">{message}</p>
-        </div>
-    </div>
-);
+
 
 const PCG_MAPPING = {
     // CLASSE 1 : CAPITAUX PROPRES & PASSIFS NON COURANTS
@@ -543,10 +535,21 @@ export default function BilanForm({ onSaisieCompleted }) {
                                 disabled={erreurNumeroCompte}
                                 className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 text-white font-semibold text-sm py-1 px-4 rounded-lg shadow-md transition duration-200 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={ligneEnModification ? "M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" : "M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"} />
-                                </svg>
-                                {ligneEnModification ? 'Valider modif.' : 'Ajouter ligne'}
+                                {ligneEnModification ? (
+                                    <div className="flex items-center min-w-[100px] justify-center">
+                                        <svg className="w-4 h-4 mr-1 transition-transform group-hover:rotate-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>Valider modif.</span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center min-w-[100px] justify-center">
+                                        <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>Ajouter ligne</span>
+                                    </div>
+                                )}
                             </button>
                         </div>
                     </div>
@@ -672,11 +675,20 @@ export default function BilanForm({ onSaisieCompleted }) {
                         <div className="mt-0 p-4 flex justify-end items-center bg-white dark:bg-gray-800 border-t dark:border-gray-700 rounded-lg shadow-lg">
                             <button
                                 onClick={enregistrerBilan}
-                                disabled={lignes.length === 0}
+                                disabled={lignes.length === 0 || isLoading}
                                 className="bg-gray-800 dark:bg-gray-600 hover:bg-gray-900 dark:hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg shadow-xl transition duration-200 flex items-center text-sm disabled:opacity-50 disabled:cursor-not-allowed w-full md:w-auto"
                             >
-                                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                Valider
+                                {isLoading ? (
+                                    <>
+                                        <ButtonSpinner className="mr-3" />
+                                        Traitement...
+                                    </>
+                                ) : (
+                                    <>
+                                        <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2l4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        Valider
+                                    </>
+                                )}
                             </button>
                         </div>
                     )}
@@ -700,6 +712,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                     : "Êtes-vous sûr de vouloir supprimer cette ligne ?"}
                 confirmText={isDeleteAll ? "Tout supprimer" : "Supprimer"}
                 isDanger={true}
+                isLoading={false}
             />
         </div >
     );

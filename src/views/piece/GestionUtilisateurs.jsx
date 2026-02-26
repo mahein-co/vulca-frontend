@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { X, Edit2, Trash2, UserPlus } from 'lucide-react';
+import { X, Edit2, Trash2, UserPlus, Loader } from 'lucide-react';
 import { useGetUsersQuery, useGetAdminCountQuery, useCreateUserByAdminMutation, useUpdateUserMutation, useDeleteUserMutation } from '../../states/user/userApiSlice';
 import toast from 'react-hot-toast';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import ButtonSpinner from '../../components/ui/ButtonSpinner';
 
 const DeleteConfirmationModal = ({ isOpen, onCancel, onConfirm, userName, isDeleting }) => {
     if (!isOpen) return null;
@@ -28,9 +30,16 @@ const DeleteConfirmationModal = ({ isOpen, onCancel, onConfirm, userName, isDele
                     <button
                         onClick={onConfirm}
                         disabled={isDeleting}
-                        className="px-6 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center min-w-[100px]"
+                        className="px-6 py-2 text-sm font-bold bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 min-w-[120px]"
                     >
-                        {isDeleting ? "..." : "Supprimer"}
+                        {isDeleting ? (
+                            <>
+                                <ButtonSpinner />
+                                <span>Suppression...</span>
+                            </>
+                        ) : (
+                            "Supprimer"
+                        )}
                     </button>
                 </div>
             </div>
@@ -308,9 +317,16 @@ const GestionUtilisateurs = () => {
                                     <button
                                         onClick={handleSubmit}
                                         disabled={isUpdating}
-                                        className="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md hover:shadow-lg transition-all disabled:opacity-50"
+                                        className="px-6 py-2 text-sm font-semibold bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 min-w-[120px]"
                                     >
-                                        {isUpdating ? "Mise à jour..." : "Maj"}
+                                        {isUpdating ? (
+                                            <>
+                                                <ButtonSpinner />
+                                                <span>Mise à jour...</span>
+                                            </>
+                                        ) : (
+                                            "Enregistrer"
+                                        )}
                                     </button>
                                 </div>
                             </div>
@@ -421,9 +437,16 @@ const GestionUtilisateurs = () => {
                                     <button
                                         onClick={handleCreateUser}
                                         disabled={isCreating}
-                                        className="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md hover:shadow-lg transition-all disabled:opacity-50 font-semibold"
+                                        className="px-6 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-md hover:shadow-lg transition-all disabled:opacity-50 font-semibold flex items-center justify-center gap-2 min-w-[100px]"
                                     >
-                                        {isCreating ? "Création..." : "Créer"}
+                                        {isCreating ? (
+                                            <>
+                                                <ButtonSpinner />
+                                                <span>Création...</span>
+                                            </>
+                                        ) : (
+                                            "Créer"
+                                        )}
                                     </button>
                                 </div>
                             </div>

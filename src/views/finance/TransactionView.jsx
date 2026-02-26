@@ -25,6 +25,9 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import ButtonSpinner from '../../components/ui/ButtonSpinner';
+import ConfirmationModal from '../../components/ui/ConfirmationModal';
 import { fetchWithReauth } from '../../utils/apiUtils';
 import { BASE_URL_API } from '../../constants/globalConstants';
 import { useProjectId } from '../../hooks/useProjectId';
@@ -647,7 +650,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                             >
                                 {isAnalyzing ? (
                                     <>
-                                        <Loader className="animate-spin h-4 w-4" />
+                                        <ButtonSpinner className="mr-2" />
                                         <span>Analyse en cours...</span>
                                     </>
                                 ) : (
@@ -664,7 +667,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
 
                 {/* Content Area with Loading Overlay */}
                 <div className="relative flex-1 flex flex-col min-h-0 min-w-0">
-                    {loading && <LoadingOverlay message="Chargement des données..." fullScreen={false} className="!justify-start pt-40" />}
+                    {loading && <LoadingOverlay message="Chargement des données..." fullScreen={true} />}
 
                     {/* 2. BARRE DE RECHERCHE */}
                     <div className="bg-white dark:bg-gray-800 p-1.5 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 mb-1">
@@ -703,7 +706,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                     disabled={isDeleting}
                                     className="flex items-center space-x-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded shadow transition-all disabled:opacity-50"
                                 >
-                                    {isDeleting ? <Loader size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                                    {isDeleting ? <ButtonSpinner size="w-3 h-3" /> : <Trash2 size={12} />}
                                     <span>Supprimer la sélection</span>
                                 </button>
                                 <button
@@ -891,7 +894,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
             {/* AI ANALYSIS MODAL */}
             {
                 isAnalysisModalOpen && (
-                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+                    <div className="fixed inset-0 z-[10010] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
                         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-purple-100 dark:border-purple-900/30">
                             {/* Header Modale */}
                             <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20">
@@ -1086,16 +1089,22 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                 )
             }
             {/* Delete Confirmation Modal */}
-            {
-                isDeleteModalOpen && (
-                    <DeleteConfirmationModal
-                        count={deleteTarget?.isBulk ? selectedItems.length : 1}
-                        onClose={() => { setIsDeleteModalOpen(false); setDeleteTarget(null); }}
-                        onConfirm={confirmDelete}
-                        isLoading={isDeleting}
-                    />
-                )
-            }
+            <ConfirmationModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => {
+                    setIsDeleteModalOpen(false);
+                    setDeleteTarget(null);
+                }}
+                onConfirm={confirmDelete}
+                isLoading={isDeleting}
+                isDanger={true}
+                title={deleteTarget?.isBulk ? "Supprimer la sélection" : "Confirmer la suppression"}
+                message={deleteTarget?.isBulk
+                    ? `Êtes-vous sûr de vouloir supprimer ces ${selectedItems.length} lignes ? Cette action est irréversible.`
+                    : "Êtes-vous sûr de vouloir supprimer cette ligne ? Cette action est irréversible."
+                }
+                confirmText="Supprimer"
+            />
         </div >
     );
 };
@@ -1266,7 +1275,7 @@ const EditEntryModal = ({ item, type, onClose, onSave }) => {
                             disabled={isSaving}
                             className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg shadow-lg shadow-indigo-200 dark:shadow-none transition-all flex items-center space-x-2 disabled:opacity-50"
                         >
-                            {isSaving ? <Loader size={16} className="animate-spin" /> : <span>Enregistrer</span>}
+                            {isSaving ? <ButtonSpinner /> : <span>Enregistrer</span>}
                         </button>
                     </div>
                 </form>
@@ -1275,39 +1284,7 @@ const EditEntryModal = ({ item, type, onClose, onSave }) => {
     );
 };
 
-const DeleteConfirmationModal = ({ count, onClose, onConfirm, isLoading }) => {
-    return (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-red-100 dark:border-red-900/30 p-6 text-center">
-                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
-                    <Trash2 className="h-6 w-6 text-red-600 dark:text-red-400" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                    Confirmer la suppression
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 font-medium">
-                    Êtes-vous sûr de vouloir supprimer {count > 1 ? `ces ${count} lignes` : "cette ligne"} ? Cette action est irréversible.
-                </p>
-                <div className="flex flex-col space-y-2">
-                    <button
-                        onClick={onConfirm}
-                        disabled={isLoading}
-                        className="w-full px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg shadow-lg shadow-red-200 dark:shadow-none transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
-                    >
-                        {isLoading ? <Loader size={16} className="animate-spin" /> : <span>Supprimer définitivement</span>}
-                    </button>
-                    <button
-                        onClick={onClose}
-                        disabled={isLoading}
-                        className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-bold rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-all"
-                    >
-                        Annuler
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
+
 
 export default TransactionView;
 

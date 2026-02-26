@@ -11,6 +11,7 @@ import {
 import { useGetProfileQuery } from '../../states/user/userApiSlice';
 import { FaPlus, FaEllipsisV, FaTimes, FaEdit, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import ButtonSpinner from '../../components/ui/ButtonSpinner';
 
 // Helper for initials
 const getInitials = (name) => {
@@ -106,7 +107,14 @@ const DeleteModal = ({ project, onClose, onConfirm, isDeleting }) => {
                             onClick={onConfirm}
                             disabled={isDeleting}
                         >
-                            {isDeleting ? 'Suppression...' : 'Supprimer définitivement'}
+                            {isDeleting ? (
+                                <div className="flex items-center gap-2">
+                                    <ButtonSpinner />
+                                    <span>Suppression...</span>
+                                </div>
+                            ) : (
+                                'Supprimer définitivement'
+                            )}
                         </button>
                         <button
                             type="button"
@@ -118,8 +126,8 @@ const DeleteModal = ({ project, onClose, onConfirm, isDeleting }) => {
                         </button>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 };
 
@@ -359,7 +367,7 @@ export default function ProjectSelection() {
                                             className="px-5 py-2.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold hover:bg-gray-50 dark:hover:bg-gray-600 hover:border-gray-300 dark:hover:border-gray-500 transition-all shadow-sm w-full disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                                         >
                                             {isRequesting && requestingProjectId === project.id ? (
-                                                <LoadingSpinner />
+                                                <ButtonSpinner color="text-gray-400 dark:text-gray-300" />
                                             ) : (
                                                 "Demander l'accès"
                                             )}
@@ -433,27 +441,37 @@ export default function ProjectSelection() {
                                         <button
                                             type="submit"
                                             disabled={isCreating || isUpdating}
-                                            className="flex-1 px-4 py-3 bg-blue-600 dark:bg-blue-600 text-white rounded-xl hover:bg-blue-700 dark:hover:bg-blue-500 font-semibold shadow-lg shadow-blue-200 dark:shadow-blue-900/50 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                                            className="flex-1 px-4 py-3 bg-blue-600 dark:bg-blue-600 text-white rounded-xl hover:bg-blue-700 dark:hover:bg-blue-500 font-semibold shadow-lg shadow-blue-200 dark:shadow-blue-900/50 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
-                                            {isCreating || isUpdating ? 'Enregistrement...' : 'Enregistrer'}
+                                            {isCreating || isUpdating ? (
+                                                <>
+                                                    <ButtonSpinner />
+                                                    <span>Enregistrement...</span>
+                                                </>
+                                            ) : (
+                                                'Enregistrer'
+                                            )}
                                         </button>
                                     </div>
                                 </form>
                             </div>
                         </div>
                     </div>
-                )}
+                )
+                }
 
                 {/* Delete Confirmation Modal */}
-                {showDeleteModal && (
-                    <DeleteModal
-                        project={projectToDelete}
-                        onClose={() => setShowDeleteModal(false)}
-                        onConfirm={handleConfirmDelete}
-                        isDeleting={isDeleting}
-                    />
-                )}
-            </div>
-        </div>
+                {
+                    showDeleteModal && (
+                        <DeleteModal
+                            project={projectToDelete}
+                            onClose={() => setShowDeleteModal(false)}
+                            onConfirm={handleConfirmDelete}
+                            isDeleting={isDeleting}
+                        />
+                    )
+                }
+            </div >
+        </div >
     );
 }

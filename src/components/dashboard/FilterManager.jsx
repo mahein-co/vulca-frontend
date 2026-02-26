@@ -13,7 +13,7 @@ import {
 import { fetchWithReauth } from '../../utils/apiUtils';
 import { BASE_URL_API } from '../../constants/globalConstants';
 
-const FilterManager = ({ page = "dashboard", rightAction = null }) => {
+const FilterManager = ({ page = "dashboard", rightAction = null, hidePeriod = false }) => {
   const dispatch = useDispatch();
 
   // Synchroniser la page actuelle pour le chatbot
@@ -89,30 +89,38 @@ const FilterManager = ({ page = "dashboard", rightAction = null }) => {
         </div>
 
         {/* Inputs Directs (Style "Avant", sans bouton Appliquer) */}
-        <div className="flex flex-wrap gap-2 sm:space-x-3 items-center text-sm w-full lg:w-auto">
-          <div className="flex items-center space-x-2">
-            <label className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm">Du</label>
-            <input
-              type="date"
-              value={dateStart}
-              onChange={(e) => setDateStart(e.target.value)}
-              className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <label className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm">Au</label>
-            <input
-              type="date"
-              value={dateEnd}
-              onChange={(e) => setDateEnd(e.target.value)}
-              className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-            />
-          </div>
+        {!hidePeriod && (
+          <div className="flex flex-wrap gap-2 sm:space-x-3 items-center text-sm w-full lg:w-auto">
+            <div className="flex items-center space-x-2">
+              <label className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm">Du</label>
+              <input
+                type="date"
+                value={dateStart}
+                onChange={(e) => setDateStart(e.target.value)}
+                className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="text-gray-600 dark:text-gray-300 text-xs sm:text-sm">Au</label>
+              <input
+                type="date"
+                value={dateEnd}
+                onChange={(e) => setDateEnd(e.target.value)}
+                className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              />
+            </div>
 
+            <div className="flex gap-2">
+              {rightAction}
+            </div>
+          </div>
+        )}
+
+        {hidePeriod && rightAction && (
           <div className="flex gap-2">
             {rightAction}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

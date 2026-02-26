@@ -52,6 +52,7 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd, onLoad 
 
         if (data.length === 0) {
           setLoading(false);
+          if (onLoad) onLoad(false);
           return;
         }
 

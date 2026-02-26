@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import ButtonSpinner from '../../components/ui/ButtonSpinner';
 import { setCurrentPage, selectActiveFilter } from '../../states/dashboard/dashboardFilterSlice';
 import BalanceModal from '../balance/BalanceModal';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
@@ -20,7 +21,6 @@ import {
   Calendar,
   AlertCircle,
   XCircle,
-  Loader,
   LayoutDashboard,
   Target,
   Zap,
@@ -51,14 +51,13 @@ const formatCurrencyHelper = (amount, decimals = 2) => {
 
 // --- 2. Composants de Support ---
 
-const JournalRepartition = ({ globalStartDate, globalEndDate, onLoad }) => {
+const JournalRepartition = ({ globalStartDate, globalEndDate, onLoad, selectedJournal, setSelectedJournal }) => {
   const [totalFormatted, setTotalFormatted] = useState('0 Ar');
   const [totalGlobal, setTotalGlobal] = useState(0);
   const [journals, setJournals] = useState([]);
   const projectId = useProjectId();
 
   // États de sélection et pagination
-  const [selectedJournal, setSelectedJournal] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
@@ -186,7 +185,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate, onLoad }) => {
       {/* Modal Journal Detail */}
       {/* Modal Journal Detail - STYLE EXACT BALANCE MODAL */}
       {selectedJournal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-50 flex justify-center items-center p-2 sm:p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm overflow-y-auto h-full w-full z-[10010] flex justify-center items-center p-2 sm:p-4">
 
           <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-5xl max-h-[95vh] sm:max-h-[90vh] lg:max-h-[85vh] h-auto flex flex-col border-t-2 border-gray-300 dark:border-gray-700">
 
@@ -657,6 +656,7 @@ const Dashboard = () => {
 
   const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
   const [isIndicatorsModalOpen, setIsIndicatorsModalOpen] = useState(false);
+  const [selectedJournal, setSelectedJournal] = useState(null);
 
   // États pour l'analyse IA
   const [aiAnalysis, setAiAnalysis] = useState(null);
@@ -672,6 +672,12 @@ const Dashboard = () => {
 
   // Fonction pour analyser le dashboard avec l'IA
   const handleAIAnalysis = async () => {
+    // Si déjà analysé et pas d'erreur, on ouvre juste la modale
+    if (hasAnalyzed && aiAnalysis && !analysisError) {
+      setIsIndicatorsModalOpen(true);
+      return;
+    }
+
     setIsAnalyzing(true);
     setAnalysisError(null);
 
@@ -720,23 +726,22 @@ const Dashboard = () => {
       if (data.success) {
         setAiAnalysis(data.analysis);
         setHasAnalyzed(true);
+        setIsIndicatorsModalOpen(true); // OUVRIR LA MODALE APRES SUCCÈS
       } else {
         setAnalysisError(data.error || 'Erreur lors de l\'analyse');
+        setIsIndicatorsModalOpen(true); // OUVRIR AUSSI SI ERREUR POUR MONTRER LE MESSAGE
       }
     } catch (error) {
       console.error('Erreur analyse IA:', error);
       setAnalysisError('Impossible de contacter le serveur d\'analyse');
+      setIsIndicatorsModalOpen(true);
     } finally {
       setIsAnalyzing(false);
     }
   };
 
-  // Déclencher l'analyse automatiquement à l'ouverture de la modale
-  useEffect(() => {
-    if (isIndicatorsModalOpen && !hasAnalyzed && !isAnalyzing) {
-      handleAIAnalysis();
-    }
-  }, [isIndicatorsModalOpen]);
+  // Suppression du déclenchement automatique à l'ouverture (géré par le bouton)
+
 
   // Réinitialiser l'analyse quand les dates changent
   useEffect(() => {
@@ -758,16 +763,28 @@ const Dashboard = () => {
       <div className="relative z-[10001]">
         <FilterManager
           page="dashboard"
+          hidePeriod={isBalanceModalOpen || isIndicatorsModalOpen || !!selectedJournal}
           rightAction={
             <button
-              onClick={() => setIsIndicatorsModalOpen(true)}
-              className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+              onClick={handleAIAnalysis}
+              disabled={isAnalyzing}
+              className={`inline-flex items-center px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-300 shadow-md ${isAnalyzing
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white hover:shadow-emerald-200 dark:hover:shadow-none transform hover:-translate-y-0.5'
+                }`}
               title="Analyser en détails"
             >
-              <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
-              Analyse IA
+              {isAnalyzing ? (
+                <>
+                  <ButtonSpinner className="mr-1.5" />
+                  <span>Analyse en cours...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-1.5" />
+                  <span>Analyse IA</span>
+                </>
+              )}
             </button>
           }
         />
@@ -1100,6 +1117,8 @@ const Dashboard = () => {
           globalStartDate={globalDateStart}
           globalEndDate={globalDateEnd}
           onLoad={handleLoadStatus('journals')}
+          selectedJournal={selectedJournal}
+          setSelectedJournal={setSelectedJournal}
         />
       </div>
 
@@ -1116,14 +1135,14 @@ const Dashboard = () => {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[10010] flex justify-center items-center p-2 sm:p-4 animate-fadeIn">
           <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden border border-purple-100 dark:border-purple-900/30">
 
-            {/* En-tête Modale - Style TransactionView */}
-            <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20">
+            {/* En-tête Modale - Style TransactionView Harmonisé */}
+            <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20">
               <div>
-                <h3 className="text-lg sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-indigo-600 dark:from-purple-400 dark:to-indigo-400 flex items-center">
-                  <Sparkles className="mr-2 sm:mr-3 text-purple-600 dark:text-purple-400 shrink-0" size={24} />
-                  <span className="truncate">Analyse des Indicateurs Financiers</span>
+                <h3 className="text-lg sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600 dark:from-indigo-400 dark:to-blue-400 flex items-center">
+                  <Sparkles className="mr-2 sm:mr-3 text-indigo-600 dark:text-indigo-400 shrink-0" size={24} />
+                  <span className="truncate">Analyse Expert-Comptable</span>
                 </h3>
-                <p className="text-[10px] sm:text-sm text-purple-600/70 dark:text-purple-400/70 font-medium">Auto-analyse intelligente de votre performance</p>
+                <p className="text-[10px] sm:text-sm text-purple-600/70 dark:text-purple-400/70 font-medium">Auto-analyse intelligente de votre performance globale</p>
               </div>
               <div className="flex items-center gap-2">
                 <button

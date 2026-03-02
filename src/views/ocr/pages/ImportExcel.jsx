@@ -317,18 +317,33 @@ const ExcelValidationForm = ({
                                 const docSheetKey = year ? `${currentIndex}-${sheetIdx}-${year}` : `${currentIndex}-${sheetIdx}`;
                                 let currentData = editedData[docSheetKey];
 
-                                // Si pas encore de modifications, créer la version initiale (filtrée par année si multi-year)
+                                // Si pas encore de modifications, créer la version initiale
                                 if (!currentData) {
+                                    const docType = sheet.structured_data.type_document;
+
                                     if (isMultiYear && year) {
-                                        // Filtrer les données pour ne garder que cette année
-                                        currentData = {
-                                            ...sheet.structured_data,
-                                            annees: [year],
-                                            lignes: sheet.structured_data.lignes.map(ligne => ({
-                                                ...ligne,
-                                                valeurs: { [year]: ligne.valeurs[year] }
-                                            }))
-                                        };
+                                        if (docType === 'JOURNAL') {
+                                            // Pour le Journal, on utilise les données déjà groupées par le backend
+                                            // ou on filtre la liste plate par date
+                                            const yearRows = sheet.structured_data.donnees_par_annee?.[year] ||
+                                                sheet.structured_data.lignes.filter(l => l.date && l.date.split('-')[0] === year);
+
+                                            currentData = {
+                                                ...sheet.structured_data,
+                                                annees: [year],
+                                                lignes: yearRows
+                                            };
+                                        } else {
+                                            // Bilan / CR : Filtrer les colonnes de valeurs
+                                            currentData = {
+                                                ...sheet.structured_data,
+                                                annees: [year],
+                                                lignes: sheet.structured_data.lignes.map(ligne => ({
+                                                    ...ligne,
+                                                    valeurs: { [year]: (ligne.valeurs ? ligne.valeurs[year] : 0) }
+                                                }))
+                                            };
+                                        }
                                     } else {
                                         currentData = sheet.structured_data;
                                     }
@@ -607,16 +622,27 @@ export default function ImportExcel({ onSaisieCompleted }) {
                 let currentData = newState[key];
 
                 if (!currentData) {
+                    const docType = sheet.structured_data.type_document;
                     // Initialisation si pas encore de modification (même logique que l'affichage)
                     if (y && sheet.structured_data.annees && sheet.structured_data.annees.length > 1) {
-                        currentData = {
-                            ...sheet.structured_data,
-                            annees: [y],
-                            lignes: sheet.structured_data.lignes.map(ligne => ({
-                                ...ligne,
-                                valeurs: { [y]: ligne.valeurs[y] }
-                            }))
-                        };
+                        if (docType === 'JOURNAL') {
+                            const yearRows = sheet.structured_data.donnees_par_annee?.[y] ||
+                                sheet.structured_data.lignes.filter(l => l.date && l.date.split('-')[0] === y);
+                            currentData = {
+                                ...sheet.structured_data,
+                                annees: [y],
+                                lignes: yearRows
+                            };
+                        } else {
+                            currentData = {
+                                ...sheet.structured_data,
+                                annees: [y],
+                                lignes: sheet.structured_data.lignes.map(ligne => ({
+                                    ...ligne,
+                                    valeurs: { [y]: (ligne.valeurs ? ligne.valeurs[y] : 0) }
+                                }))
+                            };
+                        }
                     } else {
                         currentData = sheet.structured_data;
                     }
@@ -814,7 +840,13 @@ export default function ImportExcel({ onSaisieCompleted }) {
 
                         let rows;
                         if (docType === 'JOURNAL') {
-                            rows = structuredData.lignes.map((ligne, idx) => {
+                            // Pour le Journal, si on a une année spécifique, on ne prend que les lignes de cette année
+                            let sourceLignes = structuredData.lignes;
+                            if (year && sheet.structured_data.annees?.length > 1) {
+                                sourceLignes = sourceLignes.filter(l => !l.date || l.date.split('-')[0] === year || year === 'Inconnu');
+                            }
+
+                            rows = sourceLignes.map((ligne, idx) => {
                                 const debit = parseFloat(ligne.debit || 0);
                                 const credit = parseFloat(ligne.credit || 0);
                                 return {

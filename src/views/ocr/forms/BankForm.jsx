@@ -395,11 +395,11 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                   <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
                     <div>
                       <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">Période Du</label>
-                      <input type="date" name="dateDebut" value={header.dateDebut} onChange={handleChangeHeader} className={`w-full px-1 py-1 text-xs border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 ${headerErrors.dateDebut ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
+                      <input type="date" name="dateDebut" value={header.dateDebut} onChange={handleChangeHeader} max={getTodayISO()} className={`w-full px-1 py-1 text-xs border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 ${headerErrors.dateDebut ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
                     </div>
                     <div>
                       <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">Au</label>
-                      <input type="date" name="dateFin" value={header.dateFin} onChange={handleChangeHeader} className={`w-full px-1 py-1 text-xs border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 ${headerErrors.dateFin ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
+                      <input type="date" name="dateFin" value={header.dateFin} onChange={handleChangeHeader} max={getTodayISO()} className={`w-full px-1 py-1 text-xs border rounded-md bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 ${headerErrors.dateFin ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`} />
                     </div>
                   </div>
                 </div>
@@ -422,7 +422,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date</label>
-                    <input type="date" name="date" value={nouvelleLigne.date} onChange={handleChangeLigne} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.date ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                    <input type="date" name="date" value={nouvelleLigne.date} onChange={handleChangeLigne} max={getTodayISO()} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.date ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">

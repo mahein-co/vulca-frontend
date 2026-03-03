@@ -308,6 +308,7 @@ export default function GestionPiecesBoard() {
                             <input
                                 type="date"
                                 value={dateDebut}
+                                max={new Date().toISOString().split('T')[0]}
                                 className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                 onChange={(e) => setDateDebut(e.target.value)}
                             />
@@ -317,6 +318,7 @@ export default function GestionPiecesBoard() {
                             <input
                                 type="date"
                                 value={dateFin}
+                                max={new Date().toISOString().split('T')[0]}
                                 className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                 onChange={(e) => setDateFin(e.target.value)}
                             />

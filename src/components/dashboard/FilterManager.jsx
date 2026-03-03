@@ -97,6 +97,7 @@ const FilterManager = ({ page = "dashboard", rightAction = null, hidePeriod = fa
                 type="date"
                 value={dateStart}
                 onChange={(e) => setDateStart(e.target.value)}
+                max={defaultDateEnd}
                 className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>
@@ -106,6 +107,7 @@ const FilterManager = ({ page = "dashboard", rightAction = null, hidePeriod = fa
                 type="date"
                 value={dateEnd}
                 onChange={(e) => setDateEnd(e.target.value)}
+                max={defaultDateEnd}
                 className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               />
             </div>

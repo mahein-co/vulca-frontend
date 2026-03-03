@@ -450,6 +450,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             name="dateFacture"
                                             value={header.dateFacture}
                                             onChange={handleChangeHeader}
+                                            max={getTodayISO()}
                                             className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${headerErrors.dateFacture ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                                         />
                                     </div>

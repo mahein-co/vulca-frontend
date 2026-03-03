@@ -180,7 +180,6 @@ export default function RegisterForm() {
                                             >
                                                 <option value="expert_comptable">Expert Comptable</option>
                                                 {adminCount < 3 && <option value="admin">Administrateur</option>}
-                                                <option value="assistant">Assistant</option>
                                             </select>
                                             {/* Dynamic Admin Quota Message */}
                                             <p className="text-xs text-red-500 mt-1 ml-1">

@@ -65,7 +65,7 @@ const GestionUtilisateurs = () => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
-        role: 'assistant',
+        role: 'expert_comptable',
         status: 'Active',
         avatar: null
     });
@@ -73,7 +73,7 @@ const GestionUtilisateurs = () => {
         username: '',
         name: '',
         email: '',
-        role: 'assistant'
+        role: 'expert_comptable'
     });
 
     // TODO: Implement Update Mutation
@@ -103,7 +103,7 @@ const GestionUtilisateurs = () => {
         setFormData({
             name: user.username || user.name, // Adjust based on API response
             email: user.email,
-            role: user.role || 'assistant',
+            role: user.role || 'expert_comptable',
             status: user.is_active ? 'Active' : 'Bloqué', // Adjust based on API boolean
             avatar: user.avatar
         });
@@ -140,7 +140,7 @@ const GestionUtilisateurs = () => {
             await createUser(createFormData).unwrap();
             toast.success("Utilisateur créé avec succès");
             setShowCreateModal(false);
-            setCreateFormData({ username: '', name: '', email: '', role: 'assistant' });
+            setCreateFormData({ username: '', name: '', email: '', role: 'expert_comptable' });
         } catch (error) {
             console.error(error);
             toast.error(error?.data?.error || "Erreur lors de la création");
@@ -219,7 +219,7 @@ const GestionUtilisateurs = () => {
                                     </h3>
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{user.email}</p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500 mb-4 capitalize">
-                                        {user.role === 'expert_comptable' ? 'Expert Comptable' : user.role === 'admin' ? 'Administrateur' : user.role === 'assistant' ? 'Assistant' : 'Expert Comptable'}
+                                        {user.role === 'expert_comptable' ? 'Expert Comptable' : user.role === 'admin' ? 'Administrateur' : 'Expert Comptable'}
                                     </p>
 
                                     <span className={`${user.is_active ? 'bg-green-500' : 'bg-red-500'} text-white px-5 py-1.5 rounded-full text-sm font-medium shadow-md`}>
@@ -286,7 +286,6 @@ const GestionUtilisateurs = () => {
                                         disabled={editingUser?.id === userAuthenticated?.id}
                                         className={`w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all ${editingUser?.id === userAuthenticated?.id ? 'bg-gray-100 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed' : ''}`}
                                     >
-                                        <option value="assistant">Assistant</option>
                                         <option value="admin">Administrateur</option>
                                         <option value="expert_comptable">Expert Comptable</option>
                                     </select>
@@ -411,7 +410,6 @@ const GestionUtilisateurs = () => {
                                         onChange={(e) => setCreateFormData({ ...createFormData, role: e.target.value })}
                                         className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all"
                                     >
-                                        <option value="assistant">Assistant</option>
                                         {adminCount < 3 && <option value="admin">Administrateur</option>}
                                         <option value="expert_comptable">Expert Comptable</option>
                                     </select>

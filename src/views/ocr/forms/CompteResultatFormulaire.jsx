@@ -294,7 +294,7 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                 <div className="max-w-7xl mx-auto px-3 py-2">
                     <div className="flex justify-between items-center">
                         <div className="flex-shrink-0"><BackToFormsPage onClick={onSaisieCompleted} /></div>
-                        <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 flex-1 text-center px-4">Saisie Manuelle du Compte de Résultat</h1>
+                        <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 flex-1 text-center px-4">Saisie manuelle du compte de résultat</h1>
                         <div className="flex-shrink-0 w-[88px]"></div>
                     </div>
                 </div>
@@ -439,8 +439,8 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
 
                     {lignes.length === 0 && (
                         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 text-center text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
-                            <p className="text-base text-gray-800 dark:text-gray-200">Aucune ligne de Compte de Résultat ajoutée pour le moment</p>
-                            <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">Saisissez les informations de Résultat (Comptes 6 et 7) ci-dessus.</p>
+                            <p className="text-base text-gray-800 dark:text-gray-200">Aucune ligne de compte de résultat ajoutée pour le moment</p>
+                            <p className="text-sm mt-1 text-gray-500 dark:text-gray-400">Saisissez les informations de compte de résultat (Comptes 6 et 7) ci-dessus.</p>
                         </div>
                     )}
                 </div>

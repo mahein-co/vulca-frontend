@@ -337,7 +337,7 @@ export default function GestionPiecesBoard() {
                         </svg>
                         <input
                             type="text"
-                            placeholder="Ref, nom du fichier"
+                            placeholder="Référence ou nom du fichier"
                             value={recherche}
                             onChange={(e) => setRecherche(e.target.value)}
                             className="w-full p-2 border-0 focus:ring-0 text-sm placeholder-gray-400 dark:placeholder-gray-500 bg-transparent dark:text-gray-100"

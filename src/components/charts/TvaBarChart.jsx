@@ -118,7 +118,7 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd, onLoad }) 
         {/* Partie Gauche: Titre, Date */}
         <div>
           <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100">
-            TVA Collectée vs Déductible
+            TVA collectée vs TVA déductible
           </h3>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
             {startDateStr} - {endDateStr}
@@ -147,7 +147,7 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd, onLoad }) 
         {!loading && tvaData.length > 0 && (
           <div className="flex items-center gap-4 border-l border-gray-100 dark:border-gray-700 pl-4 lg:border-none lg:pl-0">
             <div className="text-right">
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">TVA Nette</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">TVA nette</p>
               <p className={`text-base sm:text-lg font-bold text-emerald-500`}>
                 {netTva.toLocaleString('fr-FR').replace(/\u202f/g, ' ').replace(/\u00a0/g, ' ')} Ar
               </p>
@@ -155,7 +155,7 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd, onLoad }) 
             <div className="text-left">
               <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Solde</p>
               <p className={`text-sm font-bold ${isToPay ? 'text-red-500' : 'text-emerald-500'}`}>
-                {isToPay ? 'À décaisser' : 'Crédit TVA'}
+                {isToPay ? 'à décaisser' : 'Crédit TVA'}
               </p>
             </div>
           </div>

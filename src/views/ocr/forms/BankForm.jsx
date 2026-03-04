@@ -354,7 +354,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                 <BackToFormsPage onClick={onSaisieCompleted} />
               </div>
               <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 flex-1 text-center px-4">
-                Saisie Manuelle de Relevé Bancaire
+                Saisie manuelle de relevé bancaire
               </h1>
               <div className="flex-shrink-0 w-[88px] flex justify-end">
                 {/* Exemple Button Removed */}

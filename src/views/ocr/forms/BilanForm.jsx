@@ -429,7 +429,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                             <BackToFormsPage onClick={onSaisieCompleted} />
                         </div>
                         <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 flex-1 text-center px-4">
-                            Saisie Manuelle du Bilan
+                            Saisie manuelle du bilan
                         </h1>
                         <div className="flex-shrink-0 w-[88px]"></div>
                     </div>
@@ -448,7 +448,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
 
                             <div>
-                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">N° Compte (1xx-5xx)</label>
+                                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Numéro de compte (1xx-5xx)</label>
                                 <input
                                     type="text"
                                     name="numeroCompte"

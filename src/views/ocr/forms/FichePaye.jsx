@@ -219,7 +219,7 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
                                 <BackToFormsPage onClick={onSaisieCompleted} />
                             </div>
                             <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 flex-1 text-center px-4">
-                                Saisie Manuelle de Fiche de Paie
+                                Saisie manuelle de fiche de paie
                             </h1>
                             <div className="flex-shrink-0 w-[88px]"></div>
                         </div>
@@ -235,7 +235,7 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
                             {/* Card 1: Informations Générales */}
                             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border-t-2 border-gray-300 dark:border-gray-700">
                                 <h2 className="text-base font-semibold text-gray-800 dark:text-gray-200 mb-3">
-                                    Informations Employé & Paiement
+                                    Informations émployé & paiement
                                 </h2>
                                 <div className="grid grid-cols-1 gap-3">
                                     <div>
@@ -245,22 +245,22 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">N° Fiche de Paye</label>
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Numéro de la fiche de paie</label>
                                             <input type="text" name="numFichePaie" value={formData.numFichePaie} onChange={handleChange} placeholder="ex: PAIE-2025-01" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${validationErrors.numFichePaie ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Période de Paiement</label>
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Période de paiement</label>
                                             <input type="text" name="periodePaie" value={formData.periodePaie} onChange={handleChange} placeholder="ex: Janvier 2025" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.periodePaie ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date Émission</label>
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date     d'émission</label>
                                             <input type="date" name="dateEmission" value={formData.dateEmission} onChange={handleChange} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.dateEmission ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date Échéance</label>
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date d'échéance</label>
                                             <input type="date" name="dateEcheance" value={formData.dateEcheance} onChange={handleChange} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.dateEcheance ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                         </div>
                                     </div>
@@ -275,17 +275,17 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
 
                                 <div className="space-y-3">
                                     <div>
-                                        <label className="block text-xs font-medium text-gray-900 dark:text-gray-100 mb-1 uppercase tracking-wide">Salaire Brut (Ar)</label>
+                                        <label className="block text-xs font-medium text-gray-900 dark:text-gray-100 mb-1 uppercase tracking-wide">Salaire brut (Ar)</label>
                                         <input type="text" name="salaireBrut" value={formData.salaireBrut} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-base font-semibold rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.salaireBrut ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4 pt-2">
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cotisation Salariale</label>
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cotisation salariale</label>
                                             <input type="text" name="cotisationSalariale" value={formData.cotisationSalariale} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 text-right" />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cotisation Patronale</label>
+                                            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cotisation patronale</label>
                                             <input type="text" name="cotisationPatronale" value={formData.cotisationPatronale} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 text-right" />
                                         </div>
                                     </div>
@@ -296,7 +296,7 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
                                     </div>
 
                                     <div className="pt-4 mt-2 border-t border-gray-200 dark:border-gray-700">
-                                        <label className="block text-sm font-bold text-gray-800 dark:text-gray-100 mb-1 uppercase">Net à Payer (Ar)</label>
+                                        <label className="block text-sm font-bold text-gray-800 dark:text-gray-100 mb-1 uppercase">Net à payer (Ar)</label>
                                         <input type="text" name="netAPayer" value={formData.netAPayer} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-lg font-bold rounded-md text-emerald-700 dark:text-emerald-400 text-right bg-emerald-50 dark:bg-emerald-900/20 ${validationErrors.netAPayer ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-emerald-500'}`} />
                                     </div>
                                 </div>

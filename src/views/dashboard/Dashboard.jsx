@@ -628,15 +628,15 @@ const Dashboard = () => {
       variation: roaData.variation
     },
     {
-      title: "Rotation stocks",
+      title: "Rotation des stocks",
       value: rotationStockData.rotation_stock !== null ? `${Number(rotationStockData.rotation_stock).toFixed(1)}x` : '--',
       icon: "🔄",
       variation: rotationStockData.variation
     },
     {
-      title: "Marge opé.",
+      title: "Marge opérationnelle",
       value: margeOperationnelleData.marge_operationnelle !== null ? `${Number(margeOperationnelleData.marge_operationnelle).toFixed(1)}%` : '--',
-      icon: "�",
+      icon: "",
       variation: margeOperationnelleData.variation
     },
     {
@@ -902,7 +902,7 @@ const Dashboard = () => {
                     {/* RESULTAT NET / CA (Marge Nette) */}
                     <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">
-                        R. Net / CA
+                        Resultat net / CA
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
                         {indicators.ratios && indicators.ratios.marge_nette ? Number(indicators.ratios.marge_nette.value).toFixed(2) + "%" : "--"}
@@ -928,7 +928,7 @@ const Dashboard = () => {
                     {/* CHARGE FINANCIERE / EBE */}
                     <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">
-                        Ch. Fi. / EBE
+                        Charge financière / EBE
                       </td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
                         {indicators.ratios && indicators.ratios.fi_ebe ? Number(indicators.ratios.fi_ebe.value).toFixed(2) : "--"}
@@ -947,7 +947,7 @@ const Dashboard = () => {
 
                     {/* CHARGE FI / CA */}
                     <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Ch. Fi. / CA</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Charge financière / CA</td>
                       <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
                         {indicators.ratios && indicators.ratios.fi_ca ? (Number(indicators.ratios.fi_ca.value) * 100).toFixed(2) + "%" : "--"}
                       </td>

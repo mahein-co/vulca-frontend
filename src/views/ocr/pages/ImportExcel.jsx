@@ -188,7 +188,7 @@ const ExcelValidationForm = ({
 
             {/* Nom du Fichier Source */}
             <div className="mb-2 flex-shrink-0">
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">Fichier Source</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5">Fichier source</label>
                 <input
                     type="text"
                     name="fileName"
@@ -527,7 +527,7 @@ export default function ImportExcel({ onSaisieCompleted }) {
         }
 
         if (documents.length + validFiles.length > MAX_FILE_UPLOAD) {
-            toast.error(`Maximum ${MAX_FILE_UPLOAD} fichiers autorisés.`);
+            toast.error(`Maximum :${MAX_FILE_UPLOAD} fichiers autorisés.`);
             return;
         }
 
@@ -987,7 +987,7 @@ export default function ImportExcel({ onSaisieCompleted }) {
                         <div className="bg-gray-800 p-3 sm:p-4 rounded-t-lg text-white flex justify-between items-center shadow-md flex-shrink-0 relative overflow-hidden">
                             <h3 className="font-bold text-sm sm:text-base relative z-10">
                                 <span className="inline-block w-2 h-2 bg-green-400 rounded-full mr-2" />
-                                Fichiers : {documents.length}
+                                Fichiers  : {documents.length}
                             </h3>
 
                             {documents.length > 0 && (

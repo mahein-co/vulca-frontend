@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { formatNumberWithSpaces } from "../../utils/numberFormat";
 
 export default function CompteDeResultatCard() {
   // ------------------------------
@@ -76,12 +77,12 @@ export default function CompteDeResultatCard() {
           {produits.map((p, i) => (
             <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
               <td style={{ padding: "8px" }}>{p.libelle}</td>
-              <td style={{ padding: "8px" }}>{p.montant.toLocaleString()}</td>
+              <td style={{ padding: "8px" }}>{formatNumberWithSpaces(p.montant)}</td>
             </tr>
           ))}
           <tr style={{ fontWeight: "bold", background: "#eee" }}>
             <td>Total Produits</td>
-            <td>{totalProduits.toLocaleString()}</td>
+            <td>{formatNumberWithSpaces(totalProduits)}</td>
           </tr>
         </tbody>
       </table>
@@ -101,12 +102,12 @@ export default function CompteDeResultatCard() {
           {charges.map((c, i) => (
             <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
               <td style={{ padding: "8px" }}>{c.libelle}</td>
-              <td style={{ padding: "8px" }}>{c.montant.toLocaleString()}</td>
+              <td style={{ padding: "8px" }}>{formatNumberWithSpaces(c.montant)}</td>
             </tr>
           ))}
           <tr style={{ fontWeight: "bold", background: "#eee" }}>
             <td>Total Charges</td>
-            <td>{totalCharges.toLocaleString()}</td>
+            <td>{formatNumberWithSpaces(totalCharges)}</td>
           </tr>
         </tbody>
       </table>
@@ -119,7 +120,7 @@ export default function CompteDeResultatCard() {
         fontSize: "20px",
         color: resultColor
       }}>
-        Résultat Net : {resultatNet.toLocaleString()} {resultatNet >= 0 ? "(Bénéfice)" : "(Perte)"}
+        Résultat Net : {formatNumberWithSpaces(resultatNet)} {resultatNet >= 0 ? "(Bénéfice)" : "(Perte)"}
       </h3>
     </div>
   );

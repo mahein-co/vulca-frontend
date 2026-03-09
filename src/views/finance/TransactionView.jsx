@@ -29,6 +29,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ButtonSpinner from '../../components/ui/ButtonSpinner';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
 import { fetchWithReauth } from '../../utils/apiUtils';
+import { formatCurrency } from '../../utils/numberFormat';
 import { BASE_URL_API } from '../../constants/globalConstants';
 import { useProjectId } from '../../hooks/useProjectId';
 
@@ -58,11 +59,6 @@ const formatDate = (date) => {
     if (month.length < 2) month = '0' + month;
     if (day.length < 2) day = '0' + day;
     return [year, month, day].join('-');
-};
-
-const formatCurrency = (amount) => {
-    if (typeof amount !== 'number' || isNaN(amount)) return '0,00 Ar';
-    return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(amount) + ' Ar';
 };
 
 const MetricCard = ({ title, value, icon: Icon, change, changeLabel, isRatio, description }) => {

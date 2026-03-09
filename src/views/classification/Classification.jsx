@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Database, Loader2, BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
+import { formatNumberWithSpaces } from "../../utils/numberFormat";
 
 // --- CONFIGURATION ---
 const API_BASE_URL = process.env.REACT_APP_API_URL;
@@ -14,13 +15,7 @@ const journalTypes = {
 const PAGE_SIZE = 3;
 
 const formatAr = (amount) => {
-  const value = parseFloat(amount || 0);
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: "MGA",
-    minimumFractionDigits: 2,
-    currencyDisplay: "symbol",
-  }).format(value).replace("MGA", " Ar");
+  return `${formatNumberWithSpaces(amount)} Ar`;
 };
 
 const Classification = () => {

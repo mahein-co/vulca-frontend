@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BASE_URL_API } from '../../constants/globalConstants';
 import { fetchWithReauth } from '../../utils/apiUtils';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
+import { formatCurrency as formatCurrencyUtil } from '../../utils/numberFormat';
 
 const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
   const [balanceData, setBalanceData] = useState([]);
@@ -16,10 +17,7 @@ const BalanceModal = ({ isOpen, onClose, startDate, endDate }) => {
 
   // Fonction pour formater les montants en Ar xxx xxx xxx,xx
   const formatAmount = (amount) => {
-    return new Intl.NumberFormat('fr-FR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    }).format(amount).replace(/\u202f/g, ' ').replace(/\u00a0/g, ' ') + ' Ar';
+    return formatCurrencyUtil(amount);
   };
 
 

@@ -1,5 +1,5 @@
-// src/components/cloture/BilanCard.jsx
 import React, { useMemo } from "react";
+import { formatNumberWithSpaces } from "../../utils/numberFormat";
 
 export default function BilanCard() {
   const journal = [
@@ -71,12 +71,12 @@ export default function BilanCard() {
               <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
                 <td>{row.compte}</td>
                 <td>{row.libelle}</td>
-                <td>{row.montant.toLocaleString()}</td>
+                <td>{formatNumberWithSpaces(row.montant)}</td>
               </tr>
             ))}
             <tr style={{ fontWeight: "bold", background: "#eee" }}>
               <td colSpan="2">Total Actif</td>
-              <td>{totalActif.toLocaleString()}</td>
+              <td>{formatNumberWithSpaces(totalActif)}</td>
             </tr>
           </tbody>
         </table>
@@ -103,12 +103,12 @@ export default function BilanCard() {
               <tr key={i} style={{ borderBottom: "1px solid #eee" }}>
                 <td>{row.compte}</td>
                 <td>{row.libelle}</td>
-                <td>{row.montant.toLocaleString()}</td>
+                <td>{formatNumberWithSpaces(row.montant)}</td>
               </tr>
             ))}
             <tr style={{ fontWeight: "bold", background: "#eee" }}>
               <td colSpan="2">Total Passif</td>
-              <td>{totalPassif.toLocaleString()}</td>
+              <td>{formatNumberWithSpaces(totalPassif)}</td>
             </tr>
           </tbody>
         </table>
@@ -121,7 +121,7 @@ export default function BilanCard() {
         fontSize: "18px",
         color: totalActif === totalPassif ? "green" : "red"
       }}>
-        Équilibre : {totalActif.toLocaleString()} = {totalPassif.toLocaleString()}
+        Équilibre : {formatNumberWithSpaces(totalActif)} = {formatNumberWithSpaces(totalPassif)}
       </h3>
     </div>
   );

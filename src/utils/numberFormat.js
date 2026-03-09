@@ -1,25 +1,29 @@
 /**
- * Format a number with spaces as thousands separators
- * Example: 800000 -> "800 000"
+ * Format a number with spaces as thousands separators and comma as decimal separator
+ * Example: 1000000.5 -> "1 000 000,50"
  * @param {string|number} value - The value to format
- * @returns {string} - Formatted value with spaces
+ * @param {number} decimals - Number of decimal places (default 2)
+ * @returns {string} - Formatted value
  */
-export const formatNumberWithSpaces = (value) => {
-    if (!value) return '';
+export const formatNumberWithSpaces = (value, decimals = 2) => {
+  if (value === undefined || value === null || value === "") return "";
 
-    // Remove all non-digit characters except decimal point
-    const cleanValue = value.toString().replace(/[^\d.]/g, '');
+  const num =
+    typeof value === "string" ? parseFloat(value.replace(",", ".")) : value;
+  if (isNaN(num)) return value.toString();
 
-    // Split into integer and decimal parts
-    const parts = cleanValue.split('.');
-    const integerPart = parts[0];
-    const decimalPart = parts[1];
+  return new Intl.NumberFormat("fr-FR", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  }).format(num).replace(/\u202f/g, ' ').replace(/\u00a0/g, ' ');
+};
 
-    // Add spaces every 3 digits from the right
-    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-
-    // Combine with decimal part if it exists
-    return decimalPart !== undefined ? `${formattedInteger}.${decimalPart}` : formattedInteger;
+/**
+ * Format a number as currency (Ar)
+ * Example: 1000 -> "1 000,00 Ar"
+ */
+export const formatCurrency = (amount) => {
+  return `${formatNumberWithSpaces(amount)} Ar`;
 };
 
 /**
@@ -29,6 +33,6 @@ export const formatNumberWithSpaces = (value) => {
  * @returns {string} - Clean numeric value
  */
 export const removeSpacesFromNumber = (value) => {
-    if (!value) return '';
-    return value.toString().replace(/\s/g, '');
+  if (!value) return "";
+  return value.toString().replace(/\s/g, "");
 };

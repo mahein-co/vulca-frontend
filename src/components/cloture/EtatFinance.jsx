@@ -18,6 +18,7 @@ import {
   AlertCircle,
   Loader
 } from 'lucide-react';
+import { formatCurrency as formatCurrencyUtil, formatNumberWithSpaces } from '../../utils/numberFormat';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -69,7 +70,7 @@ const MetricCard = ({ title, value, icon: Icon, change, isRatio }) => {
     } else if (change === 0) {
       variationMessage = `Stable`;
     } else {
-      const montant = Math.abs(change).toLocaleString('fr-FR') + ' Ar';
+      const montant = formatNumberWithSpaces(Math.abs(change)) + ' Ar';
       variationMessage = `${change > 0 ? '+' : '-'} ${montant}`;
     }
   }
@@ -130,8 +131,7 @@ const PaginationControls = ({ currentPage, totalPages, setCurrentPage }) => {
   );
 };
 
-const formatCurrency = (amount) =>
-  new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2 }).format(amount) + ' Ar';
+const formatCurrency = (amount) => formatCurrencyUtil(amount);
 
 const EtatFinance = () => {
   const [selectedSection, setSelectedSection] = useState(null);

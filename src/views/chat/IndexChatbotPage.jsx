@@ -411,12 +411,14 @@ export default function IndexChatbotPage({ close }) {
             <FaHistory className="text-indigo-500" />{" "}
             <span style={{ color: textColor }}>Historique</span>
           </h2>
-          <button
-            onClick={() => setIsSidebarOpen(false)}
-            className="text-gray-400 hover:text-red-500"
-          >
-            <FaTimes />
-          </button>
+          {!isFullScreen && (
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="text-gray-400 hover:text-red-500"
+            >
+              <FaTimes />
+            </button>
+          )}
         </div>
 
         <button

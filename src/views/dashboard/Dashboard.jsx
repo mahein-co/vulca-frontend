@@ -39,12 +39,11 @@ import { useProjectId } from '../../hooks/useProjectId';
 
 
 
+import { formatNumberWithSpaces } from '../../utils/numberFormat';
+
 // --- 1. Helpers ---
 const formatCurrencyHelper = (amount, decimals = 2) => {
-  return new Intl.NumberFormat('fr-FR', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
-  }).format(amount).replace(/\u202f/g, ' ').replace(/\u00a0/g, ' ');
+  return formatNumberWithSpaces(amount, decimals);
 };
 
 

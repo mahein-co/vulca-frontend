@@ -14,10 +14,6 @@ import {
 } from 'recharts';
 import LoadingOverlay from '../layout/LoadingOverlay';
 
-// Différentes palettes de couleurs pour chaque camembert
-const COLORS_PRODUITS = ['#10b981', '#059669', '#047857', '#065f46', '#064e3b'];
-const COLORS_CHARGES = ['#ef4444', '#dc2626', '#b91c1c', '#991b1b', '#7f1d1d'];
-const COLORS_COMPARISON = ['#3b82f6', '#ef4444']; // Bleu pour Produits, Rouge pour Charges
 
 export default function ThreePieCharts({ globalDateStart, globalDateEnd, onLoad }) {
   const { isDarkMode } = useTheme();
@@ -124,7 +120,7 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd, onLoad 
         setLoading(false);
         if (onLoad) onLoad(false);
       });
-  }, [globalDateStart, globalDateEnd, projectId]);
+  }, [globalDateStart, globalDateEnd, projectId, onLoad]);
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {

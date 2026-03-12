@@ -2,12 +2,8 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   setActiveFilter,
-  clearActiveFilter,
-  selectActiveFilter,
-  selectActiveFilterJSON,
   setFilteredData,
   setLoadingData,
-  selectIsLoadingData,
   setCurrentPage
 } from '../../states/dashboard/dashboardFilterSlice';
 import { fetchWithReauth } from '../../utils/apiUtils';
@@ -22,8 +18,6 @@ const FilterManager = ({ page = "dashboard", rightAction = null, hidePeriod = fa
   }, [page, dispatch]);
 
   const activeFilter = useSelector(state => state.dashboardFilter[page]?.activeFilter);
-  const activeFilterJSON = useSelector(selectActiveFilterJSON);
-  const isLoadingData = useSelector(selectIsLoadingData);
 
   // Calculer 6 mois glissants par défaut
   const dStart = new Date();
@@ -70,11 +64,9 @@ const FilterManager = ({ page = "dashboard", rightAction = null, hidePeriod = fa
     if (last.start === dateStart && last.end === dateEnd && last.page === page) return;
     lastAppliedRef.current = { start: dateStart, end: dateEnd, page };
     handleApplyFilter(dateStart, dateEnd);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateStart, dateEnd, page]);
 
-  const handleClearFilter = () => {
-    dispatch(clearActiveFilter(page));
-  };
 
   return (
     <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700 mb-4">

@@ -8,7 +8,7 @@ import FilterManager from '../../components/dashboard/FilterManager';
 
 import BarCharts from '../../components/charts/BarCharts';
 import TvaBarChart from '../../components/charts/TvaBarChart';
-import PieChartRepartition from '../../components/charts/PieChartRepartition';
+
 import LineChartCAEvolution from '../../components/charts/LineChartCAEvolution';
 import LineChartCategorized from '../../components/charts/LineChartCategorized';
 import ThreePieCharts from '../../components/charts/ThreePieCharts';
@@ -28,9 +28,7 @@ import {
   Briefcase,
   DollarSign,
   Droplets,
-  Activity,
-  ChevronRight,
-  ChevronLeft
+  Activity
 } from 'lucide-react';
 import { fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
@@ -85,6 +83,7 @@ const JournalRepartition = ({ globalStartDate, globalEndDate, onLoad, selectedJo
       .finally(() => {
         if (onLoad) onLoad(false);
       });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [globalStartDate, globalEndDate, projectId]);
 
   // 2. Charger le DÉTAIL quand un journal est sélectionné (avec pagination, date et recherche)
@@ -748,6 +747,7 @@ const Dashboard = () => {
       setHasAnalyzed(false);
       setAiAnalysis(null);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [globalDateStart, globalDateEnd]);
 
   return (

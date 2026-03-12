@@ -10,8 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { BASE_URL_API } from '../../constants/globalConstants';
-import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
+import { fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 import LoadingOverlay from '../layout/LoadingOverlay';
 
@@ -102,7 +101,7 @@ export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, o
     return () => {
       abortController.abort();
     };
-  }, [projectId, globalDateStart, globalDateEnd]);
+  }, [projectId, globalDateStart, globalDateEnd, onLoad]);
 
   const formatCurrency = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(val).replace('MGA', 'Ar');
 

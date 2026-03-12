@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { fetchWithReauth } from '../../../utils/apiUtils';
+
 import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
 import { getTodayISO } from '../../../utils/dateUtils';
 import { useSaveBilanManualMutation } from "../../../states/compta/comptaApiSlice";
@@ -99,6 +99,7 @@ export default function BilanForm({ onSaisieCompleted }) {
         if (!nouvelleLigne.date) {
             setNouvelleLigne(prev => ({ ...prev, date: getTodayISO() }));
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const formatMontant = useCallback((montant) => {
@@ -379,10 +380,9 @@ export default function BilanForm({ onSaisieCompleted }) {
             return;
         }
 
-        const statut = ecart === 0
+        const statut = ecart === 0  // eslint-disable-line no-unused-vars
             ? 'équilibré'
             : `non équilibré (Écart: ${formatMontant(ecart)} Ar)`;
-
         setIsLoading(true);
         try {
             const promises = lignes.map(ligne => {

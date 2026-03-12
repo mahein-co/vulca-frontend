@@ -9,8 +9,7 @@ import ConfirmationModal from '../../../components/ui/ConfirmationModal';
 import LoadingOverlay from '../../../components/layout/LoadingOverlay';
 import ButtonSpinner from '../../../components/ui/ButtonSpinner';
 
-const BASE_URL_API = 'http://api.exemple.com'; // Placeholder, unused with real API
-const TAUX_TVA_DEFAULT = 20;
+
 
 const BackToFormsPage = ({ onClick }) => (
   <button
@@ -63,7 +62,6 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleteAll, setIsDeleteAll] = useState(false);
 
-  const hasLines = useMemo(() => lignes.length > 0, [lignes]);
 
   const formatMontant = useCallback((montant) => {
     if (typeof montant === 'string') {

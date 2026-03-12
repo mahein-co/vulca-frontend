@@ -7,11 +7,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { BASE_URL_API } from '../../constants/globalConstants';
-import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
+import { fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 import LoadingOverlay from '../layout/LoadingOverlay';
 
@@ -101,7 +99,7 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd, onLoad }) 
     return () => {
       abortController.abort();
     };
-  }, [globalDateStart, globalDateEnd, projectId]);
+  }, [globalDateStart, globalDateEnd, projectId, onLoad]);
 
   // Calculer les données du dernier mois pour le résumé
   const latestData = tvaData.length > 0 ? tvaData[tvaData.length - 1] : { net: 0 };

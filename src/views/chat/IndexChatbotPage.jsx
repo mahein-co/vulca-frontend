@@ -14,6 +14,7 @@ import {
   FaFileAlt,
   FaFileExcel,
 } from "react-icons/fa";
+import toast from 'react-hot-toast';
 import { marked } from "marked";
 import DOMPurify from "dompurify";
 import PropTypes from "prop-types";
@@ -32,7 +33,8 @@ import { useSelector, useDispatch } from "react-redux"; // MODIFIÉ
 import {
   selectFilteredData,
   setActiveFilter,
-} from "../../states/dashboard/dashboardFilterSlice"; // MODIFIÉ
+} from "../../states/dashboard/dashboardFilterSlice";
+import ConfirmationModal from "../../components/ui/ConfirmationModal";
 
 export default function IndexChatbotPage({ close }) {
   const [messages, setMessages] = useState([]);
@@ -40,6 +42,9 @@ export default function IndexChatbotPage({ close }) {
   const [selectedHistoryId, setSelectedHistoryId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [historyToDelete, setHistoryToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const themeContext = useTheme();
   const theme = themeContext?.theme || "dark";
@@ -298,59 +303,32 @@ export default function IndexChatbotPage({ close }) {
     }
   };
 
-  const handleDeleteHistory = async (id, e) => {
+  const handleDeleteHistory = (id, e) => {
     e.stopPropagation();
+    setHistoryToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
 
-    const result = await Swal.fire({
-      title: "Supprimer ?",
-      text: "Cette discussion sera définitivement supprimée.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Oui, supprimer",
-      cancelButtonText: "Annuler",
-      background: isDarkMode ? "#1e293b" : "#fff",
-      color: isDarkMode ? "#fff" : "#1e293b",
-      target: document.body,
-      customClass: {
-        container: "z-[10020]", // Higher than typical z-[10015] of the chat
-      },
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await deleteHistory({ historyId: id, project_id: projectId }).unwrap();
-        if (selectedHistoryId === id) {
-          setSelectedHistoryId(null);
-          setMessages([]);
-        }
-        Swal.fire({
-          title: "Supprimé !",
-          icon: "success",
-          timer: 1500,
-          showConfirmButton: false,
-          background: isDarkMode ? "#1e293b" : "#fff",
-          color: isDarkMode ? "#fff" : "#1e293b",
-          target: document.body,
-          customClass: {
-            container: "z-[10020]",
-          },
-        });
-      } catch (err) {
-        console.error("Failed to delete", err);
-        Swal.fire({
-          title: "Erreur",
-          text: "Impossible de supprimer cette discussion.",
-          icon: "error",
-          background: isDarkMode ? "#1e293b" : "#fff",
-          color: isDarkMode ? "#fff" : "#1e293b",
-          target: document.body,
-          customClass: {
-            container: "z-[10020]",
-          },
-        });
+  const confirmDeleteHistory = async () => {
+    if (!historyToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteHistory({
+        historyId: historyToDelete,
+        project_id: projectId,
+      }).unwrap();
+      if (selectedHistoryId === historyToDelete) {
+        setSelectedHistoryId(null);
+        setMessages([]);
       }
+      toast.success("Discussion supprimée");
+    } catch (err) {
+      console.error("Failed to delete", err);
+      toast.error("Impossible de supprimer cette discussion.");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+      setHistoryToDelete(null);
     }
   };
 
@@ -751,6 +729,18 @@ export default function IndexChatbotPage({ close }) {
           </form>
         </footer>
       </main>
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDeleteHistory}
+        title="Supprimer ?"
+        message="Cette discussion sera définitivement supprimée."
+        confirmText="Oui, supprimer"
+        cancelText="Annuler"
+        isDanger={true}
+        isLoading={isDeleting}
+      />
 
       <style
         dangerouslySetInnerHTML={{

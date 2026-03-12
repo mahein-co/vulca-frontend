@@ -123,11 +123,11 @@ export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, o
               <p className="font-bold text-[10px] sm:text-sm text-gray-800 dark:text-gray-100">{formatCurrency(totals.ca)}</p>
             </div>
             <div>
-              <p className="text-[9px] sm:text-xs text-red-500 uppercase font-bold mb-0.5 sm:mb-1">Charge total</p>
+              <p className="text-[9px] sm:text-xs text-red-500 uppercase font-bold mb-0.5 sm:mb-1">Charges totales</p>
               <p className="font-bold text-[10px] sm:text-sm text-gray-800 dark:text-gray-100">{formatCurrency(totals.charges)}</p>
             </div>
             <div>
-              <p className="text-[9px] sm:text-xs text-green-600 uppercase font-bold mb-0.5 sm:mb-1">Résultat</p>
+              <p className="text-[9px] sm:text-xs text-green-600 uppercase font-bold mb-0.5 sm:mb-1">Résultat net</p>
               <p className="font-bold text-[10px] sm:text-sm text-gray-800 dark:text-gray-100">{formatCurrency(totals.resultat)}</p>
             </div>
           </div>

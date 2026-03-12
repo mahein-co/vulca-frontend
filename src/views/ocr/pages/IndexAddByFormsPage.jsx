@@ -26,18 +26,18 @@ const formSections = [
         forms: [
             // Section 1 : 3 formulaires
             { type: FORM_TYPES.bilan, name: 'Bilan', description: 'Actif et passif de l\'entreprise à une date donnée.', icon: ScaleIcon, color: 'blue' },
-            { type: FORM_TYPES.compteResultat, name: 'Compte de Résultat', description: 'Charges et produits pour déterminer le résultat net de l\'exercice.', icon: CalculatorIcon, color: 'green' },
-            { type: FORM_TYPES.importExcel, name: 'Importation par IA', description: 'Importer des états financiers via Excel ou CSV.', icon: DocumentTextIcon, color: 'indigo' },
+            { type: FORM_TYPES.compteResultat, name: 'compte de résultat', description: 'Charges et produits pour déterminer le résultat net de l\'exercice.', icon: CalculatorIcon, color: 'green' },
+            { type: FORM_TYPES.importExcel, name: 'Importation par IA', description: 'Importation d\'états financiers via Excel ou CSV.', icon: DocumentTextIcon, color: 'indigo' },
         ],
     },
     {
         title: 'Documents de Base & Flux',
         forms: [
             // Section 2 : 4 formulaires
-            { type: FORM_TYPES.facture, name: 'Facture Client/Fournisseur', description: 'Enregistrement détaillé d\'une facture d\'achat ou de vente.', icon: DocumentTextIcon, color: 'indigo' },
-            { type: FORM_TYPES.achat, name: 'Bon d\'Achat/Réception', description: 'Saisie d\'un document d\'achat ou de réception sans détail comptable complet.', icon: ShoppingCartIcon, color: 'orange' },
-            { type: FORM_TYPES.ficheDePaie, name: 'Fiche de Paie / Salaire', description: 'Enregistrement des charges sociales, salaires nets et bruts.', icon: ReceiptPercentIcon, color: 'purple' },
-            { type: FORM_TYPES.banque, name: 'Relevé Bancaire', description: 'Enregistrement manuel des mouvements de trésorerie (dépenses, encaissements).', icon: BanknotesIcon, color: 'red' },
+            { type: FORM_TYPES.facture, name: 'Facture client / fournisseur', description: 'Enregistrement détaillé d\'une facture d\'achat ou de vente.', icon: DocumentTextIcon, color: 'indigo' },
+            { type: FORM_TYPES.achat, name: 'Bon d\'achat/réception', description: 'Saisie d\'un document d\'achat ou de réception sans détail comptable complet.', icon: ShoppingCartIcon, color: 'orange' },
+            { type: FORM_TYPES.ficheDePaie, name: 'Fiche de paie / salaire', description: 'Enregistrement des charges sociales, salaires nets et bruts.', icon: ReceiptPercentIcon, color: 'purple' },
+            { type: FORM_TYPES.banque, name: 'Relevé bancaire', description: 'Enregistrement manuel des mouvements de trésorerie (dépenses, encaissements).', icon: BanknotesIcon, color: 'red' },
         ],
     },
 ];
@@ -127,7 +127,7 @@ export default function IndexAddByFormsPage({ onOpenForm }) {
             <div className={`transition-all duration-300 ${showExcelImport ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
 
                 <div className="text-center mb-5">
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Saisie Manuelle</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Saisie manuelle</h2>
                     <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Sélectionnez le type de document ou d'état financier à saisir.</p>
                 </div>
 

@@ -205,9 +205,9 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd, onLoad 
 
   // Déterminer quels graphiques ont des données
   const activeCharts = [
-    { data: produitsData, colors: COLORS_PRODUITS_NEW, title: "Répartition des Produits", type: "PRODUIT" },
-    { data: chargesData, colors: COLORS_CHARGES_NEW, title: "Répartition des Charges", type: "CHARGE" },
-    { data: comparisonData, colors: COLORS_COMPARISON_NEW, title: "Produits vs Charges", type: "COMPARISON" }
+    { data: produitsData, colors: COLORS_PRODUITS_NEW, title: "Répartition des produits", type: "PRODUIT" },
+    { data: chargesData, colors: COLORS_CHARGES_NEW, title: "Répartition des charges", type: "CHARGE" },
+    { data: comparisonData, colors: COLORS_COMPARISON_NEW, title: "Produits vs charges", type: "COMPARISON" }
   ].filter(chart => chart.data && chart.data.length > 0);
 
   // Si aucun graphique n'a de données
@@ -226,7 +226,7 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd, onLoad 
         <div>
           <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center">
             <span className="text-2xl mr-3">📊</span>
-            Répartitions Financières
+            Répartitions financières
           </h3>
           {globalDateStart && globalDateEnd && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-11">

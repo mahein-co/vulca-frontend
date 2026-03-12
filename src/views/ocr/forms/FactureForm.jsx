@@ -376,7 +376,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                 <BackToFormsPage onClick={onSaisieCompleted} />
                             </div>
                             <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 flex-1 text-center px-4">
-                                Saisie Manuelle de Facture
+                                Saisie manuelle de Facture
                             </h1>
                             <div className="flex-shrink-0 w-[88px]"></div>
                         </div>
@@ -395,7 +395,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                 </h2>
 
                                 <div className='mb-3'>
-                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Type de Document</label>
+                                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Type de document</label>
 
 
 
@@ -409,7 +409,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                                 onChange={() => setTypeFacture('vente')}
                                                 className="h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 bg-white dark:bg-gray-700"
                                             />
-                                            <span className="ml-2 text-gray-700 dark:text-gray-300">Facture de <strong>Vente</strong></span>
+                                            <span className="ml-2 text-gray-700 dark:text-gray-300">Facture de <strong>vente</strong></span>
                                         </label>
                                         <label className="flex items-center text-sm cursor-pointer">
                                             <input
@@ -420,7 +420,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                                 onChange={() => setTypeFacture('achat')}
                                                 className="h-4 w-4 text-indigo-600 border-gray-300 dark:border-gray-600 focus:ring-indigo-500 bg-white dark:bg-gray-700"
                                             />
-                                            <span className="ml-2 text-gray-700 dark:text-gray-300">Facture d'<strong>Achat</strong></span>
+                                            <span className="ml-2 text-gray-700 dark:text-gray-300">Facture d'<strong>achat</strong></span>
                                         </label>
                                     </div>
                                 </div>
@@ -450,6 +450,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             name="dateFacture"
                                             value={header.dateFacture}
                                             onChange={handleChangeHeader}
+                                            max={getTodayISO()}
                                             className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 ${headerErrors.dateFacture ? 'border-2 border-red-500 focus:border-red-500' : 'border-gray-300 dark:border-gray-600'}`}
                                         />
                                     </div>
@@ -555,7 +556,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                     </div>
 
                                     <div className="col-span-6 md:col-span-3 lg:col-span-2">
-                                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Qté</label>
+                                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Quantité</label>
                                         <input
                                             type="text"
                                             name="quantite"
@@ -567,7 +568,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                     </div>
 
                                     <div className="col-span-6 md:col-span-3 lg:col-span-2">
-                                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">P.U. HT (Ar)</label>
+                                        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Prix unitaire HT (Ar)</label>
                                         <input
                                             type="text"
                                             name="prixUnitaire"

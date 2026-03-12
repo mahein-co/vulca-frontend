@@ -357,7 +357,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                 <BackToFormsPage onClick={onSaisieCompleted} />
               </div>
               <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 flex-1 text-center px-4">
-                Saisie Manuelle de Bon d'Achat
+                Saisie manuelle de bon d'achat
               </h1>
               <div className="flex-shrink-0 w-[88px] flex justify-end">
                 {/* Exemple Button Removed */}
@@ -400,13 +400,13 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                   </div>
 
                   <div className="col-span-1">
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">N° Bon</label>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Numéro Bon</label>
                     <input type="text" name="numeroBon" value={header.numeroBon} onChange={handleChangeHeader} placeholder="BA-001" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${headerErrors.numeroBon ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                   </div>
 
                   <div className="col-span-1">
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Date</label>
-                    <input type="date" name="dateBon" value={header.dateBon} onChange={handleChangeHeader} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${headerErrors.dateBon ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
+                    <input type="date" name="dateBon" value={header.dateBon} onChange={handleChangeHeader} max={getTodayISO()} className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 ${headerErrors.dateBon ? 'border-2 border-red-500' : 'border border-gray-300 dark:border-gray-600'}`} />
                   </div>
 
                   <div className="col-span-2">
@@ -420,7 +420,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
 
               <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 border-t-2 border-gray-300 dark:border-gray-700">
                 <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Infos Légales (Optionnel)</h3>
+                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">Infos légales (Optionnel)</h3>
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     <div className="col-span-1">
                       <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">RCS</label>
@@ -468,7 +468,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                   </div>
 
                   <div className="col-span-6 md:col-span-3 lg:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Qté</label>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Quantité</label>
                     <input
                       type="text"
                       name="quantite"
@@ -480,7 +480,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                   </div>
 
                   <div className="col-span-6 md:col-span-3 lg:col-span-2">
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">P.U. HT (Ar)</label>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Prix unitaire HT (Ar)</label>
                     <input
                       type="text"
                       name="prixUnitaire"
@@ -492,7 +492,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                   </div>
 
                   <div className="col-span-12 md:col-span-6 lg:col-span-3">
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Total Ligne TTC (Ar)</label>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Total ligne TTC (Ar)</label>
                     <p className="w-full px-2 py-1 text-sm border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-md text-gray-700 dark:text-gray-300 text-right font-bold">
                       {formatMontant((parseFloat(removeSpacesFromNumber(nouvelleLigne.quantite)) || 0) * (parseFloat(removeSpacesFromNumber(nouvelleLigne.prixUnitaire)) || 0) * (1 + tvaRateDecimal))}
                     </p>
@@ -522,7 +522,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
 
                 <div className='p-3 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700 text-sm'>
                   <div className='flex justify-between items-center mb-1'>
-                    <p className='text-gray-700 dark:text-gray-300'>Total Hors Taxe:</p>
+                    <p className='text-gray-700 dark:text-gray-300'>Total hors taxe:</p>
                     <p className='text-gray-900 dark:text-gray-100 font-semibold'>{formatMontant(totalHT)} Ar</p>
                   </div>
                   <div className='flex justify-between items-center mb-1'>
@@ -530,7 +530,7 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                     <p className='text-gray-900 dark:text-gray-100 font-semibold'>{formatMontant(montantTVA)} Ar</p>
                   </div>
                   <div className='flex justify-between items-center text-base font-bold pt-2 border-t border-gray-300 dark:border-gray-600'>
-                    <p className='text-gray-800 dark:text-gray-200'>TOTAL TTC:</p>
+                    <p className='text-gray-800 dark:text-gray-200'>Total TTC:</p>
                     <p className='text-gray-900 dark:text-gray-100'>{formatMontant(totalTTC)} Ar</p>
                   </div>
                 </div>
@@ -541,11 +541,11 @@ export default function BonAchatForm({ onSaisieCompleted, onSaveComplete }) {
                       <thead className="bg-gray-50 dark:bg-gray-700/50 sticky top-0 z-10 shadow-sm">
                         <tr>
                           <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-left text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[30%]">Désignation</th>
-                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[10%]">Qté</th>
-                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[15%]">Prix U. HT (Ar)</th>
-                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[15%]">Total HT (Ar)</th>
+                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[10%]">Quantité</th>
+                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[15%]">Prix unitaire HT (Ar)</th>
+                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[15%]">Total ligne HT (Ar)</th>
                           <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[10%]">TVA (Ar)</th>
-                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[10%]">Total TTC (Ar)</th>
+                          <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-right text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[10%]">Total ligne TTC (Ar)</th>
                           <th className="border-b-2 border-gray-200 dark:border-gray-600 px-2 py-1.5 text-center text-xs font-bold text-gray-700 dark:text-gray-300 uppercase w-[10%]">Action</th>
                         </tr>
                       </thead>

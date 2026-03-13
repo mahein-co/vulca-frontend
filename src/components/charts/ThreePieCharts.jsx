@@ -120,7 +120,8 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd, onLoad 
         setLoading(false);
         if (onLoad) onLoad(false);
       });
-  }, [globalDateStart, globalDateEnd, projectId, onLoad]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalDateStart, globalDateEnd, projectId]);
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {

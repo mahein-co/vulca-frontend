@@ -65,6 +65,7 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd, o
         if (metricsToFetch.length === 0) {
           setEvolutionData([]);
           setLoading(false);
+          if (onLoad) onLoad(false);
           return;
         }
 

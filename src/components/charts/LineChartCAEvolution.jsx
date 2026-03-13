@@ -101,7 +101,8 @@ export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, o
     return () => {
       abortController.abort();
     };
-  }, [projectId, globalDateStart, globalDateEnd, onLoad]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, globalDateStart, globalDateEnd]);
 
   const formatCurrency = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(val).replace('MGA', 'Ar');
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import ButtonSpinner from '../../components/ui/ButtonSpinner';
 import { setCurrentPage, selectActiveFilter } from '../../states/dashboard/dashboardFilterSlice';
@@ -357,9 +357,27 @@ const Dashboard = () => {
 
   const isGlobalLoading = Object.values(loadingStates).some(v => v);
 
-  const handleLoadStatus = (key) => (isLoading) => {
-    setLoadingStates(prev => ({ ...prev, [key]: isLoading }));
-  };
+  // Callbacks stables (useCallback) pour éviter la boucle infinie de re-renders
+  // handleLoadStatus('key') créait une nouvelle fonction à chaque render, ce qui
+  // déclenchait les useEffect des charts (ayant onLoad en dépendance) en boucle.
+  const handleLoadCa = useCallback((isLoading) => {
+    setLoadingStates(prev => ({ ...prev, ca: isLoading }));
+  }, []);
+  const handleLoadMetrics = useCallback((isLoading) => {
+    setLoadingStates(prev => ({ ...prev, metrics: isLoading }));
+  }, []);
+  const handleLoadBar = useCallback((isLoading) => {
+    setLoadingStates(prev => ({ ...prev, bar: isLoading }));
+  }, []);
+  const handleLoadTva = useCallback((isLoading) => {
+    setLoadingStates(prev => ({ ...prev, tva: isLoading }));
+  }, []);
+  const handleLoadPie = useCallback((isLoading) => {
+    setLoadingStates(prev => ({ ...prev, pie: isLoading }));
+  }, []);
+  const handleLoadJournals = useCallback((isLoading) => {
+    setLoadingStates(prev => ({ ...prev, journals: isLoading }));
+  }, []);
 
   // Helper pour adapter la taille de police des grands nombres
   const getAdaptiveFontSize = (value) => {
@@ -1073,7 +1091,7 @@ const Dashboard = () => {
           <LineChartCAEvolution
             globalDateStart={globalDateStart}
             globalDateEnd={globalDateEnd}
-            onLoad={handleLoadStatus('ca')}
+            onLoad={handleLoadCa}
           />
         </div>
 
@@ -1083,7 +1101,7 @@ const Dashboard = () => {
           <LineChartCategorized
             globalDateStart={globalDateStart}
             globalDateEnd={globalDateEnd}
-            onLoad={handleLoadStatus('metrics')}
+            onLoad={handleLoadMetrics}
           />
         </div>
 
@@ -1093,14 +1111,14 @@ const Dashboard = () => {
             <BarCharts
               globalDateStart={globalDateStart}
               globalDateEnd={globalDateEnd}
-              onLoad={handleLoadStatus('bar')}
+              onLoad={handleLoadBar}
             />
           </div>
           <div className="w-full">
             <TvaBarChart
               globalDateStart={globalDateStart}
               globalDateEnd={globalDateEnd}
-              onLoad={handleLoadStatus('tva')}
+              onLoad={handleLoadTva}
             />
           </div>
         </div>
@@ -1108,14 +1126,14 @@ const Dashboard = () => {
         <ThreePieCharts
           globalDateStart={globalDateStart}
           globalDateEnd={globalDateEnd}
-          onLoad={handleLoadStatus('pie')}
+          onLoad={handleLoadPie}
         />
 
         {/* 8. Répartition par Journal */}
         <JournalRepartition
           globalStartDate={globalDateStart}
           globalEndDate={globalDateEnd}
-          onLoad={handleLoadStatus('journals')}
+          onLoad={handleLoadJournals}
           selectedJournal={selectedJournal}
           setSelectedJournal={setSelectedJournal}
         />

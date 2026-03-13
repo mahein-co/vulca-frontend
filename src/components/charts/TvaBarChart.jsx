@@ -99,7 +99,8 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd, onLoad }) 
     return () => {
       abortController.abort();
     };
-  }, [globalDateStart, globalDateEnd, projectId, onLoad]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalDateStart, globalDateEnd, projectId]);
 
   // Calculer les données du dernier mois pour le résumé
   const latestData = tvaData.length > 0 ? tvaData[tvaData.length - 1] : { net: 0 };

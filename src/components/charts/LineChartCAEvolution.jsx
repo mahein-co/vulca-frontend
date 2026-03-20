@@ -20,6 +20,7 @@ export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, o
   const [loading, setLoading] = useState(true);
   const [totals, setTotals] = useState({ ca: 0, charges: 0, resultat: 0, moyenne: 0 });
   const [dateRangeDisplay, setDateRangeDisplay] = useState('');
+  const [groupBy, setGroupBy] = useState('month'); // New state for toggling view
   const projectId = useProjectId();
 
   useEffect(() => {
@@ -56,12 +57,18 @@ export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, o
         // Format date range for display
         const sObj = new Date(dateStart);
         const eObj = new Date(dateEnd);
-        const startDateStr = sObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
-        const endDateStr = eObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
-        setDateRangeDisplay(`${startDateStr} - ${endDateStr}`);
+        let dateRangeStr = '';
+        if (groupBy === 'year') {
+          dateRangeStr = `${sObj.getFullYear()} - ${eObj.getFullYear()}`;
+        } else {
+          const startDateStr = sObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+          const endDateStr = eObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+          dateRangeStr = `${startDateStr} - ${endDateStr}`;
+        }
+        setDateRangeDisplay(dateRangeStr);
 
         // Fetch evolution data
-        const response = await fetchWithReauth(`/evolution-ca-resultat/?date_start=${dateStart}&date_end=${dateEnd}`, {
+        const response = await fetchWithReauth(`/evolution-ca-resultat/?date_start=${dateStart}&date_end=${dateEnd}&group_by=${groupBy}`, {
           signal: abortController.signal
         });
 
@@ -102,7 +109,7 @@ export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, o
       abortController.abort();
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projectId, globalDateStart, globalDateEnd]);
+  }, [projectId, globalDateStart, globalDateEnd, groupBy]);
 
   const formatCurrency = (val) => new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'MGA', maximumFractionDigits: 0 }).format(val).replace('MGA', 'Ar');
 
@@ -111,10 +118,35 @@ export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, o
       {/* Header Style "Premium" - KPIs à droite */}
       {!loading && (
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-3 sm:mb-6 pl-1 sm:pl-2">
-          <div>
-            <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-1">
-              {dateRangeDisplay}
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+            <div>
+              <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {dateRangeDisplay}
+              </p>
+            </div>
+            {/* Toggle GroupBy */}
+            <div className="flex bg-gray-100 dark:bg-gray-700/50 p-1 rounded-lg">
+              <button
+                onClick={() => setGroupBy('month')}
+                className={`px-3 py-1 text-[10px] sm:text-xs font-medium rounded-md transition-all ${
+                  groupBy === 'month' 
+                    ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm' 
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`}
+              >
+                Mois
+              </button>
+              <button
+                onClick={() => setGroupBy('year')}
+                className={`px-3 py-1 text-[10px] sm:text-xs font-medium rounded-md transition-all ${
+                  groupBy === 'year' 
+                    ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm' 
+                    : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                }`}
+              >
+                Année
+              </button>
+            </div>
           </div>
 
           <div className="flex space-x-3 sm:space-x-6 mt-2 sm:mt-4 md:mt-0 text-right">

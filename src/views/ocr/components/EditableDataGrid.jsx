@@ -237,6 +237,16 @@ const EditableDataGrid = ({ data, onChange, onDeleteRow, readOnly = false }) => 
             if (typeof finalValue === 'string' && /^\d\s*-\s*/.test(finalValue)) {
                 finalValue = finalValue.replace(/^\d\s*-\s*/, '');
             }
+        } else if (!isEditing && type === 'number' && displayValue !== '') {
+            const num = Number(displayValue);
+            if (!isNaN(num)) {
+                // Formater avec des espaces (via fr-FR) et 2 décimales max
+                const hasDecimals = num % 1 !== 0;
+                finalValue = num.toLocaleString('fr-FR', {
+                    minimumFractionDigits: hasDecimals ? 2 : 0,
+                    maximumFractionDigits: 2
+                });
+            }
         }
 
         if (readOnly) {

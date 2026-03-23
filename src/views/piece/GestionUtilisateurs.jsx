@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
-import { X, Edit2, Trash2, UserPlus, Loader } from 'lucide-react';
+import { X, Edit2, Trash2, UserPlus, Loader, Eye, EyeOff } from 'lucide-react';
 import { useGetUsersQuery, useGetAdminCountQuery, useCreateUserByAdminMutation, useUpdateUserMutation, useDeleteUserMutation } from '../../states/user/userApiSlice';
 import toast from 'react-hot-toast';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
@@ -73,8 +73,10 @@ const GestionUtilisateurs = () => {
         username: '',
         name: '',
         email: '',
+        password: '',
         role: 'expert_comptable'
     });
+    const [showPassword, setShowPassword] = useState(false);
 
     // TODO: Implement Update Mutation
     const handleSubmit = async () => {
@@ -131,8 +133,13 @@ const GestionUtilisateurs = () => {
     };
 
     const handleCreateUser = async () => {
-        if (!createFormData.username || !createFormData.name || !createFormData.email || !createFormData.role) {
+        if (!createFormData.username || !createFormData.name || !createFormData.email || !createFormData.password || !createFormData.role) {
             toast.error("Tous les champs sont requis");
+            return;
+        }
+
+        if (createFormData.password.length < 8) {
+            toast.error("Le mot de passe doit contenir au moins 8 caractères");
             return;
         }
 
@@ -140,7 +147,8 @@ const GestionUtilisateurs = () => {
             await createUser(createFormData).unwrap();
             toast.success("Utilisateur créé avec succès");
             setShowCreateModal(false);
-            setCreateFormData({ username: '', name: '', email: '', role: 'expert_comptable' });
+            setCreateFormData({ username: '', name: '', email: '', password: '', role: 'expert_comptable' });
+            setShowPassword(false);
         } catch (error) {
             console.error(error);
             toast.error(error?.data?.error || "Erreur lors de la création");
@@ -399,6 +407,28 @@ const GestionUtilisateurs = () => {
                                         className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all placeholder-gray-400 dark:placeholder-gray-500"
                                         placeholder="exemple@email.com"
                                     />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                        Mot de passe <span className="text-red-500">*</span>
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            value={createFormData.password}
+                                            onChange={(e) => setCreateFormData({ ...createFormData, password: e.target.value })}
+                                            className="w-full px-3 py-2.5 pr-10 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-all placeholder-gray-400 dark:placeholder-gray-500"
+                                            placeholder="••••••••"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                                        >
+                                            {showPassword ? <EyeOff className="w-5 h-5 focus:outline-none" /> : <Eye className="w-5 h-5 focus:outline-none" />}
+                                        </button>
+                                    </div>
                                 </div>
 
                                 <div>

@@ -13,6 +13,7 @@ import {
 import { fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 import LoadingOverlay from '../layout/LoadingOverlay';
+import { formatDateToISO } from '../../utils/dateUtils';
 
 export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, onLoad }) {
   const { isDarkMode } = useTheme();
@@ -50,8 +51,8 @@ export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, o
           startDateObj.setMonth(startDateObj.getMonth() - 5);
           startDateObj.setDate(1);
 
-          dateStart = startDateObj.toISOString().split('T')[0];
-          dateEnd = endDateObj.toISOString().split('T')[0];
+          dateStart = formatDateToISO(startDateObj);
+          dateEnd = formatDateToISO(endDateObj);
         }
 
         // Format date range for display
@@ -80,9 +81,9 @@ export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, o
           setEvolutionData(monthsData);
 
           // Calculer les totaux pour le header
-          const totalCA = monthsData.reduce((acc, curr) => acc + curr.ca, 0);
-          const totalCharges = monthsData.reduce((acc, curr) => acc + curr.charges, 0);
-          const totalResultat = monthsData.reduce((acc, curr) => acc + curr.resultatNet, 0);
+          const totalCA = monthsData.reduce((acc, curr) => acc + (curr.ca || 0), 0);
+          const totalCharges = monthsData.reduce((acc, curr) => acc + (curr.charges || 0), 0);
+          const totalResultat = monthsData.reduce((acc, curr) => acc + (curr.resultatNet || 0), 0);
 
           setTotals({
             ca: totalCA,
@@ -220,27 +221,30 @@ export default function LineChartCAEvolution({ globalDateStart, globalDateEnd, o
                 dataKey="charges"
                 stroke="#ef4444"
                 strokeWidth={2}
-                dot={{ fill: '#ef4444', r: 3, strokeWidth: 0 }}
+                dot={{ fill: '#ef4444', r: 3.5, strokeWidth: 0 }}
                 activeDot={{ r: 5 }}
                 name="Charges"
+                connectNulls={true}
               />
               <Line
                 type="monotone"
                 dataKey="ca"
                 stroke="#3b82f6"
                 strokeWidth={2}
-                dot={{ fill: '#3b82f6', r: 3, strokeWidth: 0 }}
+                dot={{ fill: '#3b82f6', r: 3.5, strokeWidth: 0 }}
                 activeDot={{ r: 5 }}
                 name="Chiffre d'Affaires"
+                connectNulls={true}
               />
               <Line
                 type="monotone"
                 dataKey="resultatNet"
                 stroke="#10b981"
                 strokeWidth={2}
-                dot={{ fill: '#10b981', r: 3, strokeWidth: 0 }}
+                dot={{ fill: '#10b981', r: 3.5, strokeWidth: 0 }}
                 activeDot={{ r: 5 }}
                 name="Résultat"
+                connectNulls={true}
               />
             </LineChart>
           </ResponsiveContainer>

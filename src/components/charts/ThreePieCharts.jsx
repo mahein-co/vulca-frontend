@@ -221,12 +221,11 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd, onLoad 
     <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md mb-4 border-t-2 border-gray-300 dark:border-gray-700">
       <div className="mb-6">
         <div>
-          <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100 flex items-center">
-            <span className="text-2xl mr-3">📊</span>
+          <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-gray-100">
             Répartitions financières
           </h3>
           {globalDateStart && globalDateEnd && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-11">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {new Date(globalDateStart).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })} - {new Date(globalDateEnd).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
             </p>
           )}

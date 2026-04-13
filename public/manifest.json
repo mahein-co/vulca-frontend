@@ -1,9 +1,9 @@
 {
-  "short_name": "REKAPY",
-  "name": "REKAPY - Intelligence Comptable",
+  "short_name": "Rekapy",
+  "name": "Rekapy - Assistant Comptable",
   "icons": [
     {
-      "src": "favicon.ico",
+      "src": "rekapy_logo.png",
       "sizes": "64x64 32x32 24x24 16x16",
       "type": "image/x-icon"
     },

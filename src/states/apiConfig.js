@@ -29,22 +29,18 @@ const baseQuery = fetchBaseQuery({
     prepareHeaders: prepareHeadersWithAuth,
 });
 
-// Base query for root endpoints (auth/users)
-// Users endpoints are at the root level (e.g., /users/login/)
-// while other endpoints are under /api/ (e.g., /api/projects/)
+// Base query for root endpoints (now standardized under /api/)
 const baseQueryUsersRoot = fetchBaseQuery({
     baseUrl: (() => {
         const hostname = window.location.hostname;
         let url;
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
-            // Local development
-            url = `http://${hostname}:8000`;
+            // Standardize on 127.0.0.1 for local backend to avoid IPv6 issues
+            url = `http://127.0.0.1:8000/api`;
         } else if (hostname.includes('lexaiq.com')) {
-            // Production - use api.lexaiq.com
-            url = 'https://api.lexaiq.com';
+            url = 'https://api.lexaiq.com/api';
         } else {
-            // Fallback
-            url = process.env.REACT_APP_API_URL?.replace('/api', '') || 'https://api.lexaiq.com';
+            url = (process.env.REACT_APP_API_URL || 'https://api.lexaiq.com/api');
         }
         console.log("🔧 baseQueryUsersRoot configured with baseUrl:", url);
         return url;

@@ -4,7 +4,6 @@ import {
     TrendingUp,
     ChevronLeft,
     ChevronRight,
-    Wallet,
     CheckCircle,
     XCircle,
     Scale,
@@ -12,20 +11,16 @@ import {
     Users,
     Briefcase,
     AlertCircle,
-    Loader,
-    Columns2,
     Calendar,
     Search,
     Sparkles,
     Trash2,
     Edit2,
-    Plus,
     CheckSquare,
     Square
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
-import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import ButtonSpinner from '../../components/ui/ButtonSpinner';
 import ConfirmationModal from '../../components/ui/ConfirmationModal';
 import { fetchWithReauth } from '../../utils/apiUtils';
@@ -149,7 +144,6 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     const [recherche, setRecherche] = useState('');
     const [bilanData, setBilanData] = useState([]);
     const [compteResultatData, setCompteResultatData] = useState([]);
-    const [kpiData, setKpiData] = useState(null);
     const [bilanKpisData, setBilanKpisData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -163,8 +157,6 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     const [deleteTarget, setDeleteTarget] = useState(null); // { id, isBulk }
 
     const projectId = useProjectId();
-
-    const currentItems = useMemo(() => selectedSection === 'bilan' ? bilanData : compteResultatData, [selectedSection, bilanData, compteResultatData]);
 
     const toggleSelectItem = (id) => {
         setSelectedItems(prev =>
@@ -251,9 +243,9 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     useEffect(() => {
         const fetchAvailableYears = async () => {
             try {
-                const res = await fetch(`${BASE_URL_API}/journals/years/`, {
+                const res = await fetchWithReauth(`${BASE_URL_API}/journals/years/`, {
+                    method: 'GET',
                     headers: API_CONFIG.getHeaders(),
-                    credentials: 'include'
                 });
                 if (res.ok) {
                     const years = await res.json();
@@ -331,9 +323,9 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
 
     const fetchWithParams = async (url, params, normalizer, setter) => {
         const queryParams = new URLSearchParams(params).toString();
-        const res = await fetch(`${url}?${queryParams}`, {
+        const res = await fetchWithReauth(`${url}?${queryParams}`, {
+            method: 'GET',
             headers: API_CONFIG.getHeaders(),
-            credentials: 'include'
         });
         if (!res.ok) throw new Error("Erreur lors du chargement des données");
 
@@ -352,7 +344,6 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     };
 
     const fetchData = async () => {
-        setLoading(true);
         setError(null);
         try {
             const commonParams = {
@@ -376,8 +367,6 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
         } catch (err) {
             console.error(err);
             setError("Impossible de charger les données. Vérifiez votre connexion.");
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -388,18 +377,13 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                 date_end: dateFin
             }).toString();
 
-            const [resNetRes, bilanKpisRes] = await Promise.all([
-                fetch(`${BASE_URL_API}/resultat-net/?${queryParams}`, { headers: API_CONFIG.getHeaders(), credentials: 'include' }),
-                fetch(`${BASE_URL_API}/bilan-kpis-variations/?${queryParams}`, { headers: API_CONFIG.getHeaders(), credentials: 'include' })
-            ]);
+            const res = await fetchWithReauth(`${BASE_URL_API}/bilan-kpis-variations/?${queryParams}`, { 
+                method: 'GET', 
+                headers: API_CONFIG.getHeaders() 
+            });
 
-            if (resNetRes.ok) {
-                const data = await resNetRes.json();
-                setKpiData(data);
-            }
-
-            if (bilanKpisRes.ok) {
-                const data = await bilanKpisRes.json();
+            if (res.ok) {
+                const data = await res.json();
                 setBilanKpisData(data);
             }
         } catch (e) {
@@ -410,40 +394,20 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     useEffect(() => {
         const loadData = async () => {
             if (!dateDebut || !dateFin) return;
-            await fetchData();
-            fetchKPIs();
+            setLoading(true);
+            // On réinitialise les données pour éviter l'effet "deux temps" avec d'anciennes valeurs
+            setBilanKpisData(null);
+            if (selectedSection === 'bilan') setBilanData([]); else setCompteResultatData([]);
+            
+            try {
+                // On lance les deux en parallèle pour gagner du temps, mais on attend les deux
+                await Promise.all([fetchData(), fetchKPIs()]);
+            } finally {
+                setLoading(false);
+            }
         };
         loadData();
     }, [dateDebut, dateFin, projectId, currentPage, selectedSection, recherche]);
-
-    const filterData = (details, isBilan = false) => {
-        const searchLower = recherche.toLowerCase().trim();
-        let filtered = details;
-
-        if (dateDebut && dateFin) {
-            filtered = filtered.filter(item => {
-                const itemDate = (item.date || '').substring(0, 10);
-                const start = (dateDebut || '').substring(0, 10);
-                const end = (dateFin || '').substring(0, 10);
-                return itemDate >= start && itemDate <= end;
-            });
-        } else if (selectedYear) {
-            filtered = filtered.filter(item => {
-                const itemYear = new Date(item.date).getFullYear().toString();
-                return itemYear === selectedYear;
-            });
-        }
-
-        if (searchLower) {
-            filtered = filtered.filter(item =>
-                item.numero_compte.toLowerCase().includes(searchLower) ||
-                item.libelle.toLowerCase().includes(searchLower) ||
-                (item.categorie || item.nature || '').toLowerCase().includes(searchLower)
-            );
-        }
-
-        return filtered;
-    };
 
     // --- ANALYSE IA ---
     const handleAIAnalysis = async () => {
@@ -490,50 +454,44 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
     };
 
     const calculations = useMemo(() => {
-        const bilan = filterData(bilanData, true);
-        const compteResultat = filterData(compteResultatData, false);
-
-        // Prioritize global KPI data (calculated on full dataset) over paginated local data
         const hasKpis = bilanKpisData && bilanKpisData.current;
 
-        const actifCourant = hasKpis ? bilanKpisData.current.actif_courant : bilan.filter(i => i.categorie && i.categorie.toLowerCase().includes('actif') && i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
-        const actifNonCourant = hasKpis ? bilanKpisData.current.actif_non_courant : bilan.filter(i => i.categorie && i.categorie.toLowerCase().includes('actif') && !i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
-        const passifCourant = hasKpis ? bilanKpisData.current.passif_courant : bilan.filter(i => i.categorie && i.categorie.toLowerCase().includes('passif') && i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
-        const passifNonCourant = hasKpis ? bilanKpisData.current.passif_non_courant : bilan.filter(i => i.categorie && i.categorie.toLowerCase().includes('passif') && !i.categorie.toLowerCase().includes('courant')).reduce((a, b) => a + b.montant_ar, 0);
+        // Use backend data as source of truth
+        const actifCourant = hasKpis ? bilanKpisData.current.actif_courant : 0;
+        const actifNonCourant = hasKpis ? bilanKpisData.current.actif_non_courant : 0;
+        const passifCourant = hasKpis ? bilanKpisData.current.passif_courant : 0;
+        const passifNonCourant = hasKpis ? bilanKpisData.current.passif_non_courant : 0;
+        const produits = hasKpis ? bilanKpisData.current.produits : 0;
+        const charges = hasKpis ? bilanKpisData.current.charges : 0;
+        const resultatNet = hasKpis ? (produits - charges) : 0;
+        const capitauxPropresTotal = hasKpis ? bilanKpisData.current.capitaux_propres : 0;
 
-        const produits = hasKpis && bilanKpisData.current.produits !== undefined ? bilanKpisData.current.produits : compteResultat.filter(i => i.nature.toLowerCase().includes('produit')).reduce((a, b) => a + b.montant_ar, 0);
-        const charges = hasKpis && bilanKpisData.current.charges !== undefined ? bilanKpisData.current.charges : compteResultat.filter(i => i.nature.toLowerCase().includes('charge')).reduce((a, b) => a + b.montant_ar, 0);
+        const totalActif = hasKpis ? (bilanKpisData.current.total_actif || (actifCourant + actifNonCourant)) : 0;
+        const totalPassif = hasKpis ? (bilanKpisData.current.total_passif || (passifCourant + passifNonCourant + capitauxPropresTotal)) : 0;
 
-        const resultatNet = kpiData && kpiData.resultat_net !== undefined ? parseFloat(kpiData.resultat_net) : (produits - charges);
-        const capitauxPropresTotal = hasKpis ? bilanKpisData.current.capitaux_propres : (bilan.filter(i => i.categorie && i.categorie.toLowerCase().includes('capitaux')).reduce((a, b) => a + b.montant_ar, 0) + resultatNet);
-        const capitauxPropresBilan = hasKpis ? (bilanKpisData.current.capitaux_propres - resultatNet) : bilan.filter(i => i.categorie && i.categorie.toLowerCase().includes('capitaux')).reduce((a, b) => a + b.montant_ar, 0);
+        const endettementRatio = hasKpis ? bilanKpisData.current.ratio_endettement : 0;
 
-        const totalActif = actifCourant + actifNonCourant;
-        const totalPassif = passifCourant + passifNonCourant + capitauxPropresTotal;
-
-        const totalDettes = passifCourant + passifNonCourant;
-        const endettementRatio = capitauxPropresTotal ? (totalDettes / capitauxPropresTotal * 100) : 0;
-
-        const resultatNetChange = kpiData && kpiData.variation !== undefined ? parseFloat(kpiData.variation) : 0;
-
-        const actifCourantChange = bilanKpisData?.variations?.actif_courant || 0;
-        const actifNonCourantChange = bilanKpisData?.variations?.actif_non_courant || 0;
-        const capitauxPropresChange = bilanKpisData?.variations?.capitaux_propres || 0;
-        const passifCourantChange = bilanKpisData?.variations?.passif_courant || 0;
-        const passifNonCourantChange = bilanKpisData?.variations?.passif_non_courant || 0;
-        const endettementChange = bilanKpisData?.variations?.ratio_endettement || 0;
+        // Variations
+        const variations = bilanKpisData?.variations || {};
+        const actifCourantChange = variations.actif_courant || 0;
+        const actifNonCourantChange = variations.actif_non_courant || 0;
+        const capitauxPropresChange = variations.capitaux_propres || 0;
+        const passifCourantChange = variations.passif_courant || 0;
+        const passifNonCourantChange = variations.passif_non_courant || 0;
+        const resultatNetChange = variations.resultat_net || 0;
+        const endettementChange = variations.ratio_endettement || 0;
 
         return {
             actifCourant, actifNonCourant, passifCourant, passifNonCourant,
-            capitauxPropres: capitauxPropresTotal, capitauxPropresBilan,
+            capitauxPropres: capitauxPropresTotal,
             totalActif, totalPassif, produits, charges, resultatNet,
-            endettementRatio, totalDettes,
-            bilanEquilibre: Math.abs(totalActif - totalPassif) < 0.01,
+            endettementRatio, 
+            bilanEquilibre: Math.abs(totalActif - totalPassif) < 0.1,
             resultatNetChange, endettementChange,
             actifCourantChange, actifNonCourantChange, capitauxPropresChange,
             passifCourantChange, passifNonCourantChange
         };
-    }, [bilanData, compteResultatData, recherche, selectedYear, kpiData, bilanKpisData, dateDebut, dateFin]);
+    }, [bilanKpisData]);
 
     const cards = [
         ['Actif Courant', calculations.actifCourant, calculations.actifCourantChange, false, DollarSign, 'Créances,Stocks,Trésorerie'],
@@ -733,10 +691,10 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                     // Valeur précédente = Valeur actuelle - Variation
                                     const previousValue = value - numericChange;
 
-                                    if (previousValue === 0) {
-                                        // Si précédent était 0
-                                        if (numericChange === 0) changeLabel = `${changeIcon} 0 %`;
-                                        else changeLabel = `${changeIcon} 100 %`; // Ou N/A
+                                    if (Math.abs(previousValue) < 0.01) {
+                                        // Si précédent était virtuellement 0
+                                        if (Math.abs(numericChange) < 0.01) changeLabel = `${changeIcon} 0 %`;
+                                        else changeLabel = `${changeIcon} 100 %`; 
                                     } else {
                                         const percent = (numericChange / previousValue) * 100;
                                         changeLabel = `${changeIcon} ${Math.abs(percent).toFixed(1)} %`;
@@ -830,55 +788,67 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                                     </td>
                                                 )}
                                             </tr>
-                                        ) : paginatedDetails.map((item, idx) => (
-                                            <tr key={item.id || idx} className={`hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'} ${selectedItems.includes(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/10' : ''}`}>
-                                                <td className="w-[5%] border-b border-gray-100 dark:border-gray-700 px-2 text-center">
-                                                    <button onClick={() => toggleSelectItem(item.id)} className={`${selectedItems.includes(item.id) ? 'text-indigo-600' : 'text-gray-400'} hover:text-indigo-500 transition-colors`}>
-                                                        {selectedItems.includes(item.id) ? <CheckSquare size={14} /> : <Square size={14} />}
-                                                    </button>
-                                                </td>
-                                                <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-gray-700 dark:text-gray-300 font-semibold">{formatDate(item.date)}</td>
-                                                <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs">
-                                                    <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{item.numero_compte}</span>
-                                                </td>
-                                                <td className="w-[35%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-gray-800 dark:text-gray-200 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
-                                                <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 hidden lg:table-cell">
-                                                    <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 inline-flex text-[10px] font-bold rounded-full ${selectedSection === 'bilan'
-                                                        ? item.categorie?.toLowerCase().includes('actif')
-                                                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                                                            : item.categorie?.toLowerCase().includes('passif') || item.categorie?.toLowerCase().includes('capitaux')
-                                                                ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
-                                                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                                                        : item.nature?.toLowerCase().includes('produit')
-                                                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
-                                                            : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
-                                                        }`}>
-                                                        {(item.categorie || item.nature || '').replace(/_/g, ' ')}
-                                                    </span>
-                                                </td>
-                                                <td className="w-[20%] sm:w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-right font-bold text-gray-900 dark:text-gray-100">{formatCurrency(item.montant_ar)}</td>
-                                                <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 py-2 text-center">
-                                                    <div className="flex items-center justify-center space-x-2">
-                                                        <button
-                                                            onClick={() => { setEditingItem(item); setIsEditing(true); }}
-                                                            disabled={selectedItems.length > 1 || (selectedItems.length === 1 && !selectedItems.includes(item.id))}
-                                                            className={`p-1 rounded transition-colors ${(selectedItems.length > 1 || (selectedItems.length === 1 && !selectedItems.includes(item.id))) ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
-                                                            title={selectedItems.length > 1 ? "Désélectionnez pour modifier" : (selectedItems.length === 1 && !selectedItems.includes(item.id)) ? "Ligne non sélectionnée" : "Modifier"}
-                                                        >
-                                                            <Edit2 size={14} />
+                                        ) : paginatedDetails.length > 0 ? (
+                                            paginatedDetails.map((item, idx) => (
+                                                <tr key={item.id || idx} className={`hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors ${idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-900/50'} ${selectedItems.includes(item.id) ? 'bg-indigo-50 dark:bg-indigo-900/10' : ''}`}>
+                                                    <td className="w-[5%] border-b border-gray-100 dark:border-gray-700 px-2 text-center">
+                                                        <button onClick={() => toggleSelectItem(item.id)} className={`${selectedItems.includes(item.id) ? 'text-indigo-600' : 'text-gray-400'} hover:text-indigo-500 transition-colors`}>
+                                                            {selectedItems.includes(item.id) ? <CheckSquare size={14} /> : <Square size={14} />}
                                                         </button>
-                                                        <button
-                                                            onClick={() => handleDeleteClick(item.id)}
-                                                            disabled={selectedItems.length > 0}
-                                                            className={`p-1 rounded transition-colors ${selectedItems.length > 0 ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:bg-red-50'}`}
-                                                            title={selectedItems.length > 0 ? "Utilisez la suppression groupée" : "Supprimer"}
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
+                                                    </td>
+                                                    <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs text-gray-700 dark:text-gray-300 font-semibold">{formatDate(item.date)}</td>
+                                                    <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-xs">
+                                                        <span className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold">{item.numero_compte}</span>
+                                                    </td>
+                                                    <td className="w-[35%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-gray-800 dark:text-gray-200 font-medium truncate max-w-[150px] sm:max-w-none">{item.libelle}</td>
+                                                    <td className="w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 hidden lg:table-cell">
+                                                        <span className={`px-1.5 sm:px-2 py-0.5 sm:py-1 inline-flex text-[10px] font-bold rounded-full ${selectedSection === 'bilan'
+                                                            ? item.categorie?.toLowerCase().includes('actif')
+                                                                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                                                                : item.categorie?.toLowerCase().includes('passif') || item.categorie?.toLowerCase().includes('capitaux')
+                                                                    ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                                                                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                                            : item.nature?.toLowerCase().includes('produit')
+                                                                ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300'
+                                                                : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300'
+                                                            }`}>
+                                                            {(item.categorie || item.nature || '').replace(/_/g, ' ')}
+                                                        </span>
+                                                    </td>
+                                                    <td className="w-[20%] sm:w-[15%] border-b border-gray-100 dark:border-gray-700 px-2 sm:px-3 py-2 sm:py-2.5 text-[10px] sm:text-xs text-right font-bold text-gray-900 dark:text-gray-100">{formatCurrency(item.montant_ar)}</td>
+                                                    <td className="w-[10%] border-b border-gray-100 dark:border-gray-700 px-2 py-2 text-center">
+                                                        <div className="flex items-center justify-center space-x-2">
+                                                            <button
+                                                                onClick={() => { setEditingItem(item); setIsEditing(true); }}
+                                                                disabled={selectedItems.length > 1 || (selectedItems.length === 1 && !selectedItems.includes(item.id))}
+                                                                className={`p-1 rounded transition-colors ${(selectedItems.length > 1 || (selectedItems.length === 1 && !selectedItems.includes(item.id))) ? 'text-gray-300 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50'}`}
+                                                                title={selectedItems.length > 1 ? "Désélectionnez pour modifier" : (selectedItems.length === 1 && !selectedItems.includes(item.id)) ? "Ligne non sélectionnée" : "Modifier"}
+                                                            >
+                                                                <Edit2 size={14} />
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteClick(item.id)}
+                                                                disabled={selectedItems.length > 0}
+                                                                className={`p-1 rounded transition-colors ${selectedItems.length > 0 ? 'text-gray-300 cursor-not-allowed' : 'text-red-600 hover:bg-red-50'}`}
+                                                                title={selectedItems.length > 0 ? "Utilisez la suppression groupée" : "Supprimer"}
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="7" className="py-12 text-center">
+                                                    <div className="flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
+                                                        <Search size={40} className="mb-3 opacity-20" />
+                                                        <p className="text-sm font-medium">Aucune donnée trouvée pour cette période</p>
+                                                        <p className="text-[10px] mt-1">Essayez de modifier vos filtres ou effectuez une nouvelle saisie.</p>
                                                     </div>
                                                 </td>
                                             </tr>
-                                        ))}
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -910,7 +880,7 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                             </div>
 
                             {/* Corps Modale */}
-                            <div className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-6 no-scrollbar">
+                            <div className="flex-grow overflow-y-auto p-4 sm:p-6 space-y-6">
                                 {analysisError ? (
                                     <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-6 rounded-xl flex flex-col items-center text-center">
                                         <AlertCircle className="text-red-500 mb-3" size={48} />
@@ -1048,15 +1018,6 @@ const TransactionView = ({ onNewSaisieClick, viewType }) => {
                                 ) : null}
                             </div>
 
-                            {/* Footer Modale */}
-                            <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-end bg-gray-50/50 dark:bg-gray-900/20">
-                                <button
-                                    onClick={() => setIsAnalysisModalOpen(false)}
-                                    className="px-5 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all shadow-sm"
-                                >
-                                    Fermer
-                                </button>
-                            </div>
                         </div>
                     </div>
                 )

@@ -8,7 +8,7 @@ const hostname = window.location.hostname;
 let apiHost;
 
 if (hostname === 'localhost' || hostname === '127.0.0.1') {
-  apiHost = `http://${hostname}:8000/api`;
+  apiHost = `http://127.0.0.1:8000/api`;
 } else if (hostname.includes('lexaiq.com')) {
   // Force production API URL for any lexaiq.com subdomain
   apiHost = "https://api.lexaiq.com/api";

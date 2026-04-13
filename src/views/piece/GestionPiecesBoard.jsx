@@ -4,6 +4,7 @@ import { Eye, X, FileText } from 'lucide-react';
 import { BASE_URL_API } from '../../constants/globalConstants';
 import { getApiHeaders } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
+import { getTodayISO, formatDateToISO } from '../../utils/dateUtils';
 
 // --- 0. COMPOSANT : Modale de Détails ---
 const DetailsModal = ({ isOpen, document, onClose }) => {
@@ -189,11 +190,11 @@ export default function GestionPiecesBoard() {
     const [selectedDocument, setSelectedDocument] = useState(null);
     const [dateDebut, setDateDebut] = useState(() => {
         const d = new Date();
-        d.setMonth(0); // Janvier
-        d.setDate(1);  // 1er jour
-        return d.toISOString().split('T')[0];
+        d.setMonth(d.getMonth() - 6);
+        d.setDate(1);
+        return formatDateToISO(d);
     });
-    const [dateFin, setDateFin] = useState(() => new Date().toISOString().split('T')[0]);
+    const [dateFin, setDateFin] = useState(() => getTodayISO());
 
     // Charger les données depuis l'API
     useEffect(() => {
@@ -262,7 +263,7 @@ export default function GestionPiecesBoard() {
                 }
                 // Tentative standard
                 const d = new Date(dateStr);
-                return !isNaN(d.getTime()) ? d.toISOString().split('T')[0] : null;
+                return !isNaN(d.getTime()) ? formatDateToISO(d) : null;
             };
 
             const pieceDate = getComparableDate(piece.date);
@@ -308,7 +309,7 @@ export default function GestionPiecesBoard() {
                             <input
                                 type="date"
                                 value={dateDebut}
-                                max={new Date().toISOString().split('T')[0]}
+                                max={getTodayISO()}
                                 className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                 onChange={(e) => setDateDebut(e.target.value)}
                             />
@@ -318,7 +319,7 @@ export default function GestionPiecesBoard() {
                             <input
                                 type="date"
                                 value={dateFin}
-                                max={new Date().toISOString().split('T')[0]}
+                                max={getTodayISO()}
                                 className="p-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-xs sm:text-sm focus:border-emerald-500 focus:ring-1 focus:ring-emerald-200 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                                 onChange={(e) => setDateFin(e.target.value)}
                             />

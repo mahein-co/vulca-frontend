@@ -4,6 +4,7 @@ import axios from 'axios';
 import { BASE_URL_API } from '../../constants/globalConstants';
 import { getApiHeaders } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
+import { getTodayISO, formatDateToISO } from '../../utils/dateUtils';
 import {
   BarChart,
   Bar,
@@ -38,8 +39,8 @@ export default function BarCharts({ globalDateStart, globalDateEnd, onLoad }) {
       const startDate = new Date();
       startDate.setMonth(startDate.getMonth() - 5);
       startDate.setDate(1);
-      dateStart = startDate.toISOString().split('T')[0];
-      dateEnd = endDate.toISOString().split('T')[0];
+      dateStart = formatDateToISO(startDate);
+      dateEnd = getTodayISO();
     }
 
     // Format for display

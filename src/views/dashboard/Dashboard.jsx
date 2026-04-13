@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
+import { getTodayISO, formatDateToISO } from '../../utils/dateUtils';
 
 
 
@@ -400,8 +401,8 @@ const Dashboard = () => {
   defaultStartDate.setMonth(defaultStartDate.getMonth() - 6);
   defaultStartDate.setDate(1);
 
-  const [globalDateStart, setGlobalDateStart] = useState(defaultStartDate.toISOString().split('T')[0]);
-  const [globalDateEnd, setGlobalDateEnd] = useState(defaultEndDate.toISOString().split('T')[0]);
+  const [globalDateStart, setGlobalDateStart] = useState(formatDateToISO(defaultStartDate));
+  const [globalDateEnd, setGlobalDateEnd] = useState(getTodayISO());
   const projectId = useProjectId();
 
   // Reset loading states on date change
@@ -860,7 +861,6 @@ const Dashboard = () => {
         {/* 6. Autres indicateurs (Alertes & Risques + Rentabilité) */}
         <div className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-lg shadow-md border-t-2 border-gray-300 dark:border-gray-700 mb-4">
           <div className="flex items-center mb-3">
-            <span className="text-2xl mr-3 text-gray-400">📊</span>
             <h3 className="text-base sm:text-lg font-semibold text-gray-800 dark:text-gray-100">Autres indicateurs</h3>
           </div>
 
@@ -977,48 +977,12 @@ const Dashboard = () => {
                         )}
                       </td>
                     </tr>
-
-                    {/* GEARING (Dette CMLT / Fonds Propres) */}
-                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Gearing</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
-                        {indicators.ratios && indicators.ratios.gearing ? Number(indicators.ratios.gearing.value).toFixed(2) : "--"}
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
-                        &lt; 1.3
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                        {indicators.ratios && indicators.ratios.gearing && indicators.ratios.gearing.alerte ? (
-                          <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
-                        ) : (
-                          <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
-                        )}
-                      </td>
-                    </tr>
-
-                    {/* LEVERAGE BRUT (Dette / EBE) */}
-                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Leverage Brut</td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-700 dark:text-gray-300 text-right font-mono text-[10px] sm:text-sm">
-                        {indicators.ratios && indicators.ratios.leverage ? Number(indicators.ratios.leverage.value).toFixed(2) : "--"}
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right text-[9px] sm:text-xs text-gray-400 whitespace-nowrap">
-                        &lt; 3.5
-                      </td>
-                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-center">
-                        {indicators.ratios && indicators.ratios.leverage && indicators.ratios.leverage.alerte ? (
-                          <span className="text-red-700 text-[10px] sm:text-xs font-bold">Alerte</span>
-                        ) : (
-                          <span className="text-emerald-700 text-[10px] sm:text-xs font-bold">OK</span>
-                        )}
-                      </td>
-                    </tr>
                   </tbody>
                 </table>
               </div>
             </div>
 
-            {/* Rentabilité */}
+            {/* Rentabilité & Performance */}
             <div>
               <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
                 <table className="w-full text-left text-sm">
@@ -1026,7 +990,7 @@ const Dashboard = () => {
                     <tr className="border-b border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 uppercase text-xs tracking-wider">
                       <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-[10px] sm:text-xs">Indicateur</th>
                       <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-right text-[10px] sm:text-xs">Valeur</th>
-                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-right text-[10px] sm:text-xs">Variation</th>
+                      <th className="px-2 sm:px-4 py-2 sm:py-3 font-semibold text-right text-[10px] sm:text-sm">Variation</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-700 bg-white dark:bg-gray-800">
@@ -1071,6 +1035,38 @@ const Dashboard = () => {
                         {gearingData.variation !== null ? (
                           <span className={gearingData.variation >= 0 ? 'text-red-600' : 'text-emerald-600'}>
                             {gearingData.variation >= 0 ? '↗' : '↘'} {gearingData.variation >= 0 ? '+' : ''}{Number(gearingData.variation).toFixed(2)}%
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">--</span>
+                        )}
+                      </td>
+                    </tr>
+
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">Leverage Brut</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-900 dark:text-gray-100 font-bold text-right text-[10px] sm:text-sm">
+                        {leverageDataVar.leverage !== null ? Number(leverageDataVar.leverage).toFixed(2) : '--'}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-[10px] sm:text-sm">
+                        {leverageDataVar.variation !== null ? (
+                          <span className={leverageDataVar.variation >= 0 ? 'text-red-600' : 'text-emerald-600'}>
+                            {leverageDataVar.variation >= 0 ? '↗' : '↘'} {leverageDataVar.variation >= 0 ? '+' : ''}{Number(leverageDataVar.variation).toFixed(2)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">--</span>
+                        )}
+                      </td>
+                    </tr>
+
+                    <tr className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-800 dark:text-gray-200 font-medium text-[10px] sm:text-sm">ROE</td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-gray-900 dark:text-gray-100 font-bold text-right text-[10px] sm:text-sm">
+                        {roeData.roe !== null ? `${Number(roeData.roe).toFixed(2)}%` : '--'}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 sm:py-3 text-right font-medium text-[10px] sm:text-sm">
+                        {roeData.variation !== null ? (
+                          <span className={roeData.variation >= 0 ? 'text-emerald-600' : 'text-red-600'}>
+                            {roeData.variation >= 0 ? '↗' : '↘'} {roeData.variation >= 0 ? '+' : ''}{Number(roeData.variation).toFixed(2)}%
                           </span>
                         ) : (
                           <span className="text-gray-400">--</span>

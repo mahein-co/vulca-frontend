@@ -6,6 +6,7 @@ import {
   setLoadingData,
   setCurrentPage
 } from '../../states/dashboard/dashboardFilterSlice';
+import { getTodayISO, formatDateToISO } from '../../utils/dateUtils';
 import { fetchWithReauth } from '../../utils/apiUtils';
 import { BASE_URL_API } from '../../constants/globalConstants';
 
@@ -25,8 +26,8 @@ const FilterManager = ({ page = "dashboard", rightAction = null, hidePeriod = fa
   dStart.setMonth(dStart.getMonth() - 6);
   // On se cale au 1er du mois pour avoir une période propre
   dStart.setDate(1);
-  const defaultDateStart = dStart.toISOString().split('T')[0];
-  const defaultDateEnd = new Date().toISOString().split('T')[0];
+  const defaultDateStart = formatDateToISO(dStart);
+  const defaultDateEnd = getTodayISO();
 
   const [dateStart, setDateStart] = useState(activeFilter?.value?.start || defaultDateStart);
   const [dateEnd, setDateEnd] = useState(activeFilter?.value?.end || defaultDateEnd);

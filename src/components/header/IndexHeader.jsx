@@ -24,7 +24,12 @@ export default function IndexHeader() {
 
         {/* Titre à gauche */}
         <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-primary">{activePageTitle}</h1>
+          <img 
+            src="/rekapy_logo.png" 
+            alt="Rekapy" 
+            className="w-8 h-8 object-contain rounded-md bg-white p-0.5"
+          />
+          <h1 className="text-xl font-bold text-white pr-2 border-r border-slate-700">{activePageTitle}</h1>
           <button
             onClick={() => navigate("/projects")}
             className="flex items-center gap-2 text-sm bg-slate-700 dark:bg-gray-700 hover:bg-slate-600 dark:hover:bg-gray-600 text-slate-300 dark:text-gray-300 px-3 py-2 rounded-lg transition-colors shadow-sm"

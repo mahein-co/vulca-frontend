@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import ConfirmationModal from '../../../components/ui/ConfirmationModal';
+import { getTodayISO } from '../../../utils/dateUtils';
 
 /**
  * EditableDataGrid - Component for editing structured financial data
@@ -387,7 +388,7 @@ const EditableDataGrid = ({ data, onChange, onDeleteRow, readOnly = false }) => 
 
                             if (isJournal) {
                                 newRow = {
-                                    date: new Date().toISOString().split('T')[0],
+                                    date: getTodayISO(),
                                     numero_piece: '',
                                     numero_compte: '',
                                     libelle: '',
@@ -453,7 +454,7 @@ const EditableDataGrid = ({ data, onChange, onDeleteRow, readOnly = false }) => 
                                         <th className="px-3 py-2 text-left text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">Classe</th>
                                         {years.map(year => (
                                             <th key={year} className="px-3 py-2 text-right text-xs font-bold text-gray-600 dark:text-gray-400 uppercase">
-                                                {String(year).match(/^\d{4}$/) ? 'Montant' : year}
+                                                {String(year).match(/^\d{4}$/) ? `Montant (${year})` : year}
                                             </th>
                                         ))}
                                     </>

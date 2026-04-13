@@ -6,7 +6,7 @@ export default function AuthIndexRegister() {
     return (
         <React.Fragment>
             <UtilsPageMeta
-                title={"REKAPY | Inscription"}
+                title={"Rekapy "}
                 description={"Authentication page."}
             />
             <RegisterForm />

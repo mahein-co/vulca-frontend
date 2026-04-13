@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTheme } from '../../states/context/ThemeContext';
 import {
   LineChart,
@@ -10,7 +10,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
+import { fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 import LoadingOverlay from '../../components/layout/LoadingOverlay';
 
@@ -47,10 +47,11 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd, o
   const [evolutionData, setEvolutionData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dateRangeDisplay, setDateRangeDisplay] = useState('');
+  const [groupBy, setGroupBy] = useState('month');
   const projectId = useProjectId();
 
   // Récupérer les métriques de la catégorie sélectionnée
-  const availableMetrics = METRICS_CONFIG[selectedCategory] || [];
+  const availableMetrics = useMemo(() => METRICS_CONFIG[selectedCategory] || [], [selectedCategory]);
 
   // Charger les données quand la catégorie ou les métriques changent
   useEffect(() => {
@@ -71,20 +72,12 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd, o
 
         // Récupérer les données pour chaque métrique en parallèle
         const promises = metricsToFetch.map(metric => {
-          let url = metric.endpoint;
+          let url = `${metric.endpoint}?group_by=${groupBy}`;
 
           // Si la métrique utilise les dates globales, les ajouter à l'URL
           if (metric.useGlobalDates && globalDateStart && globalDateEnd) {
-            url += `?date_start=${globalDateStart}&date_end=${globalDateEnd}`;
+            url += `&date_start=${globalDateStart}&date_end=${globalDateEnd}`;
           }
-
-          // Nettoyer l'URL si elle contient BASE_URL_API (fetchWithReauth ajoute automatiquement BASE_URL sauf si http)
-          // Mais ici metric.endpoint est juste le path (ex: /evolution-roe/)
-          // Sauf qu'on a ajouté BASE_URL_API ligne 72. 
-
-          // Correction: remove BASE_URL_API pre-pend logic manually or let fetchWithReauth handle full url?
-          // fetchWithReauth checks "if (!url.startsWith('http'))"
-          // So if we pass full url, it uses it.
 
           return fetchWithReauth(url, {
             signal: abortController.signal
@@ -118,9 +111,16 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd, o
           if (globalDateStart && globalDateEnd) {
             const sObj = new Date(globalDateStart);
             const eObj = new Date(globalDateEnd);
-            const startDateStr = sObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
-            const endDateStr = eObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
-            setDateRangeDisplay(`${startDateStr} - ${endDateStr}`);
+            
+            let rangeStr = '';
+            if (groupBy === 'year') {
+              rangeStr = `${sObj.getFullYear()} - ${eObj.getFullYear()}`;
+            } else {
+              const startDateStr = sObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+              const endDateStr = eObj.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
+              rangeStr = `${startDateStr} - ${endDateStr}`;
+            }
+            setDateRangeDisplay(rangeStr);
           }
         }
       } catch (error) {
@@ -140,7 +140,7 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd, o
     return () => {
       abortController.abort();
     };
-  }, [selectedCategory, selectedMetrics, globalDateStart, globalDateEnd, projectId]);
+  }, [availableMetrics, selectedMetrics, globalDateStart, globalDateEnd, projectId, groupBy, onLoad]);
 
   // Gérer le changement de catégorie
   const handleCategoryChange = (category) => {
@@ -173,12 +173,38 @@ export default function LineChartCategorized({ globalDateStart, globalDateEnd, o
 
   return (
     <div className="w-full">
-      {/* Date Range Display */}
-      {!loading && dateRangeDisplay && (
-        <div className="mb-3 pl-1 sm:pl-2">
-          <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
-            {dateRangeDisplay}
-          </p>
+      {/* Date Range & Toggle */}
+      {!loading && (
+        <div className="flex items-center gap-4 mb-3 pl-1 sm:pl-2">
+          {dateRangeDisplay && (
+            <p className="text-[10px] sm:text-xs text-gray-400 dark:text-gray-500">
+              {dateRangeDisplay}
+            </p>
+          )}
+
+          {/* Toggle GroupBy */}
+          <div className="flex bg-gray-100 dark:bg-gray-700/50 p-1 rounded-lg">
+            <button
+              onClick={() => setGroupBy('month')}
+              className={`px-3 py-1 text-[10px] sm:text-xs font-medium rounded-md transition-all ${
+                groupBy === 'month' 
+                  ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+            >
+              Mois
+            </button>
+            <button
+              onClick={() => setGroupBy('year')}
+              className={`px-3 py-1 text-[10px] sm:text-xs font-medium rounded-md transition-all ${
+                groupBy === 'year' 
+                  ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm' 
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              }`}
+            >
+              Année
+            </button>
+          </div>
         </div>
       )}
 

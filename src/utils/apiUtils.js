@@ -13,6 +13,18 @@ export const getApiHeaders = () => {
     if (projectId) {
         headers["X-Project-ID"] = projectId;
     }
+    // Add JWT token (same logic as fetchWithReauth)
+    try {
+        const userInfo = localStorage.getItem("userInfo");
+        if (userInfo) {
+            const parsedUser = JSON.parse(userInfo);
+            if (parsedUser.access) {
+                headers["Authorization"] = `Bearer ${parsedUser.access}`;
+            }
+        }
+    } catch (e) {
+        console.error("Error parsing user info for token", e);
+    }
     return headers;
 };
 

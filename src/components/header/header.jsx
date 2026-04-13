@@ -88,7 +88,20 @@ const Header = ({ currentPage, onNavigate, onOpenSaisieMenu, hideNavigation }) =
                                 onClick={() => !hideNavigation && handleNavClick('dashboard')}
                             >
                                 {hideNavigation ? (
-                                    <span className="text-lg">REKAPY</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-slate-900 border border-slate-700/50 shadow-sm flex items-center justify-center">
+                                            <img 
+                                                src="/rekapy_logo.png" 
+                                                alt="Rekapy Logo" 
+                                                className="w-full h-full object-contain p-1"
+                                                onError={(e) => {
+                                                    console.warn("Rekapy logo not found at /assets, trying src import");
+                                                    // Fallback will be handled by the component logic if needed
+                                                }}
+                                            />
+                                        </div>
+                                        <span className="text-lg font-bold tracking-tight text-slate-800 dark:text-indigo-400">Rekapy</span>
+                                    </div>
                                 ) : (
                                     <>
                                         {projectName}

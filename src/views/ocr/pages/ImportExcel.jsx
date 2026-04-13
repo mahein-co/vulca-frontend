@@ -4,6 +4,7 @@ import { fetchWithReauth } from '../../../utils/apiUtils';
 import EditableDataGrid from '../components/EditableDataGrid';
 import LoadingOverlay from '../../../components/layout/LoadingOverlay';
 import ButtonSpinner from '../../../components/ui/ButtonSpinner';
+import { getTodayISO } from '../../../utils/dateUtils';
 
 // Styles CSS pour les animations
 const styles = `
@@ -703,7 +704,28 @@ export default function ImportExcel({ onSaisieCompleted }) {
                             data: {
                                 ...doc.data,
                                 fileName: doc.file.name,
-                                sheets: result.sheets || [],
+                                sheets: (result.sheets || []).map(sheet => {
+                                    if (!sheet.structured_data || !sheet.structured_data.lignes) return sheet;
+                                    
+                                    // Filter out rows where all amounts are zero
+                                    const filteredLignes = sheet.structured_data.lignes.filter(ligne => {
+                                        if (sheet.structured_data.type_document === 'JOURNAL') {
+                                            return parseFloat(ligne.debit || 0) !== 0 || parseFloat(ligne.credit || 0) !== 0;
+                                        } else {
+                                            // For Bilan and CR, check all year values
+                                            if (!ligne.valeurs) return true; // Keep if no values (unlikely but safe)
+                                            return Object.values(ligne.valeurs).some(v => parseFloat(v || 0) !== 0);
+                                        }
+                                    });
+                                    
+                                    return {
+                                        ...sheet,
+                                        structured_data: {
+                                            ...sheet.structured_data,
+                                            lignes: filteredLignes
+                                        }
+                                    };
+                                }),
                                 extraction_method: result.extraction_method || 'OCR'
                             }
                         };
@@ -772,7 +794,26 @@ export default function ImportExcel({ onSaisieCompleted }) {
                                     data: {
                                         ...doc.data,
                                         fileName: doc.file.name,
-                                        sheets: result.sheets || [],
+                                        sheets: (result.sheets || []).map(sheet => {
+                                            if (!sheet.structured_data || !sheet.structured_data.lignes) return sheet;
+                                            
+                                            const filteredLignes = sheet.structured_data.lignes.filter(ligne => {
+                                                if (sheet.structured_data.type_document === 'JOURNAL') {
+                                                    return parseFloat(ligne.debit || 0) !== 0 || parseFloat(ligne.credit || 0) !== 0;
+                                                } else {
+                                                    if (!ligne.valeurs) return true;
+                                                    return Object.values(ligne.valeurs).some(v => parseFloat(v || 0) !== 0);
+                                                }
+                                            });
+                                            
+                                            return {
+                                                ...sheet,
+                                                structured_data: {
+                                                    ...sheet.structured_data,
+                                                    lignes: filteredLignes
+                                                }
+                                            };
+                                        }),
                                         extraction_method: result.extraction_method || 'OCR'
                                     }
                                 };
@@ -852,14 +893,14 @@ export default function ImportExcel({ onSaisieCompleted }) {
                                 return {
                                     numero_compte: ligne.numero_compte,
                                     libelle: ligne.libelle || ligne.poste || '',
-                                    date: ligne.date || new Date().toISOString().split('T')[0],
+                                    date: ligne.date || getTodayISO(),
                                     numero_piece: ligne.numero_piece || '',
                                     type_journal: ligne.type_journal || 'OD',
                                     debit: debit,
                                     credit: credit,
                                     row_index: idx
                                 };
-                            });
+                            }).filter(r => r.debit !== 0 || r.credit !== 0);
 
                             const totalDebit = rows.reduce((sum, r) => sum + (r.debit || 0), 0);
                             const totalCredit = rows.reduce((sum, r) => sum + (r.credit || 0), 0);
@@ -881,7 +922,7 @@ export default function ImportExcel({ onSaisieCompleted }) {
                                     classe_libelle: ligne.classe_libelle,
                                     valeurs_annuelles: ligne.valeurs
                                 };
-                            });
+                            }).filter(r => parseFloat(r.montant_ar || 0) !== 0);
                         }
 
                         docSheetsData.push({

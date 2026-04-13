@@ -177,7 +177,57 @@ export default function ExcelImportWizard({ onClose, onComplete }) {
                     };
                 }
 
-                // BILAN / COMPTE_RESULTAT: Code ORIGINAL (ne pas modifier)
+                // BILAN / COMPTE_RESULTAT: Use structured_data.lignes (multi-year) if available
+                // CRITICAL FIX: data_preview uses columns_mapping.montant which may be wrongly mapped
+                // to a year column (e.g. 2021), causing all rows to use that year's values.
+                // Instead, we use structured_data.lignes which has per-year valeurs correctly extracted.
+                const lignes = sheet.structured_data?.lignes;
+                if (lignes && lignes.length > 0) {
+                    const annees = sheet.structured_data?.annees || [];
+                    const rows = [];
+
+                    lignes.forEach((ligne) => {
+                        const correctionKey = `${sheetIndex}-${rows.length}`;
+                        const numero_compte = mappingCorrections[correctionKey] || ligne.numero_compte || '';
+                        const libelle = ligne.poste || '';
+
+                        if (annees.length > 0) {
+                            // Multi-year: create one row per year with the correct value
+                            annees.forEach((year) => {
+                                const montant_ar = ligne.valeurs?.[String(year)] || 0;
+                                // Skip zero-value rows (user requirement)
+                                if (!montant_ar || montant_ar === 0) return;
+                                rows.push({
+                                    numero_compte,
+                                    libelle,
+                                    montant_ar,
+                                    date: `${year}-12-31`,
+                                    row_index: rows.length
+                                });
+                            });
+                        } else {
+                            // Single year / no year: use first available value
+                            const valeurs = ligne.valeurs || {};
+                            const firstVal = Object.values(valeurs)[0] || 0;
+                            if (!firstVal || firstVal === 0) return;
+                            rows.push({
+                                numero_compte,
+                                libelle,
+                                montant_ar: firstVal,
+                                date: null,
+                                row_index: rows.length
+                            });
+                        }
+                    });
+
+                    return {
+                        sheet_name: sheet.sheet_name,
+                        detected_type: sheet.detected_type,
+                        rows
+                    };
+                }
+
+                // FALLBACK: No structured_data, use data_preview (old behaviour)
                 const rows = sheet.data_preview.map((row, rowIndex) => {
                     const correctionKey = `${sheetIndex}-${rowIndex}`;
                     const correction = mappingCorrections[correctionKey];

@@ -12,6 +12,7 @@ import {
 import { fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 import LoadingOverlay from '../layout/LoadingOverlay';
+import { formatDateToISO } from '../../utils/dateUtils';
 
 export default function TvaBarChart({ globalDateStart, globalDateEnd, onLoad }) {
   const { isDarkMode } = useTheme();
@@ -40,8 +41,8 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd, onLoad }) 
           const startDateObj = new Date(maxDate);
           startDateObj.setMonth(startDateObj.getMonth() - 5);
           startDateObj.setDate(1);
-          dateStart = startDateObj.toISOString().split('T')[0];
-          dateEnd = maxDate.toISOString().split('T')[0];
+          dateStart = formatDateToISO(startDateObj);
+          dateEnd = formatDateToISO(maxDate);
         }
 
         const startObj = new Date(dateStart);
@@ -55,8 +56,8 @@ export default function TvaBarChart({ globalDateStart, globalDateEnd, onLoad }) 
           const mStart = new Date(current.getFullYear(), current.getMonth(), 1);
           const mEnd = new Date(current.getFullYear(), current.getMonth() + 1, 0); // Dernier jour du mois
 
-          const ds = mStart.toISOString().split('T')[0];
-          const de = mEnd.toISOString().split('T')[0];
+          const ds = formatDateToISO(mStart);
+          const de = formatDateToISO(mEnd);
           const monthLabel = mStart.toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' });
 
           monthPromises.push(

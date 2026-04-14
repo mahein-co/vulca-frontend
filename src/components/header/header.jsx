@@ -12,7 +12,7 @@ import { useCurrentProjectName } from '../../hooks/useProjectId';
 
 const navItems = [
     { name: 'Pièces comptables', key: 'gestion-pieces', icon: '📝' },
-    { name: 'Importer des fichiers', key: 'import-ocr', icon: '📎' },
+    { name: 'Importer des factures', key: 'import-ocr', icon: '📎' },
     { name: 'Saisie manuelle', key: 'saisie-manuelle', icon: '✍️' },
     { name: 'États financiers', key: 'gestion-transactions-cr', icon: '📦' },
     { name: 'Gestion Utilisateurs', key: 'gestion-user', icon: '👤', adminOnly: true },

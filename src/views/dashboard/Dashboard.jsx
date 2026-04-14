@@ -356,7 +356,7 @@ const Dashboard = () => {
     journals: true
   });
 
-  const isGlobalLoading = Object.values(loadingStates).some(v => v);
+  const isGlobalLoading = loadingStates.main;
 
   // Callbacks stables (useCallback) pour éviter la boucle infinie de re-renders
   // handleLoadStatus('key') créait une nouvelle fonction à chaque render, ce qui
@@ -437,6 +437,8 @@ const Dashboard = () => {
     bfr: 0,
     leverage: 0,
     totalBalance: 0,
+    hasTva: false,
+    hasBalance: false,
     ratios: {
       annuite_caf: { value: 0, alerte: false },
       dette_caf: { value: 0, alerte: false },
@@ -538,6 +540,8 @@ const Dashboard = () => {
           bfr: allData.bfr || 0,
           leverage: allData.leverage || 0,
           totalBalance: allData.total_balance || 0,
+          hasTva: allData.has_tva || false,
+          hasBalance: allData.has_balance || false,
           ratios: allData.ratios || {}
         });
 
@@ -561,11 +565,18 @@ const Dashboard = () => {
         setMargeNetteDataVar({ marge_nette: allData.marge_nette || 0, variation: vars.marge_nette });
         setTresorerieDataVar({ tresorerie: allData.tresorerie || 0, variation: vars.tresorerie });
 
+        // 4. Synchronisation des états de chargement
+        setLoadingStates(prev => ({
+          ...prev,
+          main: false,
+          // Si pas de TVA, on débloque immédiatement son état de chargement
+          tva: allData.has_tva ? prev.tva : false
+        }));
       })
       .catch(err => {
         console.error("Erreur chargement indicateurs dashboard:", err);
-      })
-      .finally(() => setLoadingStates(prev => ({ ...prev, main: false })));
+        setLoadingStates(prev => ({ ...prev, main: false, tva: false }));
+      });
   }, [globalDateStart, globalDateEnd, projectId]);
 
 
@@ -614,7 +625,8 @@ const Dashboard = () => {
       title: 'BALANCE',
       value: `Ar ${formatCurrencyHelper(indicators.totalBalance, 2)}`,
       icon: '⚖️',
-      action: 'openBalance'
+      action: 'openBalance',
+      shouldHide: !indicators.hasBalance
     },
     {
       title: "Leverage brut",
@@ -812,7 +824,9 @@ const Dashboard = () => {
 
         {/* 2. Cartes de Résumé - identique au style des cartes Bilan & États */}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-7 gap-2 sm:gap-3 pb-2 mb-6">
-          {summaryCards.map((card, index) => {
+          {summaryCards
+            .filter(card => !card.shouldHide)
+            .map((card, index) => {
             const hasVariation = card.variation !== undefined && card.variation !== null;
             const isPositive = hasVariation && card.variation >= 0;
             const variationClass = card.invertColors
@@ -1102,7 +1116,7 @@ const Dashboard = () => {
         </div>
 
         {/* 4. Top 10 comptes mouvementés + TVA côte à côte */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch mb-4">
+        <div className={`grid grid-cols-1 ${indicators.hasTva ? 'lg:grid-cols-2' : 'lg:grid-cols-1'} gap-4 items-stretch mb-4`}>
           <div className="w-full">
             <BarCharts
               globalDateStart={globalDateStart}
@@ -1110,13 +1124,15 @@ const Dashboard = () => {
               onLoad={handleLoadBar}
             />
           </div>
-          <div className="w-full">
-            <TvaBarChart
-              globalDateStart={globalDateStart}
-              globalDateEnd={globalDateEnd}
-              onLoad={handleLoadTva}
-            />
-          </div>
+          {indicators.hasTva && (
+            <div className="w-full">
+              <TvaBarChart
+                globalDateStart={globalDateStart}
+                globalDateEnd={globalDateEnd}
+                onLoad={handleLoadTva}
+              />
+            </div>
+          )}
         </div>
         {/* 5. Trois Camemberts: Produits, Charges, et Comparaison */}
         <ThreePieCharts

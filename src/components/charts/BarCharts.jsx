@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../states/context/ThemeContext';
 import axios from 'axios';
 import { BASE_URL_API } from '../../constants/globalConstants';
-import { getApiHeaders } from '../../utils/apiUtils';
+import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 import { getTodayISO, formatDateToISO } from '../../utils/dateUtils';
 import {
@@ -53,26 +53,33 @@ export default function BarCharts({ globalDateStart, globalDateEnd, onLoad }) {
     setDateRange({ start: dateStart, end: dateEnd, display: dateRangeStr });
 
     // Fetch top 10 accounts data with active range
-    let url = `${BASE_URL_API}/top-comptes-mouvementes/?date_start=${dateStart}&date_end=${dateEnd}`;
+    let url = `/top-comptes-mouvementes/?date_start=${dateStart}&date_end=${dateEnd}`;
 
     setLoading(true);
-    axios.get(url, { headers: getApiHeaders(), withCredentials: true })
-      .then(res => {
-        const formattedData = res.data.map(item => ({
-          account: item.compte,
-          label: item.libelle,
-          movement: parseFloat(item.mt_mvt)
-        }));
-        setData(formattedData);
-        setLoading(false);
-        if (onLoad) onLoad(false);
+    fetchWithReauth(url)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          const formattedData = data.map(item => ({
+            account: item.compte,
+            label: item.libelle,
+            movement: parseFloat(item.mt_mvt) || 0
+          }));
+          setData(formattedData);
+        } else {
+          console.error("Top Comptes: format inattendu", data);
+          setData([]);
+        }
       })
       .catch(err => {
         console.error("Erreur lors de la récupération du Top 10 comptes", err);
+        setData([]);
+      })
+      .finally(() => {
         setLoading(false);
         if (onLoad) onLoad(false);
       });
-  }, [projectId, globalDateStart, globalDateEnd]);
+  }, [projectId, globalDateStart, globalDateEnd, onLoad]);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 sm:p-6 h-full border-t-2 border-gray-300 dark:border-gray-700 relative">

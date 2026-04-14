@@ -3,7 +3,7 @@ import toast from "react-hot-toast";
 import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
-import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { formatNumberWithSpaces, removeSpacesFromNumber, formatNumberTyping } from '../../../utils/numberFormat';
 import { useProjectId } from '../../../hooks/useProjectId';
 import LoadingOverlay from '../../../components/layout/LoadingOverlay';
 import ButtonSpinner from '../../../components/ui/ButtonSpinner';
@@ -70,13 +70,18 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
 
     const handleChangeAmount = useCallback((e) => {
         const { name, value } = e.target;
-        // Format with spaces
-        const cleanValue = removeSpacesFromNumber(value);
-        // Normalize comma/dot
-        const normalizedValue = cleanValue.replace(/,/g, '.');
-        const formattedValue = formatNumberWithSpaces(normalizedValue);
+        const formattedValue = formatNumberTyping(value);
         setFormData(prev => ({ ...prev, [name]: formattedValue }));
     }, []);
+
+    const handleBlurAmount = useCallback((e) => {
+        const { name, value } = e.target;
+        const cleanValue = removeSpacesFromNumber(value);
+        if (cleanValue) {
+            const formattedValue = formatNumberWithSpaces(cleanValue);
+            setFormData(prev => ({ ...prev, [name]: formattedValue }));
+        }
+    }, [setFormData]);
 
     // IRSA Calculation Logic
     useEffect(() => {
@@ -276,28 +281,28 @@ export default function FichePayeForm({ onSaisieCompleted, onSaveComplete }) {
                                 <div className="space-y-3">
                                     <div>
                                         <label className="block text-xs font-medium text-gray-900 dark:text-gray-100 mb-1 uppercase tracking-wide">Salaire brut (Ar)</label>
-                                        <input type="text" name="salaireBrut" value={formData.salaireBrut} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-base font-semibold rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.salaireBrut ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                                        <input type="text" name="salaireBrut" value={formData.salaireBrut} onChange={handleChangeAmount} onBlur={handleBlurAmount} placeholder="0.00" className={`w-full px-3 py-2 text-base font-semibold rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700 ${validationErrors.salaireBrut ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4 pt-2">
                                         <div>
                                             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cotisation salariale</label>
-                                            <input type="text" name="cotisationSalariale" value={formData.cotisationSalariale} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 text-right" />
+                                            <input type="text" name="cotisationSalariale" value={formData.cotisationSalariale} onChange={handleChangeAmount} onBlur={handleBlurAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 text-right" />
                                         </div>
                                         <div>
                                             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Cotisation patronale</label>
-                                            <input type="text" name="cotisationPatronale" value={formData.cotisationPatronale} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 text-right" />
+                                            <input type="text" name="cotisationPatronale" value={formData.cotisationPatronale} onChange={handleChangeAmount} onBlur={handleBlurAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 text-right" />
                                         </div>
                                     </div>
 
                                     <div>
                                         <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Retenue à la source (IRSA)</label>
-                                        <input type="text" name="retenueSource" value={formData.retenueSource} onChange={handleChangeAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 text-right" />
+                                        <input type="text" name="retenueSource" value={formData.retenueSource} onChange={handleChangeAmount} onBlur={handleBlurAmount} placeholder="0.00" className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700 text-right" />
                                     </div>
 
                                     <div className="pt-4 mt-2 border-t border-gray-200 dark:border-gray-700">
                                         <label className="block text-sm font-bold text-gray-800 dark:text-gray-100 mb-1 uppercase">Net à payer (Ar)</label>
-                                        <input type="text" name="netAPayer" value={formData.netAPayer} onChange={handleChangeAmount} placeholder="0.00" className={`w-full px-3 py-2 text-lg font-bold rounded-md text-emerald-700 dark:text-emerald-400 text-right bg-emerald-50 dark:bg-emerald-900/20 ${validationErrors.netAPayer ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-emerald-500'}`} />
+                                        <input type="text" name="netAPayer" value={formData.netAPayer} onChange={handleChangeAmount} onBlur={handleBlurAmount} placeholder="0.00" className={`w-full px-3 py-2 text-lg font-bold rounded-md text-emerald-700 dark:text-emerald-400 text-right bg-emerald-50 dark:bg-emerald-900/20 ${validationErrors.netAPayer ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-emerald-500'}`} />
                                     </div>
                                 </div>
                             </div>

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
-import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { formatNumberWithSpaces, removeSpacesFromNumber, formatNumberTyping } from '../../../utils/numberFormat';
 import { getTodayISO } from '../../../utils/dateUtils';
 import { useSaveCompteResultatManualMutation } from "../../../states/compta/comptaApiSlice";
 import { useProjectId } from '../../../hooks/useProjectId';
@@ -130,11 +130,8 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
             setErreurNumeroCompte(newErreurNumeroCompte);
             setNouvelleLigne(prev => ({ ...prev, [name]: newValue, libelle: newLibelle, nature: newNature }));
         } else if (name === 'montant') {
-            const cleanValue = removeSpacesFromNumber(value);
-            // Replace comma with dot for consistency if user types comma
-            const normalizedValue = cleanValue.replace(/,/g, '.');
-            const formattedValue = formatNumberWithSpaces(normalizedValue);
-            setNouvelleLigne(prev => ({ ...prev, [name]: formattedValue }));
+            newValue = formatNumberTyping(value);
+            setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
         } else {
             setNouvelleLigne(prev => ({ ...prev, [name]: value }));
         }
@@ -145,6 +142,17 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
             setValidationErrors(prev => ({ ...prev, [name]: false }));
         }
     }, [nouvelleLigne, validationErrors]);
+
+    const handleBlur = useCallback((e) => {
+        const { name, value } = e.target;
+        if (name === 'montant') {
+            const cleanValue = removeSpacesFromNumber(value);
+            if (cleanValue) {
+                const formattedValue = formatNumberWithSpaces(cleanValue);
+                setNouvelleLigne(prev => ({ ...prev, [name]: formattedValue }));
+            }
+        }
+    }, [setNouvelleLigne]);
 
     const validateAndGetMontant = () => {
         const errors = {};
@@ -308,7 +316,7 @@ export default function CompteResultatForm({ onSaisieCompleted }) {
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Montant (Ar)</label>
-                                <input type="text" name="montant" value={nouvelleLigne.montant} onChange={handleChange} className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.montant ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`} placeholder="0.00" />
+                                <input type="text" name="montant" value={nouvelleLigne.montant} onChange={handleChange} onBlur={handleBlur} className={`w-full px-2 py-1 text-sm border rounded-md focus:ring-indigo-500 focus:border-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.montant ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'}`} placeholder="0.00" />
                             </div>
                             <div className="md:col-span-2 lg:col-span-2">
                                 <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Nature</label>

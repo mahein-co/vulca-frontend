@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 
-import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { formatNumberWithSpaces, removeSpacesFromNumber, formatNumberTyping } from '../../../utils/numberFormat';
 import { getTodayISO } from '../../../utils/dateUtils';
 import { useSaveBilanManualMutation } from "../../../states/compta/comptaApiSlice";
 import { useProjectId } from '../../../hooks/useProjectId';
@@ -216,8 +216,7 @@ export default function BilanForm({ onSaisieCompleted }) {
             }));
 
         } else if (name === 'montant') {
-            const cleanValue = removeSpacesFromNumber(value);
-            newValue = formatNumberWithSpaces(cleanValue);
+            newValue = formatNumberTyping(value);
             setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
 
         } else if (name === 'type') {
@@ -264,6 +263,17 @@ export default function BilanForm({ onSaisieCompleted }) {
             setValidationErrors(prev => ({ ...prev, [name]: false }));
         }
     }, [nouvelleLigne, validationErrors]);
+
+    const handleBlur = useCallback((e) => {
+        const { name, value } = e.target;
+        if (name === 'montant') {
+            const cleanValue = removeSpacesFromNumber(value);
+            if (cleanValue) {
+                const formattedValue = formatNumberWithSpaces(cleanValue);
+                setNouvelleLigne(prev => ({ ...prev, [name]: formattedValue }));
+            }
+        }
+    }, [setNouvelleLigne]);
 
     const validateAndGetMontant = () => {
         const errors = {};
@@ -484,6 +494,7 @@ export default function BilanForm({ onSaisieCompleted }) {
                                     name="montant"
                                     value={nouvelleLigne.montant}
                                     onChange={handleChange}
+                                    onBlur={handleBlur}
                                     className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.montant ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
                                     placeholder="0.00"
                                 />

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
-import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { formatNumberWithSpaces, removeSpacesFromNumber, formatNumberTyping } from '../../../utils/numberFormat';
 import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
@@ -82,8 +82,7 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
     let newValue = value;
     // Format debit and credit fields with spaces
     if (name === 'debit' || name === 'credit') {
-      const cleanValue = removeSpacesFromNumber(value);
-      newValue = formatNumberWithSpaces(cleanValue);
+      newValue = formatNumberTyping(value);
     }
     setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
     // Clear validation error for this field
@@ -91,6 +90,17 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
       setValidationErrors(prev => ({ ...prev, [name]: false }));
     }
   }, [validationErrors]);
+
+  const handleBlurLigne = useCallback((e) => {
+    const { name, value } = e.target;
+    if (name === 'debit' || name === 'credit') {
+      const cleanValue = removeSpacesFromNumber(value);
+      if (cleanValue) {
+        const formattedValue = formatNumberWithSpaces(cleanValue);
+        setNouvelleLigne(prev => ({ ...prev, [name]: formattedValue }));
+      }
+    }
+  }, [setNouvelleLigne]);
 
   const resetNouvelleLigne = useCallback(() => {
     setNouvelleLigne({ date: getTodayISO(), reference: '', description: '', debit: '', credit: '' });
@@ -265,7 +275,6 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
       const t = transactions[0];
       const ref = (t.reference || '').toUpperCase();
       const desc = (t.description || '').toUpperCase();
-      const content = ref + ' ' + desc;
 
       if (ref.includes('SALAIRE') || ref.includes('PAIE') || ref.includes('PAYE') || ref.includes('REMUNERATION') ||
         desc.includes('SALAIRE') || desc.includes('PAIE') || desc.includes('PAYE') || desc.includes('REMUNERATION')) {
@@ -443,11 +452,11 @@ export default function BankForm({ onSaisieCompleted, onSaveComplete }) {
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Débit (Ar)</label>
-                    <input type="text" name="debit" value={nouvelleLigne.debit} onChange={handleChangeLigne} placeholder="0" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.debit ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                    <input type="text" name="debit" value={nouvelleLigne.debit} onChange={handleChangeLigne} onBlur={handleBlurLigne} placeholder="0" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.debit ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                   </div>
                   <div className="md:col-span-2">
                     <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Crédit (Ar)</label>
-                    <input type="text" name="credit" value={nouvelleLigne.credit} onChange={handleChangeLigne} placeholder="0" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.credit ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
+                    <input type="text" name="credit" value={nouvelleLigne.credit} onChange={handleChangeLigne} onBlur={handleBlurLigne} placeholder="0" className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.credit ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`} />
                   </div>
                 </div>
 

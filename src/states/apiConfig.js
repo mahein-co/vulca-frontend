@@ -37,10 +37,10 @@ const baseQueryUsersRoot = fetchBaseQuery({
         if (hostname === 'localhost' || hostname === '127.0.0.1') {
             // Standardize on 127.0.0.1 for local backend to avoid IPv6 issues
             url = `http://127.0.0.1:8000/api`;
-        } else if (hostname.includes('lexaiq.com')) {
-            url = 'https://api.lexaiq.com/api';
+        } else if (hostname.includes('rekapy.com')) {
+            url = 'https://api.rekapy.com/api';
         } else {
-            url = (process.env.REACT_APP_API_URL || 'https://api.lexaiq.com/api');
+            url = (process.env.REACT_APP_API_URL || 'https://api.rekapy.com/api');
         }
         console.log("🔧 baseQueryUsersRoot configured with baseUrl:", url);
         return url;

@@ -518,9 +518,7 @@ export default function IndexChatbotPage({ close }) {
               >
                 Assistant
               </h3>
-              <p className="text-[8px] md:text-[10px] text-emerald-500 font-bold tracking-widest uppercase opacity-90">
-                REKAPY Smart Service
-              </p>
+              
             </div>
           </div>
 

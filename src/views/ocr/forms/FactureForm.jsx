@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import toast from "react-hot-toast";
-import { formatNumberWithSpaces, removeSpacesFromNumber } from '../../../utils/numberFormat';
+import { formatNumberWithSpaces, removeSpacesFromNumber, formatNumberTyping } from '../../../utils/numberFormat';
 import { getTodayISO } from '../../../utils/dateUtils';
 import { useSavePieceByFormularMutation } from "../../../states/ocr/ocrApiSlice";
 import { useGenerateJournalMutation } from "../../../states/journal/journalApiSlice";
@@ -95,8 +95,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
         const { name, value } = e.target;
         let newValue = value;
         if (name === 'quantite' || name === 'prixUnitaire') {
-            const cleanValue = removeSpacesFromNumber(value);
-            newValue = formatNumberWithSpaces(cleanValue);
+            newValue = formatNumberTyping(value);
         }
         setNouvelleLigne(prev => ({ ...prev, [name]: newValue }));
         // Clear validation error if exists
@@ -104,6 +103,17 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
             setValidationErrors(prev => ({ ...prev, [name]: false }));
         }
     }, [validationErrors]);
+
+    const handleBlurLigne = useCallback((e) => {
+        const { name, value } = e.target;
+        if (name === 'quantite' || name === 'prixUnitaire') {
+            const cleanValue = removeSpacesFromNumber(value);
+            if (cleanValue) {
+                const formattedValue = formatNumberWithSpaces(cleanValue);
+                setNouvelleLigne(prev => ({ ...prev, [name]: formattedValue }));
+            }
+        }
+    }, [setNouvelleLigne]);
 
     const tvaRateDecimal = useMemo(() => {
         const tvaPercent = parseFloat(header.tauxTVA);
@@ -562,6 +572,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             name="quantite"
                                             value={nouvelleLigne.quantite}
                                             onChange={handleChangeLigne}
+                                            onBlur={handleBlurLigne}
                                             className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.quantite ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
                                             placeholder="1"
                                         />
@@ -574,6 +585,7 @@ export default function FactureForm({ onSaisieCompleted, onSaveComplete }) {
                                             name="prixUnitaire"
                                             value={nouvelleLigne.prixUnitaire}
                                             onChange={handleChangeLigne}
+                                            onBlur={handleBlurLigne}
                                             className={`w-full px-2 py-1 text-sm rounded-md focus:ring-indigo-500 text-gray-800 dark:text-gray-100 bg-white dark:bg-gray-700 text-right ${validationErrors.prixUnitaire ? 'border-2 border-red-500 focus:border-red-500' : 'border border-gray-300 dark:border-gray-600 focus:border-indigo-500'}`}
                                             placeholder="100000.00"
                                         />

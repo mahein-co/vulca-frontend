@@ -365,6 +365,9 @@ const OcrValidationForm = ({
                                     // 2. Ignorer 'objet_description' (demande utilisateur)
                                     if (key === 'objet_description' || key.toLowerCase() === 'objet description') return null;
 
+                                    // 2.bis. Ignorer le champ 'description' simple (texte brut) sans casser le tableau d'articles
+                                    if (key.toLowerCase() === 'description' && !Array.isArray(value)) return null;
+
                                     // 3. Ignorer les valeurs nulles, undefined (mais garder les chaînes vides pour permettre l'édition)
                                     // On garde aussi les 0 pour permettre la correction manuelle
                                     if (value === null || value === undefined) return null;

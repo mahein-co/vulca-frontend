@@ -88,6 +88,18 @@ const UserProfileDropdown = ({ isOpen, onClose, userInfo, onOpenProfile, onOpenS
                     Sécurité & Mot de passe
                 </button>
 
+                <button
+                    onClick={() => {
+                        localStorage.removeItem('selectedProjectId');
+                        localStorage.removeItem('selectedProjectName');
+                        window.location.href = '/projects';
+                    }}
+                    className="w-full flex items-center px-4 py-3 rounded-xl text-[13px] font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors group"
+                >
+                    <Shield className="w-4 h-4 mr-3 text-gray-400 dark:text-gray-500 group-hover:text-amber-500" />
+                    Changer de dossier
+                </button>
+
                 <div className="h-px bg-gray-100 dark:bg-gray-700 my-2 mx-2" />
 
                 <button

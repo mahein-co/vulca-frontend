@@ -9,12 +9,12 @@ let apiHost;
 
 if (hostname === 'localhost' || hostname === '127.0.0.1') {
   apiHost = `http://127.0.0.1:8000/api`;
-} else if (hostname.includes('lexaiq.com')) {
-  // Force production API URL for any lexaiq.com subdomain
-  apiHost = "https://api.lexaiq.com/api";
+} else if (hostname.includes('rekapy.com')) {
+  // Force production API URL for any rekapy.com subdomain
+  apiHost = "https://api.rekapy.com/api";
 } else {
-  // Fallback to env var or default
-  apiHost = process.env.REACT_APP_API_URL || "https://api.lexaiq.com/api";
+  // En dernier recours, utiliser la variable d'environnement ou la prod par défaut
+  apiHost = process.env.REACT_APP_API_URL || "https://api.rekapy.com/api";
 }
 
 export const BASE_URL_API = apiHost;
@@ -41,5 +41,5 @@ export const SIDEBAR_NAVIGATIONS = [
   { title: "grandlivre", path: "/app/grandlivre", icon: IconAdd },
   { title: "Finance", path: "/app/finance", icon: IconFinance },
   { title: "Formulaire", path: "/app/forms", icon: IconAdd },
-  { title: "Import file", path: "/app/ocr", icon: IconOcr },
+  { title: "Importer des factures", path: "/app/ocr", icon: IconOcr },
 ];

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../states/context/ThemeContext';
 import axios from 'axios';
 import { BASE_URL_API } from '../../constants/globalConstants';
-import { getApiHeaders } from '../../utils/apiUtils';
+import { getApiHeaders, fetchWithReauth } from '../../utils/apiUtils';
 import { useProjectId } from '../../hooks/useProjectId';
 import {
   PieChart,
@@ -38,15 +38,16 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd, onLoad 
     if (globalDateEnd) params += `date_end=${globalDateEnd}`;
 
     // Fetch des données pour les 3 camemberts
-    Promise.all([
-      axios.get(`${BASE_URL_API}/CompteResultats/${params}`, { headers: getApiHeaders(), withCredentials: true }),
-    ])
-      .then(([res]) => {
-        let rawData = res.data;
+    fetchWithReauth(`/CompteResultats/${params}`)
+      .then(res => res.json())
+      .then(rawData => {
         // Gérer la pagination si nécessaire
         const data = Array.isArray(rawData) ? rawData : (rawData && rawData.results ? rawData.results : []);
 
         if (data.length === 0) {
+          setProduitsData([]);
+          setChargesData([]);
+          setComparisonData([]);
           setLoading(false);
           if (onLoad) onLoad(false);
           return;
@@ -112,16 +113,19 @@ export default function ThreePieCharts({ globalDateStart, globalDateEnd, onLoad 
         setProduitsData(produits);
         setChargesData(charges);
         setComparisonData(comparison);
-        setLoading(false);
-        if (onLoad) onLoad(false);
       })
       .catch(err => {
         console.error("Erreur lors du chargement des répartitions", err);
+        setProduitsData([]);
+        setChargesData([]);
+        setComparisonData([]);
+      })
+      .finally(() => {
         setLoading(false);
         if (onLoad) onLoad(false);
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [globalDateStart, globalDateEnd, projectId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalDateStart, globalDateEnd, projectId, onLoad]);
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
